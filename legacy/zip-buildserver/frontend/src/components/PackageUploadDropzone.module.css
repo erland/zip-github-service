@@ -1,0 +1,49 @@
+.dropzone {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+  border: 2px dashed #cbd5e1;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  background: #f8fafc;
+}
+
+.dropzone input {
+  max-width: 100%;
+}
+
+.button {
+  width: fit-content;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  background: #0f172a;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.result {
+  border-radius: 0.75rem;
+  background: #ecfdf5;
+  color: #065f46;
+  padding: 0.75rem;
+}
+
+.error {
+  border-radius: 0.75rem;
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 0.75rem;
+  font-weight: 600;
+}
+
+.meta {
+  margin: 0;
+  color: #475569;
+}

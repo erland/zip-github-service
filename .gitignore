@@ -1,0 +1,58 @@
+# macOS and archive transport noise
+.DS_Store
+._*
+__MACOSX/
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Java / Maven
+backend/target/
+*.class
+*.jar
+*.war
+.mvn/timing.properties
+
+# Node / Vite
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/.vite/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Temporary ZIP storage and workspaces
+data/
+uploads/
+workspaces/
+tmp/
+temp/
+*.part
+
+# Logs and test output
+*.log
+logs/
+test-results/
+playwright-report/
+coverage/
+
+# Local containers and databases
+postgres-data/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# Generated project packages (fixtures may still commit ZIP files elsewhere)
+release-packages/

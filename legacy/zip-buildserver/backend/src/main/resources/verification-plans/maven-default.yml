@@ -1,0 +1,19 @@
+id: maven-default
+name: Maven default
+technology: MAVEN
+enabled: true
+networkMode: DEPENDENCY
+selectionReason: Selected server-configured Maven verification plan.
+indicators:
+  - pom.xml
+commands:
+  - label: Run tests
+    workingDirectory: ${project.path}
+    commandDisplay: mvn test
+    timeoutSeconds: 600
+    optional: false
+  - label: Package without tests
+    workingDirectory: ${project.path}
+    commandDisplay: mvn package -DskipTests
+    timeoutSeconds: 600
+    optional: false

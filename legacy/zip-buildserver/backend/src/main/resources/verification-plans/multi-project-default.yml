@@ -1,0 +1,35 @@
+id: multi-project-default
+name: Backend Maven plus frontend Node
+technology: MULTI_PROJECT
+enabled: true
+networkMode: DEPENDENCY
+selectionReason: Selected server-configured backend/frontend multi-project verification plan.
+indicators:
+  - backend/pom.xml
+  - frontend/package.json
+commands:
+  - label: Backend tests
+    workingDirectory: backend
+    commandDisplay: mvn test
+    timeoutSeconds: 600
+    optional: false
+  - label: Backend package without tests
+    workingDirectory: backend
+    commandDisplay: mvn package -DskipTests
+    timeoutSeconds: 600
+    optional: false
+  - label: Frontend install dependencies
+    workingDirectory: frontend
+    commandDisplay: npm ci
+    timeoutSeconds: 600
+    optional: false
+  - label: Frontend tests
+    workingDirectory: frontend
+    commandDisplay: npm test -- --runInBand
+    timeoutSeconds: 600
+    optional: true
+  - label: Frontend build
+    workingDirectory: frontend
+    commandDisplay: npm run build
+    timeoutSeconds: 600
+    optional: true

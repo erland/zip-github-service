@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: zip-buildserver-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-zip_buildserver}
+      POSTGRES_USER: ${POSTGRES_USER:-zip_buildserver}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zip_buildserver}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zip-buildserver-api
+    user: ${ZIP_BUILDSERVER_BACKEND_USER:-zipbuildserver}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      QUARKUS_HTTP_HOST: 0.0.0.0
+      QUARKUS_HTTP_PORT: 8080
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-zip_buildserver}
+      QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-zip_buildserver}
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-zip_buildserver}
+      ZIP_BUILDSERVER_AUTH_ENABLED: ${ZIP_BUILDSERVER_AUTH_ENABLED:-true}
+      ZIP_BUILDSERVER_API_TOKEN: ${ZIP_BUILDSERVER_API_TOKEN:-change-me}
+      ZIP_BUILDSERVER_DATA_DIR: ${ZIP_BUILDSERVER_DATA_DIR:-/data/zip-buildserver}
+      ZIP_BUILDSERVER_PACKAGES_DIR: ${ZIP_BUILDSERVER_DATA_DIR:-/data/zip-buildserver}/packages
+      ZIP_BUILDSERVER_WORKSPACES_DIR: ${ZIP_BUILDSERVER_DATA_DIR:-/data/zip-buildserver}/workspaces
+      ZIP_BUILDSERVER_ARTIFACTS_DIR: ${ZIP_BUILDSERVER_DATA_DIR:-/data/zip-buildserver}/artifacts
+      ZIP_BUILDSERVER_ARTIFACT_RETENTION_DAYS: ${ZIP_BUILDSERVER_ARTIFACT_RETENTION_DAYS:-14}
+      ZIP_BUILDSERVER_RETENTION_CLEANUP_ENABLED: ${ZIP_BUILDSERVER_RETENTION_CLEANUP_ENABLED:-true}
+      ZIP_BUILDSERVER_RETENTION_CLEANUP_INTERVAL: ${ZIP_BUILDSERVER_RETENTION_CLEANUP_INTERVAL:-24h}
+      ZIP_BUILDSERVER_PACKAGE_RETENTION_DAYS: ${ZIP_BUILDSERVER_PACKAGE_RETENTION_DAYS:-7}
+      ZIP_BUILDSERVER_SESSION_RETENTION_DAYS: ${ZIP_BUILDSERVER_SESSION_RETENTION_DAYS:-90}
+      ZIP_BUILDSERVER_WORKSPACE_CLEANUP_GRACE_MINUTES: ${ZIP_BUILDSERVER_WORKSPACE_CLEANUP_GRACE_MINUTES:-60}
+      ZIP_BUILDSERVER_WORKER_EXECUTOR: ${ZIP_BUILDSERVER_WORKER_EXECUTOR:-fake}
+      ZIP_BUILDSERVER_WORKER_IMAGE: ${ZIP_BUILDSERVER_WORKER_IMAGE:-zip-buildserver-worker-node-maven:local}
+      ZIP_BUILDSERVER_WORKER_MEMORY: ${ZIP_BUILDSERVER_WORKER_MEMORY:-2g}
+      ZIP_BUILDSERVER_WORKER_CPUS: ${ZIP_BUILDSERVER_WORKER_CPUS:-2}
+      ZIP_BUILDSERVER_WORKER_NETWORK: ${ZIP_BUILDSERVER_WORKER_NETWORK:-bridge}
+      ZIP_BUILDSERVER_WORKER_HOST_WORKSPACES_DIR: ${ZIP_BUILDSERVER_WORKER_HOST_WORKSPACES_DIR:-}
+      DOCKER_HOST: unix:///var/run/docker.sock
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - ${ZIP_BUILDSERVER_DATA_HOST_DIR:-zip-buildserver-data}:${ZIP_BUILDSERVER_DATA_DIR:-/data/zip-buildserver}
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: zip-buildserver-web
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+  zip-buildserver-data:

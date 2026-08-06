@@ -1,0 +1,1 @@
+-- Clean zip-github baseline. Target-domain tables are introduced in implementation step 1.2.

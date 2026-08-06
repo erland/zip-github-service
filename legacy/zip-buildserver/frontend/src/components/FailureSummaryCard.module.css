@@ -1,0 +1,16 @@
+.failure {
+  border: 1px solid #fecaca;
+  border-radius: 0.85rem;
+  padding: 1rem;
+  background: #fff7f7;
+}
+
+.failure h3 {
+  margin: 0 0 0.5rem;
+  color: #991b1b;
+}
+
+.list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}

@@ -1,0 +1,1 @@
+export default function HomePage(){return <section><h1>zip-github</h1><p>En säker ZIP-till-GitHub-tjänst är under uppbyggnad.</p><p>GitHub ska vara beständig källa och godkända importer ska levereras via branch och pull request.</p></section>}

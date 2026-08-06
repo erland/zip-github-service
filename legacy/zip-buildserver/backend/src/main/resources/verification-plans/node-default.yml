@@ -1,0 +1,24 @@
+id: node-default
+name: Node default
+technology: NODE
+enabled: true
+networkMode: DEPENDENCY
+selectionReason: Selected server-configured Node verification plan.
+indicators:
+  - package.json
+commands:
+  - label: Install dependencies
+    workingDirectory: ${project.path}
+    commandDisplay: npm ci
+    timeoutSeconds: 600
+    optional: false
+  - label: Run tests
+    workingDirectory: ${project.path}
+    commandDisplay: npm test -- --runInBand
+    timeoutSeconds: 600
+    optional: true
+  - label: Build
+    workingDirectory: ${project.path}
+    commandDisplay: npm run build
+    timeoutSeconds: 600
+    optional: true

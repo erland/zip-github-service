@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  structure:
+    name: Structure and security checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify active project structure
+        run: ./scripts/verify-structure.sh
+      - name: Validate shell scripts
+        run: |
+          find scripts backend -type f \( -name '*.sh' -o -name 'mvnw' \) -print0 \
+            | xargs -0 -r -n1 bash -n
+      - name: Verify implementation ledger
+        run: ./scripts/verify-implementation-status.sh
+      - name: Verify ignored generated files
+        run: |
+          test -f .gitignore
+          ! git ls-files | grep -E '(^|/)(node_modules|target|dist|coverage)/'
+
+  backend:
+    name: Backend tests and package
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+      - name: Verify Maven wrapper
+        working-directory: backend
+        run: ./mvnw --batch-mode --version
+      - name: Test and package backend
+        working-directory: backend
+        run: ./mvnw --batch-mode --no-transfer-progress verify
+      - name: Upload backend test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-reports
+          path: |
+            backend/target/surefire-reports/
+            backend/target/failsafe-reports/
+          if-no-files-found: ignore
+
+  frontend:
+    name: Frontend tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm test
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          if-no-files-found: error

@@ -1,0 +1,23 @@
+.page {
+  display: grid;
+  gap: 1rem;
+}
+
+.card {
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
+}
+
+.card h2 {
+  margin: 0.75rem 0;
+  color: #0f172a;
+}
+
+.card p,
+.card li {
+  color: #475569;
+  line-height: 1.6;
+}

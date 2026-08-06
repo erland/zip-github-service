@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0019`
+- Repository revision: `r0021`
 - Last completed step: `3.6`
 - Next step: `4.1`
 - Overall state: `IN IMPLEMENTATION`
@@ -91,6 +91,9 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0017` | 2026-08-06 | `3.4` archive normalization and deterministic inventory implemented | Java compilation and standalone normalization self-test passed; Maven unavailable | `3.5` |
 | `r0018` | 2026-08-06 | `3.5` upload retention and mobile upload flow implemented | Static structure/configuration checks passed; automated iPhone Safari and full Maven/npm tests unavailable | `4.1` |
 | `r0019` | 2026-08-06 | `3.6` complete CI baseline established | Workflow, wrapper, ignore rules, status and structure checks validated locally; full CI execution awaits repository push | `4.1` |
+| `r0020` | 2026-08-06 | Corrective follow-up to `3.6` | Added missing Quarkus Scheduler dependency and isolated frontend routing tests with DOM cleanup after first full local run | `4.1` |
+| `r0021` | 2026-08-06 | Corrective follow-up to `3.6` | Marked `StreamingUploadService` configuration constructor as the explicit CDI injection constructor after Quarkus Arc validation failure | `4.1` |
+| `r0023` | 2026-08-06 | Corrective follow-up to `3.6` | Made GitHub App private-key configuration optional at startup, added runtime credential validation, and removed deprecated Hibernate schema-generation configuration | `4.1` |
 
 ## Required update after every step
 
@@ -100,3 +103,5 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 4. Update **Current position** and **Revision history**.
 5. Add a step report containing changed files, verification commands/results, limitations and follow-ups.
 6. Increment the ZIP revision.
+
+- r0023: Isolated Quarkus API tests by clearing the temporary in-memory project/import/upload store before each ProjectResourceTest.

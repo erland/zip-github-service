@@ -17,6 +17,15 @@ public class ProjectApplicationService {
     private final Map<UUID, StoredUpload> uploadsByImport = new ConcurrentHashMap<>();
     @Inject GitHubProjectConfigurationService githubConfiguration;
 
+    /** Clears the temporary in-memory store between Quarkus tests.
+     *  This method must be removed when persistent repositories replace the prototype store.
+     */
+    public void clearInMemoryStateForTests() {
+        projects.clear();
+        imports.clear();
+        uploadsByImport.clear();
+    }
+
     public List<ProjectResponse> listProjects(UUID ownerUserId) {
         return projects.values().stream().filter(project -> project.ownerUserId.equals(ownerUserId))
                 .map(OwnedProject::response).sorted(Comparator.comparing(ProjectResponse::createdAt)).toList();

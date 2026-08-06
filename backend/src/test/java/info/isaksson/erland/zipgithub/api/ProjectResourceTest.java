@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
+import info.isaksson.erland.zipgithub.application.ProjectApplicationService;
 import info.isaksson.erland.zipgithub.github.GitHubAppClient;
 import info.isaksson.erland.zipgithub.github.GitHubProjectCatalog;
 import info.isaksson.erland.zipgithub.security.CurrentUserProvider;
@@ -23,10 +24,12 @@ class ProjectResourceTest {
     private static final UUID USER_A = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final UUID USER_B = UUID.fromString("22222222-2222-2222-2222-222222222222");
     @Inject WebSessionStore sessions;
+    @Inject ProjectApplicationService projects;
     @InjectMock GitHubProjectCatalog catalog;
 
     @BeforeEach
     void githubCatalogue() {
+        projects.clearInMemoryStateForTests();
         var installation = new GitHubAppClient.GitHubInstallation(10L, 1L, "erland", "User", "selected", null);
         var repository = new GitHubAppClient.GitHubRepository(20L, "erland/example", true, "main", "https://github.com/erland/example");
         when(catalog.listUserInstallations(anyString())).thenReturn(List.of(installation));

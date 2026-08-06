@@ -1,6 +1,7 @@
 package info.isaksson.erland.zipgithub.upload;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.io.IOException;
@@ -24,6 +25,7 @@ public class StreamingUploadService {
     private final Duration retention;
     private final Clock clock;
 
+    @Inject
     public StreamingUploadService(
             @ConfigProperty(name = "zipgithub.upload.storage-root") String storageRoot,
             @ConfigProperty(name = "zipgithub.upload.max-compressed-bytes") long maximumBytes,

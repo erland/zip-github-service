@@ -19,11 +19,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 
 @ApplicationScoped
 public class GitHubAppClient implements GitHubProjectCatalog {
     @ConfigProperty(name = "zipgithub.github.app-id") long appId;
-    @ConfigProperty(name = "zipgithub.github.app-private-key") String privateKeyPem;
+    @ConfigProperty(name = "zipgithub.github.app-private-key") Optional<String> privateKeyPem;
     @Inject ObjectMapper mapper;
 
     private final HttpClient http = HttpClient.newHttpClient();
@@ -88,6 +89,7 @@ public class GitHubAppClient implements GitHubProjectCatalog {
     }
 
     String createAppJwt() {
+        ensureAppCredentialsConfigured();
         try {
             Instant now = Instant.now();
             String header = base64Url("{\"alg\":\"RS256\",\"typ\":\"JWT\"}");
@@ -96,11 +98,18 @@ public class GitHubAppClient implements GitHubProjectCatalog {
                     + ",\"iss\":\"" + appId + "\"}");
             String unsigned = header + "." + payload;
             Signature signer = Signature.getInstance("SHA256withRSA");
-            signer.initSign(parsePrivateKey(privateKeyPem));
+            signer.initSign(parsePrivateKey(privateKeyPem.orElseThrow()));
             signer.update(unsigned.getBytes(StandardCharsets.US_ASCII));
             return unsigned + "." + Base64.getUrlEncoder().withoutPadding().encodeToString(signer.sign());
         } catch (Exception e) {
             throw new IllegalStateException("Could not sign GitHub App JWT", e);
+        }
+    }
+
+    private void ensureAppCredentialsConfigured() {
+        if (appId <= 0 || privateKeyPem.isEmpty() || privateKeyPem.get().isBlank()) {
+            throw new IllegalStateException(
+                    "GitHub App credentials are not configured. Set GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY before requesting an installation token.");
         }
     }
 

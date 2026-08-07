@@ -258,15 +258,9 @@ public class ImportWorkspaceService {
     }
 
     private static String run(Path directory, String token, String... command) {
-        Path askPass = null;
         try {
-            askPass = Files.createTempFile(directory, ".git-askpass-", ".sh");
-            Files.writeString(askPass, "#!/bin/sh\ncase \"$1\" in\n  *Username*) printf '%s\\n' 'x-access-token' ;;\n  *) printf '%s\\n' \"$ZIP_GITHUB_GIT_TOKEN\" ;;\nesac\n", StandardCharsets.UTF_8);
-            askPass.toFile().setExecutable(true, true);
             ProcessBuilder builder = new ProcessBuilder(command).directory(directory.toFile()).redirectErrorStream(true);
-            builder.environment().put("GIT_ASKPASS", askPass.toString());
-            builder.environment().put("GIT_TERMINAL_PROMPT", "0");
-            builder.environment().put("ZIP_GITHUB_GIT_TOKEN", token == null ? "" : token);
+            configureGitEnvironment(builder, token);
             Process process = builder.start();
             String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
             int exit = process.waitFor();
@@ -277,9 +271,13 @@ public class ImportWorkspaceService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ImportWorkspaceException("Git command was interrupted.", e);
-        } finally {
-            if (askPass != null) try { Files.deleteIfExists(askPass); } catch (IOException ignored) { }
         }
+    }
+
+    private static void configureGitEnvironment(ProcessBuilder builder, String token) {
+        builder.environment().put("GIT_ASKPASS", "/usr/local/bin/zip-github-git-askpass");
+        builder.environment().put("GIT_TERMINAL_PROMPT", "0");
+        builder.environment().put("ZIP_GITHUB_GIT_TOKEN", token == null ? "" : token);
     }
 
     private static String sanitize(String value, String token) {

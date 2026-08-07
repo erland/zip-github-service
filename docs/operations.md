@@ -195,3 +195,13 @@ The backend runtime image must include the Git CLI because repository snapshot, 
 docker compose exec backend git --version
 docker compose exec backend sh -c 'id; ls -ld /var/lib/zip-github/uploads /var/lib/zip-github/delivery'
 ```
+
+## Durable project configuration (RC13)
+
+From `1.0.0-rc.13`, authenticated user identity, per-user GitHub App installation visibility and project configuration are stored in PostgreSQL. Project lists therefore survive backend restarts and image deployments.
+
+In-progress import execution state (uploaded-source associations, snapshots, plans, approvals and delivery state) is still held in application memory in the current MVP. Avoid restarting the backend while an import is actively being reviewed or delivered. A completed/recreated project does not need to be recreated after later deployments.
+
+## Git askpass runtime helper (RC13)
+
+The backend image contains `/usr/local/bin/zip-github-git-askpass` as a fixed executable. Git operations no longer create executable askpass scripts inside temporary workspaces, which avoids `noexec` tmpfs mount failures while keeping installation tokens out of command-line arguments.

@@ -8,6 +8,7 @@ import info.isaksson.erland.zipgithub.plan.ImmutableImportPlan;
 import info.isaksson.erland.zipgithub.plan.ImportPlanApproval;
 import info.isaksson.erland.zipgithub.workspace.AppliedImportWorkspace;
 import info.isaksson.erland.zipgithub.delivery.GitDeliveryResult;
+import info.isaksson.erland.zipgithub.persistence.ProjectPersistenceStore;
 import info.isaksson.erland.zipgithub.pullrequest.PullRequestResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -28,6 +29,7 @@ public class ProjectApplicationService {
     private final Map<UUID, GitDeliveryResult> deliveriesByImport = new ConcurrentHashMap<>();
     private final Map<UUID, PullRequestResult> pullRequestsByImport = new ConcurrentHashMap<>();
     @Inject GitHubProjectConfigurationService githubConfiguration;
+    @Inject ProjectPersistenceStore persistentProjects;
 
     /** Clears the temporary in-memory store between Quarkus tests.
      *  This method must be removed when persistent repositories replace the prototype store.
@@ -45,6 +47,7 @@ public class ProjectApplicationService {
     }
 
     public List<ProjectResponse> listProjects(UUID ownerUserId) {
+        if (persistentProjects.enabled()) return persistentProjects.listProjects(ownerUserId);
         return projects.values().stream().filter(project -> project.ownerUserId.equals(ownerUserId))
                 .map(OwnedProject::response).sorted(Comparator.comparing(ProjectResponse::createdAt)).toList();
     }
@@ -56,6 +59,11 @@ public class ProjectApplicationService {
         Instant now = Instant.now();
         ProjectResponse response = new ProjectResponse(UUID.randomUUID(), name, verified.installationId(), verified.repositoryId(),
                 verified.fullName(), verified.privateRepository(), verified.defaultBranch(), true, now, now);
+        if (persistentProjects.enabled()) {
+            persistentProjects.upsertInstallation(ownerUserId, verified.installationId(),
+                    verified.installationAccountLogin(), verified.repositorySelection());
+            persistentProjects.insertProject(ownerUserId, response);
+        }
         projects.put(response.id(), new OwnedProject(ownerUserId, response));
         return response;
     }
@@ -72,6 +80,11 @@ public class ProjectApplicationService {
         ProjectResponse updated = new ProjectResponse(projectId, name, verified.installationId(), verified.repositoryId(),
                 verified.fullName(), verified.privateRepository(), verified.defaultBranch(), active,
                 owned.response.createdAt(), Instant.now());
+        if (persistentProjects.enabled()) {
+            persistentProjects.upsertInstallation(ownerUserId, verified.installationId(),
+                    verified.installationAccountLogin(), verified.repositorySelection());
+            persistentProjects.updateProject(ownerUserId, updated);
+        }
         projects.put(projectId, new OwnedProject(ownerUserId, updated));
         return updated;
     }
@@ -356,12 +369,22 @@ public class ProjectApplicationService {
     }
 
     private OwnedProject requireOwnedProject(UUID ownerUserId, UUID projectId) {
+        if (persistentProjects.enabled()) {
+            ProjectResponse response = persistentProjects.findProject(ownerUserId, projectId)
+                    .orElseThrow(() -> ApiException.notFound("PROJECT_NOT_FOUND", "The project was not found."));
+            return new OwnedProject(ownerUserId, response);
+        }
         OwnedProject item = projects.get(projectId);
         if (item == null || !item.ownerUserId.equals(ownerUserId)) throw ApiException.notFound("PROJECT_NOT_FOUND", "The project was not found.");
         return item;
     }
 
     private void ensureUniqueName(UUID ownerUserId, String name, UUID excludedId) {
+        if (persistentProjects.enabled()) {
+            if (persistentProjects.projectNameExists(ownerUserId, name, excludedId))
+                throw ApiException.conflict("PROJECT_NAME_EXISTS", "A project with this name already exists.");
+            return;
+        }
         boolean duplicate = projects.values().stream().anyMatch(project -> project.ownerUserId.equals(ownerUserId)
                 && !project.response.id().equals(excludedId) && project.response.name().equalsIgnoreCase(name));
         if (duplicate) throw ApiException.conflict("PROJECT_NAME_EXISTS", "A project with this name already exists.");

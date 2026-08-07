@@ -17,6 +17,10 @@ public class GitHubProjectConfigurationService {
         }
         var installations = catalog.listUserInstallations(userAccessToken);
         GitHubInstallationAccess.requireVisible(installationId, installations);
+        GitHubAppClient.GitHubInstallation installation = installations.stream()
+                .filter(item -> item.id() == installationId)
+                .findFirst()
+                .orElseThrow(() -> ApiException.notFound("GITHUB_INSTALLATION_NOT_FOUND", "The GitHub App installation was not found."));
         GitHubAppClient.GitHubRepository repository = catalog
                 .listUserInstallationRepositories(userAccessToken, installationId).stream()
                 .filter(item -> item.id() == repositoryId)
@@ -26,9 +30,10 @@ public class GitHubProjectConfigurationService {
         if (!catalog.branchExists(userAccessToken, repository.fullName(), selectedBranch)) {
             throw ApiException.badRequest("GITHUB_BRANCH_NOT_FOUND", "The selected branch does not exist in the repository.");
         }
-        return new VerifiedRepository(installationId, repository.id(), repository.fullName(), repository.privateRepository(), selectedBranch);
+        return new VerifiedRepository(installationId, installation.accountLogin(), installation.repositorySelection(),
+                repository.id(), repository.fullName(), repository.privateRepository(), selectedBranch);
     }
 
-    public record VerifiedRepository(long installationId, long repositoryId, String fullName,
-                                     boolean privateRepository, String defaultBranch) {}
+    public record VerifiedRepository(long installationId, String installationAccountLogin, String repositorySelection,
+                                     long repositoryId, String fullName, boolean privateRepository, String defaultBranch) {}
 }

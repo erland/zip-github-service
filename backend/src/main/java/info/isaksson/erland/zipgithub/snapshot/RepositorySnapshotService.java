@@ -98,12 +98,10 @@ public class RepositorySnapshotService {
 
 
     private String hashBlob(Path directory, String token, String objectId) {
-        Path askPass = null;
         try {
-            askPass = createAskPass(directory);
             ProcessBuilder builder = new ProcessBuilder("git", "cat-file", "blob", objectId)
                     .directory(directory.toFile()).redirectErrorStream(false);
-            configureGitEnvironment(builder, askPass, token);
+            configureGitEnvironment(builder, token);
             Process process = builder.start();
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] buffer = new byte[64 * 1024];
@@ -122,30 +120,19 @@ public class RepositorySnapshotService {
             throw new RepositorySnapshotException("Repository hashing was interrupted.", e);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 is unavailable", e);
-        } finally {
-            if (askPass != null) try { Files.deleteIfExists(askPass); } catch (IOException ignored) { }
         }
     }
 
-    private static Path createAskPass(Path directory) throws IOException {
-        Path askPass = Files.createTempFile(directory, ".git-askpass-", ".sh");
-        Files.writeString(askPass, "#!/bin/sh\ncase \"$1\" in\n  *Username*) printf '%s\\n' 'x-access-token' ;;\n  *) printf '%s\\n' \"$ZIP_GITHUB_GIT_TOKEN\" ;;\nesac\n", StandardCharsets.UTF_8);
-        askPass.toFile().setExecutable(true, true);
-        return askPass;
-    }
-
-    private static void configureGitEnvironment(ProcessBuilder builder, Path askPass, String token) {
-        builder.environment().put("GIT_ASKPASS", askPass.toString());
+    private static void configureGitEnvironment(ProcessBuilder builder, String token) {
+        builder.environment().put("GIT_ASKPASS", "/usr/local/bin/zip-github-git-askpass");
         builder.environment().put("GIT_TERMINAL_PROMPT", "0");
         builder.environment().put("ZIP_GITHUB_GIT_TOKEN", token == null ? "" : token);
     }
 
     private String run(Path directory, String token, String... command) {
-        Path askPass = null;
         try {
-            askPass = createAskPass(directory);
             ProcessBuilder builder = new ProcessBuilder(command).directory(directory.toFile()).redirectErrorStream(true);
-            configureGitEnvironment(builder, askPass, token);
+            configureGitEnvironment(builder, token);
             Process process = builder.start();
             String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
             int exit = process.waitFor();
@@ -156,8 +143,6 @@ public class RepositorySnapshotService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RepositorySnapshotException("Git command was interrupted.", e);
-        } finally {
-            if (askPass != null) try { Files.deleteIfExists(askPass); } catch (IOException ignored) { }
         }
     }
 

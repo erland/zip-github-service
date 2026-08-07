@@ -36,7 +36,10 @@ class DatabaseMigrationTest {
             UUID project = UUID.randomUUID();
             insertUser(connection, ownerA, 1001L, "owner-a");
             insertUser(connection, ownerB, 1002L, "owner-b");
-            execute(connection, "INSERT INTO project (id, owner_user_id, name, default_branch, active, created_at, updated_at) VALUES (?, ?, 'A project', 'main', true, now(), now())", project, ownerA);
+            // The same GitHub installation may be visible to multiple users; tenant identity includes owner_user_id.
+            execute(connection, "INSERT INTO github_installation (id, owner_user_id, account_login, permissions_snapshot, repository_selection, created_at, updated_at) VALUES (10, ?, 'shared-org', '{}'::jsonb, 'selected', now(), now())", ownerA);
+            execute(connection, "INSERT INTO github_installation (id, owner_user_id, account_login, permissions_snapshot, repository_selection, created_at, updated_at) VALUES (10, ?, 'shared-org', '{}'::jsonb, 'selected', now(), now())", ownerB);
+            execute(connection, "INSERT INTO project (id, owner_user_id, name, github_installation_id, github_repository_id, repository_owner, repository_name, default_branch, active, created_at, updated_at, private_repository) VALUES (?, ?, 'A project', 10, 20, 'shared-org', 'repo', 'main', true, now(), now(), true)", project, ownerA);
 
             SQLException violation = assertThrows(SQLException.class, () -> execute(connection,
                     "INSERT INTO import_session (id, project_id, owner_user_id, base_branch, status, created_at, updated_at) VALUES (?, ?, ?, 'main', 'CREATED', now(), now())",

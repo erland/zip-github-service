@@ -4,6 +4,7 @@ import info.isaksson.erland.zipgithub.api.dto.AuthenticatedUserResponse;
 import info.isaksson.erland.zipgithub.api.error.ApiException;
 import info.isaksson.erland.zipgithub.security.CurrentUserProvider;
 import info.isaksson.erland.zipgithub.security.WebSessionStore;
+import info.isaksson.erland.zipgithub.persistence.ProjectPersistenceStore;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
@@ -19,6 +20,7 @@ public class AuthResource {
     @Inject WebSessionStore sessions;
     @Inject GitHubUserAuthorizationClient github;
     @Inject CurrentUserProvider currentUser;
+    @Inject ProjectPersistenceStore persistentProjects;
     @ConfigProperty(name="zipgithub.frontend-url") String frontendUrl;
     @ConfigProperty(name="zipgithub.cookies.secure", defaultValue="true") boolean secureCookies;
 
@@ -40,6 +42,7 @@ public class AuthResource {
                 .orElseThrow(() -> ApiException.unauthorized("INVALID_OAUTH_STATE", "The GitHub login state is invalid, expired or already used."));
         GitHubUserAuthorizationClient.GitHubUser githubUser = github.exchangeAndLoadUser(code);
         UUID userId = UUID.nameUUIDFromBytes(("github:" + githubUser.id()).getBytes(StandardCharsets.UTF_8));
+        persistentProjects.upsertUser(userId, githubUser.id(), githubUser.login(), githubUser.avatarUrl());
         String session = sessions.createSession(userId, githubUser.id(), githubUser.login(), githubUser.avatarUrl(), githubUser.accessToken());
         URI target = URI.create(frontendUrl + stateRecord.returnTo());
         return Response.seeOther(target)

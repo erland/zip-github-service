@@ -18,6 +18,9 @@ grep -q 'quarkus.http.cors.access-control-allow-credentials=true' backend/src/ma
 grep -q 'SYMLINK' backend/src/main/java/info/isaksson/erland/zipgithub/archive/ArchiveSecurityCode.java || fail 'symlink rejection missing'
 grep -q 'max-compression-ratio' backend/src/main/resources/application.properties || fail 'ZIP bomb ratio limit missing'
 grep -q 'GIT_TERMINAL_PROMPT' backend/src/main/java/info/isaksson/erland/zipgithub/delivery/GitDeliveryService.java || fail 'noninteractive Git guard missing'
+grep -q '/usr/local/bin/zip-github-git-askpass' backend/src/main/java/info/isaksson/erland/zipgithub/snapshot/RepositorySnapshotService.java || fail 'fixed Git askpass helper missing from snapshot service'
+grep -q 'COPY docker/git-askpass.sh /usr/local/bin/zip-github-git-askpass' backend/Dockerfile || fail 'Git askpass helper missing from backend image'
+! grep -R -n --exclude='*.md' --exclude-dir=target 'createTempFile.*git-askpass' backend/src/main/java || fail 'temporary askpass script creation found'
 ! grep -R -n --exclude='*.md' --exclude-dir=target 'push.*--force\|--force.*push' backend/src/main/java || fail 'force push found'
 
 echo 'Security regression checks passed.'

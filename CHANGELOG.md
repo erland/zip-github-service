@@ -1,3 +1,17 @@
+## 1.0.0-rc.13 — 2026-08-07
+
+Corrective release candidate for Git authentication execution and durable project configuration.
+
+### Fixed
+
+- Replaced per-workspace temporary Git askpass scripts with a fixed executable helper built into the backend image, avoiding `noexec` tmpfs failures.
+- Applied the fixed askpass helper consistently to snapshot, workspace preparation and delivery Git operations.
+- Persisted authenticated user identities, visible GitHub App installation ownership and project configuration in PostgreSQL.
+- Project lists and project details now survive backend restarts and deployments.
+- Changed GitHub installation persistence identity to `(installation_id, owner_user_id)` so one GitHub App installation can safely be visible to multiple zip-github users without cross-tenant reassignment.
+- Added Flyway migration V5 for durable project metadata including repository privacy.
+- Kept in-progress import execution state in memory for now; only durable project configuration is covered by this correction.
+
 ## 1.0.0-rc.12 — 2026-08-07
 
 Corrective release candidate for production container runtime prerequisites and persistent-volume ownership.

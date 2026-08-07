@@ -11,6 +11,8 @@ RUN apt-get update \
     && useradd --system --uid 10001 zipgithub
 WORKDIR /app
 COPY --from=build /workspace/target/quarkus-app/ ./
+COPY docker/git-askpass.sh /usr/local/bin/zip-github-git-askpass
+RUN chmod 0555 /usr/local/bin/zip-github-git-askpass
 USER zipgithub
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "quarkus-run.jar"]

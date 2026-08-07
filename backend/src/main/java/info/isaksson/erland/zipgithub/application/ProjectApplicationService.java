@@ -155,11 +155,12 @@ public class ProjectApplicationService {
                 new ImportAuditMetadata(ImportSource.WEB_UPLOAD, null));
     }
 
-    private ImportResponse createImport(UUID ownerUserId, UUID projectId, CreateImportRequest request,
+    private synchronized ImportResponse createImport(UUID ownerUserId, UUID projectId, CreateImportRequest request,
                                         String committerName, String committerEmail,
                                         ImportAuditMetadata auditMetadata) {
         ProjectResponse project = requireOwnedProject(ownerUserId, projectId).response;
         if (!project.active()) throw ApiException.conflict("PROJECT_INACTIVE", "The project is inactive.");
+        assertNoActiveImport(ownerUserId, projectId);
         WorkSession work = getOrCreateWork(ownerUserId, projectId, project.defaultBranch());
         String branch = work.hasCommit() ? work.branchName() : work.baseBranch();
         String requestedName = request == null ? null : request.authorName();
@@ -260,6 +261,22 @@ public class ProjectApplicationService {
         return requireOwnedImport(ownerUserId, importId).response;
     }
 
+    private void assertNoActiveImport(UUID ownerUserId, UUID projectId) {
+        if (persistentImportsEnabled()) persistentImports.list(ownerUserId, projectId).forEach(this::hydrate);
+        boolean active = imports.values().stream()
+                .anyMatch(item -> item.ownerUserId.equals(ownerUserId)
+                        && item.response.projectId().equals(projectId)
+                        && !isTerminalImportStatus(item.response.status()));
+        if (active) {
+            throw ApiException.conflict("ACTIVE_IMPORT_EXISTS",
+                    "The work already has an active import. Complete or cancel it before uploading another ZIP.");
+        }
+    }
+
+    private static boolean isTerminalImportStatus(String status) {
+        return Set.of("PUSHED", "PULL_REQUEST_CREATED", "CANCELLED").contains(status);
+    }
+
     public List<ImportHistoryResponse> listProjectImports(UUID ownerUserId, UUID projectId) {
         requireOwnedProject(ownerUserId, projectId);
         if (persistentImportsEnabled()) {
@@ -288,7 +305,7 @@ public class ProjectApplicationService {
     }
 
     private static String resumeStage(String status, ImmutableImportPlan plan, PullRequestResult pullRequest) {
-        if (pullRequest != null || "PULL_REQUEST_CREATED".equals(status) || "PUSHED".equals(status)) return "RESULT";
+        if ("CANCELLED".equals(status) || pullRequest != null || "PULL_REQUEST_CREATED".equals(status) || "PUSHED".equals(status)) return "RESULT";
         if (plan != null || Set.of("READY_FOR_REVIEW", "BLOCKED", "APPROVED", "FILES_APPLIED", "PUSHED").contains(status)) return "REVIEW";
         return "UPLOAD";
     }
@@ -299,7 +316,7 @@ public class ProjectApplicationService {
     }
 
     public SourceUploadResponse recordUpload(UUID ownerUserId, UUID importId, StoredUpload upload) {
-        getImport(ownerUserId, importId);
+        requireMutableImport(ownerUserId, importId);
         if (!upload.ownerUserId().equals(ownerUserId) || !upload.importId().equals(importId))
             throw ApiException.notFound("IMPORT_NOT_FOUND", "The import was not found.");
         StoredUpload existing = uploadsByImport.putIfAbsent(importId, upload);
@@ -319,7 +336,7 @@ public class ProjectApplicationService {
     }
 
     public RepositorySnapshot recordRepositorySnapshot(UUID ownerUserId, UUID importId, RepositorySnapshot snapshot) {
-        OwnedImport ownedImport = requireOwnedImport(ownerUserId, importId);
+        OwnedImport ownedImport = requireMutableImport(ownerUserId, importId);
         if (!snapshot.importId().equals(importId)) throw ApiException.notFound("IMPORT_NOT_FOUND", "The import was not found.");
         RepositorySnapshot existing = snapshotsByImport.putIfAbsent(importId, snapshot);
         if (existing != null) {
@@ -349,7 +366,7 @@ public class ProjectApplicationService {
 
 
     public ImmutableImportPlan recordImportPlan(UUID ownerUserId, UUID importId, ImmutableImportPlan plan) {
-        requireOwnedImport(ownerUserId, importId);
+        requireMutableImport(ownerUserId, importId);
         if (!plan.importId().equals(importId) || !plan.ownerUserId().equals(ownerUserId)) {
             throw ApiException.notFound("IMPORT_NOT_FOUND", "The import was not found.");
         }
@@ -379,7 +396,7 @@ public class ProjectApplicationService {
     }
 
     public ImportPlanApproval approveImportPlan(UUID ownerUserId, UUID importId, String submittedDigest, String submittedSelectionDigest) {
-        requireOwnedImport(ownerUserId, importId);
+        requireMutableImport(ownerUserId, importId);
         ImmutableImportPlan plan = getImportPlan(ownerUserId, importId);
         if (submittedDigest == null || !submittedDigest.matches("[0-9a-f]{64}")) {
             throw ApiException.badRequest("INVALID_PLAN_DIGEST", "planDigestSha256 must be a lower-case SHA-256.");
@@ -423,7 +440,7 @@ public class ProjectApplicationService {
     }
 
     public ApprovedSelection recordImportSelection(UUID ownerUserId, UUID importId, ApprovedSelection selection) {
-        requireOwnedImport(ownerUserId, importId);
+        requireMutableImport(ownerUserId, importId);
         ImmutableImportPlan plan = getImportPlan(ownerUserId, importId);
         if (!selection.importId().equals(importId)
                 || !selection.ownerUserId().equals(ownerUserId)
@@ -459,7 +476,7 @@ public class ProjectApplicationService {
 
 
     public DeliverySources deliverySources(UUID ownerUserId, UUID importId) {
-        OwnedImport ownedImport = requireOwnedImport(ownerUserId, importId);
+        OwnedImport ownedImport = requireMutableImport(ownerUserId, importId);
         OwnedProject project = requireOwnedProject(ownerUserId, ownedImport.response.projectId());
         StoredUpload upload = uploadsByImport.get(importId);
         RepositorySnapshot snapshot = snapshotsByImport.get(importId);
@@ -484,7 +501,7 @@ public class ProjectApplicationService {
 
     public AppliedImportWorkspace recordAppliedWorkspace(UUID ownerUserId, UUID importId,
                                                           AppliedImportWorkspace workspace) {
-        requireOwnedImport(ownerUserId, importId);
+        requireMutableImport(ownerUserId, importId);
         ImmutableImportPlan plan = getImportPlan(ownerUserId, importId);
         ApprovedSelection selection = getImportSelection(ownerUserId, importId);
         if (!workspace.importId().equals(importId)
@@ -516,7 +533,7 @@ public class ProjectApplicationService {
 
 
     public GitDeliveryResult recordGitDelivery(UUID ownerUserId, UUID importId, GitDeliveryResult delivery) {
-        OwnedImport owned = requireOwnedImport(ownerUserId, importId);
+        OwnedImport owned = requireMutableImport(ownerUserId, importId);
         AppliedImportWorkspace workspace = workspacesByImport.get(importId);
         if (workspace == null || !delivery.importId().equals(importId)
                 || !delivery.baseCommitSha().equals(workspace.baseCommitSha())
@@ -541,6 +558,23 @@ public class ProjectApplicationService {
     public Optional<GitDeliveryResult> findGitDelivery(UUID ownerUserId, UUID importId) {
         requireOwnedImport(ownerUserId, importId);
         return Optional.ofNullable(deliveriesByImport.get(importId));
+    }
+
+    public ImportResponse cancelImport(UUID ownerUserId, UUID importId) {
+        OwnedImport owned = requireOwnedImport(ownerUserId, importId);
+        if (deliveriesByImport.containsKey(importId) || Set.of("PUSHED", "PULL_REQUEST_CREATED").contains(owned.response.status())) {
+            throw ApiException.conflict("IMPORT_ALREADY_DELIVERED",
+                    "The import has already been delivered to GitHub and can no longer be cancelled.");
+        }
+        if ("CANCELLED".equals(owned.response.status())) return owned.response;
+
+        workspacesByImport.remove(importId);
+        ImportResponse current = owned.response;
+        ImportResponse cancelled = new ImportResponse(current.id(), current.projectId(), current.baseBranch(),
+                "CANCELLED", current.createdAt());
+        imports.put(importId, new OwnedImport(ownerUserId, cancelled));
+        if (persistentImportsEnabled()) persistentImports.updateStatus(ownerUserId, importId, "CANCELLED", null);
+        return cancelled;
     }
 
     public PullRequestResult recordPullRequest(UUID ownerUserId, UUID importId, PullRequestResult result) {
@@ -605,7 +639,7 @@ public class ProjectApplicationService {
                 .filter(upload -> !upload.retentionDeadline().isAfter(now))
                 .filter(upload -> {
                     OwnedImport item = imports.get(upload.importId());
-                    return item != null && Set.of("PUSHED", "PULL_REQUEST_CREATED").contains(item.response.status());
+                    return item != null && Set.of("PUSHED", "PULL_REQUEST_CREATED", "CANCELLED").contains(item.response.status());
                 })
                 .forEach(upload -> candidates.put(upload.id(), upload));
         return List.copyOf(candidates.values());
@@ -615,11 +649,19 @@ public class ProjectApplicationService {
         StoredUpload current = uploadsByImport.get(importId);
         if (current == null || !current.id().equals(uploadId) || current.retentionDeadline().isAfter(now)) return false;
         OwnedImport item = imports.get(importId);
-        if (item != null && !Set.of("PUSHED", "PULL_REQUEST_CREATED").contains(item.response.status())) return false;
+        if (item != null && !Set.of("PUSHED", "PULL_REQUEST_CREATED", "CANCELLED").contains(item.response.status())) return false;
         if (item == null && !persistentImportsEnabled()) return false;
         boolean removed = uploadsByImport.remove(importId, current);
         if (persistentImportsEnabled()) persistentImports.clearUpload(current.ownerUserId(), importId);
         return removed || persistentImportsEnabled();
+    }
+
+    private OwnedImport requireMutableImport(UUID ownerUserId, UUID importId) {
+        OwnedImport item = requireOwnedImport(ownerUserId, importId);
+        if ("CANCELLED".equals(item.response.status())) {
+            throw ApiException.conflict("IMPORT_CANCELLED", "The import has been cancelled and cannot be changed.");
+        }
+        return item;
     }
 
     private boolean persistentImportsEnabled() {

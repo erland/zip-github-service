@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { approveImportPlan, createImportSelection, deliverImport, findDelivery, getImportPlan, getImportPlanApproval, getImportSelection, ImportPlanApprovalResponse, ImportPlanEntry, ImportPlanResponse, prepareImportWorkspace } from '../api/imports';
+import { approveImportPlan, cancelImport, createImportSelection, deliverImport, findDelivery, getImportPlan, getImportPlanApproval, getImportSelection, ImportPlanApprovalResponse, ImportPlanEntry, ImportPlanResponse, prepareImportWorkspace } from '../api/imports';
 import { defaultSelectedPaths, ReviewFileTree } from '../components/ReviewFileTree';
 
 type ReviewFilter = 'CHANGES' | 'BLOCKED' | 'WARNINGS' | 'UNCHANGED' | 'IGNORED' | 'ALL';
@@ -27,6 +27,8 @@ export default function ImportReviewPage() {
   const [delivering, setDelivering] = useState(false);
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [overridePaths, setOverridePaths] = useState<Set<string>>(new Set());
+  const [cancelConfirm, setCancelConfirm] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (!importId) {
@@ -120,6 +122,21 @@ export default function ImportReviewPage() {
     }
   }
 
+  async function confirmCancelImport() {
+    if (!importId || !projectId || cancelling || delivering || approving) return;
+    setCancelling(true);
+    setError('');
+    try {
+      await cancelImport(importId);
+      navigate(`/projects/${projectId}`, { replace: true });
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Importen kunde inte avbrytas.');
+      setCancelConfirm(false);
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   return (
     <section className="page-card review-page" aria-labelledby="review-heading">
       <p><Link className="back-link" to={projectId ? `/projects/${projectId}` : '/projects'}>← Till projektet</Link></p>
@@ -139,13 +156,15 @@ export default function ImportReviewPage() {
         approving={approving} approval={approval} approveAndDeliver={approveAndDeliver}
         delivering={delivering} retryApprovedDelivery={retryApprovedDelivery}
         selectedPaths={selectedPaths} setSelectedPaths={setSelectedPaths}
-        overridePaths={overridePaths} setOverridePaths={setOverridePaths} selectionLocked={Boolean(selectionDigest)} />}
+        overridePaths={overridePaths} setOverridePaths={setOverridePaths} selectionLocked={Boolean(selectionDigest)}
+        cancelConfirm={cancelConfirm} setCancelConfirm={setCancelConfirm} cancelling={cancelling}
+        confirmCancelImport={confirmCancelImport} />}
     </section>
   );
 }
 
 function ReviewContent({ plan, filter, setFilter, entries, approving, approval, approveAndDeliver, delivering, retryApprovedDelivery,
-  selectedPaths, setSelectedPaths, overridePaths, setOverridePaths, selectionLocked }: {
+  selectedPaths, setSelectedPaths, overridePaths, setOverridePaths, selectionLocked, cancelConfirm, setCancelConfirm, cancelling, confirmCancelImport }: {
   plan: ImportPlanResponse;
   filter: ReviewFilter;
   setFilter: (filter: ReviewFilter) => void;
@@ -160,6 +179,10 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
   overridePaths: ReadonlySet<string>;
   setOverridePaths: (paths: Set<string>) => void;
   selectionLocked: boolean;
+  cancelConfirm: boolean;
+  setCancelConfirm: (value: boolean) => void;
+  cancelling: boolean;
+  confirmCancelImport: () => void;
 }) {
   return (
     <>
@@ -242,6 +265,23 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
             </button>
           </>
         )}
+        <div className="review-cancel-action">
+          {!cancelConfirm ? (
+            <button className="button button--secondary" type="button" disabled={approving || delivering || cancelling}
+              onClick={() => setCancelConfirm(true)}>Avbryt import</button>
+          ) : (
+            <div className="approval-confirmation" role="alert">
+              <strong>Avbryt importen?</strong>
+              <p>Ingen commit skapas. Den här importen stängs och projektet kan ta emot en ny ZIP.</p>
+              <div className="result-primary-action">
+                <button className="button button--secondary" type="button" disabled={cancelling} onClick={() => setCancelConfirm(false)}>Behåll importen</button>
+                <button className="button" type="button" disabled={cancelling} onClick={confirmCancelImport}>
+                  {cancelling ? 'Avbryter import…' : 'Ja, avbryt import'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

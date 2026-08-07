@@ -109,7 +109,7 @@ public class ImportResumePersistenceStore {
         try (Connection c = dataSource.getConnection(); PreparedStatement s = c.prepareStatement("""
                 SELECT p.upload_json FROM import_session i
                 JOIN import_resume_payload p ON p.import_session_id = i.id
-                WHERE i.status IN ('PUSHED', 'PULL_REQUEST_CREATED') AND p.upload_json IS NOT NULL
+                WHERE i.status IN ('PUSHED', 'PULL_REQUEST_CREATED', 'CANCELLED') AND p.upload_json IS NOT NULL
                 """)) {
             try (ResultSet r = s.executeQuery()) {
                 List<StoredUpload> out = new ArrayList<>();

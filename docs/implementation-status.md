@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0079`
-- Last completed step: `7.21`
+- Repository revision: `r0083`
+- Last completed step: `7.24`
 - Next step: `8.1`
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 7 COMPLETE, PHASE 8 ACTIONS INTEGRATION NEXT`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 7 COMPLETE`
 
 ## Step ledger
 
@@ -78,6 +78,9 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `7.19` | Fas 7 — resume/Work UX | Gör pågående import fullt återupptagningsbar | **DONE** | 2026-08-07 | `docs/step-7.19-report.md` |
 | `7.20` | Fas 7 — resume/Work UX | Förenkla Work-vyn till Git-historik och pågående import | **DONE** | 2026-08-07 | `docs/step-7.20-report.md` |
 | `7.21` | Fas 7 — resume/Work UX | Slutregression för resume och Work-vy | **DONE** | 2026-08-07 | `docs/step-7.21-report.md` |
+| `7.22` | Fas 7 — importlivscykel | Avbryt och stäng pågående import | **DONE** | 2026-08-07 | `docs/step-7.22-report.md`, `docs/api-contract.md` |
+| `7.23` | Fas 7 — Work UX | State-baserade Work-actions och borttagna redundanta vägar | **DONE** | 2026-08-07 | `docs/step-7.23-report.md` |
+| `7.24` | Fas 7 — regression | Regression för cancel och state-baserade Work-actions | **DONE** | 2026-08-07 | `docs/step-7.24-report.md` |
 | `8.1` | Fas 8 — efter MVP: integrerade Actions-resultat | Workflow runs och jobs | **NEXT** | — | — |
 | `8.2` | Fas 8 — efter MVP: integrerade Actions-resultat | Artifacts och kondenserade fel | **PENDING** | — | — |
 | `8.3` | Fas 8 — efter MVP: integrerade Actions-resultat | Kontrollerad workflow dispatch och omkörning | **PENDING** | — | — |
@@ -200,3 +203,8 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0077` | 2026-08-07 | Step 7.21 | Added restart/resume, owner-isolation, single-active-import and degraded Work-history regressions; phase 7 quality gate complete | `8.1` |
 | `r0078` | 2026-08-07 | RC35 build/test correction | Made resume persistence optional for manually constructed unit-test services and fixed frontend selection fixture typing; no production behavior change | `8.1` |
 | `r0079` | 2026-08-07 | RC36 regression correction | Aligned stored-upload cleanup tests with restart-safe active-import retention, added Work commit-history route mock, and awaited loaded review tree in streamlined E2E; no production behavior change | `8.1` |
+| `r0080` | 2026-08-07 | Phase 7 Work-lifecycle planning refinement | Added steps 7.22–7.24 for explicit import cancel, state-based Work actions, direct post-commit PR completion and regression; application version unchanged | `7.22` |
+| `r0081` | 2026-08-07 | Step 7.22 | Added owner-scoped, idempotent pre-delivery import cancellation, workspace cleanup and cancelled-upload retention eligibility; review UI can explicitly abandon the active import | `7.23` |
+
+| `r0082` | 2026-08-07 | Step 7.23 | Added state-based Work actions, server-side single-active-import enforcement and direct post-commit PR completion | `7.24` |
+| `r0083` | 2026-08-07 | Step 7.24 | Added final cancellation/Work-state regressions, restart-safe cancel coverage and pull-request retry/no-duplicate recovery checks; phase 7 complete | `8.1` |

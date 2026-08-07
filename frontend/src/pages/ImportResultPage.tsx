@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getDelivery, getImportChecks, GitDeliveryResponse, ImportCheckStatusResponse } from '../api/imports';
+import { createWorkPullRequest } from '../api/projects';
 
 export default function ImportResultPage() {
   const { projectId, importId } = useParams();
@@ -8,6 +9,8 @@ export default function ImportResultPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [checks, setChecks] = useState<ImportCheckStatusResponse | null>(null);
+  const [finishing, setFinishing] = useState(false);
+  const [pullRequestUrl, setPullRequestUrl] = useState('');
 
   useEffect(() => {
     if (!importId) { setError('Import-ID saknas.'); setLoading(false); return; }
@@ -19,19 +22,28 @@ export default function ImportResultPage() {
     getImportChecks(importId).then(setChecks).catch(() => undefined);
   }, [importId, result]);
 
+  async function finishWork() {
+    if (!projectId || finishing || pullRequestUrl) return;
+    setFinishing(true); setError('');
+    try { const created = await createWorkPullRequest(projectId); setPullRequestUrl(created.pullRequestUrl); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : 'Pull request kunde inte skapas.'); }
+    finally { setFinishing(false); }
+  }
+
   const links = useMemo(() => result ? githubLinks(result) : null, [result]);
   return <section className="page-card result-page" aria-labelledby="result-heading">
     <p><Link className="back-link" to={projectId ? `/projects/${projectId}` : '/projects'}>← Till projektet</Link></p>
     <p className="eyebrow">Importresultat</p>
     <h1 id="result-heading">Commit skapad</h1>
-    <p className="lead">ZIP-importen är committad på projektets arbetsbranch. Du kan fortsätta med nästa ZIP eller skapa en pull request från projektsidan när arbetet är klart.</p>
+    <p className="lead">ZIP-importen är committad på projektets arbetsbranch. Du kan fortsätta med nästa ZIP eller avsluta arbetet och skapa en pull request direkt här.</p>
     {loading && <p role="status">Hämtar resultat…</p>}
     {error && <p role="alert" className="status-message status-message--error">{error}</p>}
     {result && links && <>
       <div className="result-success" role="status"><div><strong>Importen är committad</strong><p>Arbetsbranchen är uppdaterad med den godkända ZIP-filen.</p></div><span className="status-badge">PUSHED</span></div>
+      {pullRequestUrl && <p className="status-message" role="status">Arbetets pull request är skapad. <a href={pullRequestUrl} target="_blank" rel="noreferrer">Öppna pull request</a></p>}
       <div className="result-primary-action">
         {projectId && <Link className="button" to={`/projects/${projectId}/imports/new`}>Ladda upp nästa ZIP</Link>}
-        {projectId && <Link className="button button--secondary" to={`/projects/${projectId}`}>Till arbetet</Link>}
+        {projectId && <button className="button button--secondary" type="button" disabled={finishing || Boolean(pullRequestUrl)} onClick={finishWork}>{pullRequestUrl?'Pull request skapad':finishing?'Skapar pull request…':'Arbetet är klart – skapa pull request'}</button>}
       </div>
       <dl className="result-link-grid">
         <ResultLink label="Repository" value={result.repositoryFullName} href={links.repository} />

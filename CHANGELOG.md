@@ -1,3 +1,26 @@
+## 1.0.0-rc.39 - 2026-08-07
+
+- Completed step 7.24 with final cancel/Work-lifecycle regression coverage.
+- Added restart-safe cancellation regression proving no Git delivery is created and audit metadata survives terminal cancellation.
+- Added project-view regression proving cancellation releases exactly one next-ZIP action.
+- Added direct post-commit pull-request retry regression and strengthened the pull-request self-test for lost-response recovery without duplicate PR creation.
+- Phase 7 quality gate is complete; step 8.1 is next.
+
+## 1.0.0-rc.38 - 2026-08-07
+
+- Completed step 7.23 with state-based Work actions.
+- Enforced at most one active import per Work/project server-side with `409 ACTIVE_IMPORT_EXISTS`; cancelling the active import releases the slot.
+- Removed the redundant `Fortsätt arbete` path: active import means continue/cancel, otherwise an open Work exposes one `Ladda upp nästa ZIP` action.
+- Added direct `Arbetet är klart – skapa pull request` on the post-commit result page using the existing idempotent Work PR operation.
+
+## Planning revision r0080 - 2026-08-07
+
+- Reopened phase 7 with steps 7.22–7.24 for explicit import cancellation, state-based Work actions and final regression.
+- Defined the invariant that a Work may have at most one active import; a new ZIP is blocked until the active import is committed or cancelled.
+- Removed the planned redundant `Fortsätt arbete` path in favor of state-specific actions.
+- Added direct post-commit actions for `Ladda upp nästa ZIP` and `Arbetet är klart – skapa pull request`.
+- Application version remains 1.0.0-rc.36 because this revision changes planning/status only.
+
 ## 1.0.0-rc.36 - 2026-08-07
 
 - Corrected two backend promotion/regression tests to match step 7.19 retention semantics: active resumable imports are intentionally excluded from expired-upload cleanup until terminal delivery.
@@ -389,6 +412,15 @@ Corrective release candidate for the GHCR backend image build.
 - Kept the Maven Wrapper as the authoritative host/CI test entry point; only the Docker build stage uses the matching preinstalled Maven binary.
 
 # Changelog
+
+## 1.0.0-rc.37 - 2026-08-07
+
+- Added explicit owner-scoped import cancellation before Git delivery.
+- Cancellation is idempotent, persisted as `CANCELLED`, removes disposable workspaces and preserves audit state.
+- Cancelled uploads participate in ordinary terminal retention cleanup after their deadline.
+- Review UI now offers an explicit confirmed `Avbryt import` action and returns to the project after cancellation.
+- Added cancellation regression coverage for idempotency, owner isolation and delivered-import protection.
+
 
 ## 1.0.0-rc.34 - 2026-08-07
 

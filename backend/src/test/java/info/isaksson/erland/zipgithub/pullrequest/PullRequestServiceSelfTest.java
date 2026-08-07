@@ -38,5 +38,22 @@ public final class PullRequestServiceSelfTest {
         var reused = new PullRequestService(i -> "token", existingClient, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
                 .createOrReuseDraft(7, d);
         if (reused.pullRequestNumber() != 43) throw new AssertionError();
+
+        final int[] retryCreates = {0};
+        GitHubPullRequestClient retryClient = new GitHubPullRequestClient() {
+            private boolean created;
+            @Override public GitHubPullRequest createDraftPullRequest(String t, String r, String title, String h, String b, String body) {
+                retryCreates[0]++;
+                created = true;
+                throw new IllegalStateException("response lost after GitHub created the PR");
+            }
+            @Override public Optional<GitHubPullRequest> findOpenPullRequest(String t, String r, String h, String b) {
+                return created ? Optional.of(new GitHubPullRequest(44, "https://github.com/o/r/pull/44", "open", true)) : Optional.empty();
+            }
+        };
+        var recovered = new PullRequestService(i -> "token", retryClient, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
+                .createOrReuseDraft(7, d);
+        if (recovered.pullRequestNumber() != 44 || retryCreates[0] != 1)
+            throw new AssertionError("retry recovery must reuse the already-created PR");
     }
 }

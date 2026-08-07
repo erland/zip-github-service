@@ -102,7 +102,17 @@ public class ImportWorkspaceService {
 
     public void delete(AppliedImportWorkspace workspace) {
         if (workspace == null) return;
-        Path path = workspace.workspacePath().toAbsolutePath().normalize();
+        deletePath(workspace.workspacePath());
+    }
+
+    /** Removes any temporary workspace for an import, including one left behind before a backend restart. */
+    public void delete(UUID importId) {
+        if (importId == null) return;
+        deletePath(workspaceRoot.resolve(importId.toString()));
+    }
+
+    private void deletePath(Path candidate) {
+        Path path = candidate.toAbsolutePath().normalize();
         if (!path.startsWith(workspaceRoot)) throw new ImportWorkspaceException("Refusing to delete a workspace outside the configured root.");
         try { deleteRecursively(path); }
         catch (IOException e) { throw new ImportWorkspaceException("Could not delete the import workspace.", e); }

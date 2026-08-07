@@ -62,6 +62,9 @@ class AlternativeZipIngestionRegressionTest {
         StoredUpload browserUpload = browserUploader.store(fixture.owner, browserImport.id(), "project.zip",
                 zipBytes.length, new ByteArrayInputStream(zipBytes));
         fixture.service.recordUpload(fixture.owner, browserImport.id(), browserUpload);
+        // Step 7.23 permits only one active import per Work. Close the browser-path import
+        // before exercising the independent stored-upload path; its immutable ZIP bytes remain readable.
+        fixture.service.cancelImport(fixture.owner, browserImport.id());
 
         var stagedArtifact = ingestion.store(UUID.randomUUID(), "project.zip", zipBytes.length,
                 new ByteArrayInputStream(zipBytes));

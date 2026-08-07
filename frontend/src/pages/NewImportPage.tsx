@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { createImport, prepareImportReview, SourceUploadResponse, uploadZip } from '../api/imports';
+import { cancelImport, createImport, prepareImportReview, SourceUploadResponse, uploadZip } from '../api/imports';
 import { getProject, ProjectResponse } from '../api/projects';
 import { getCurrentUser, type AuthenticatedUser } from '../api/auth';
 
@@ -21,6 +21,9 @@ export default function NewImportPage() {
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState('');
   const [result, setResult] = useState<SourceUploadResponse | null>(null);
+  const [currentImportId, setCurrentImportId] = useState<string | null>(existingImportId);
+  const [cancelConfirm, setCancelConfirm] = useState(false);
+  const [cancellingImport, setCancellingImport] = useState(false);
   const controller = useRef<AbortController | null>(null);
 
   const busy = state === 'creating' || state === 'uploading' || state === 'preparing';
@@ -51,6 +54,22 @@ export default function NewImportPage() {
     }
   }
 
+  async function confirmCancelImport() {
+    if (!project || !currentImportId || busy || cancellingImport) return;
+    setCancellingImport(true);
+    setMessage('');
+    try {
+      await cancelImport(currentImportId);
+      navigate(`/projects/${project.id}`, { replace: true });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Importen kunde inte avbrytas.');
+      setState('error');
+      setCancelConfirm(false);
+    } finally {
+      setCancellingImport(false);
+    }
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!project || !file || busy) return;
@@ -63,6 +82,7 @@ export default function NewImportPage() {
       setState('creating');
       const customAuthor = authorMode === 'other' ? { name: authorName.trim(), email: authorEmail.trim() } : undefined;
       const importId = existingImportId || (await createImport(project.id, customAuthor)).id;
+      setCurrentImportId(importId);
       setState('uploading');
       const uploaded = await uploadZip(importId, file, setProgress, abortController.signal);
       setResult(uploaded);
@@ -158,6 +178,23 @@ export default function NewImportPage() {
           <button className="button" type="submit" disabled={!project || !file || busy || Boolean(result) || (authorMode === 'other' && (!authorName.trim() || !authorEmail.trim()))}>
             {state === 'preparing' ? 'Förbereder granskning…' : 'Ladda upp ZIP'}
           </button>
+        )}
+
+        {currentImportId && !busy && (
+          <div className="review-cancel-action">
+            {!cancelConfirm ? (
+              <button className="button button--secondary" type="button" disabled={cancellingImport} onClick={() => setCancelConfirm(true)}>Avbryt import</button>
+            ) : (
+              <div className="approval-confirmation" role="alert">
+                <strong>Avbryt importen?</strong>
+                <p>Ingen commit skapas. Importen stängs och du kan börja om med en annan ZIP.</p>
+                <div className="result-primary-action">
+                  <button className="button button--secondary" type="button" disabled={cancellingImport} onClick={() => setCancelConfirm(false)}>Behåll importen</button>
+                  <button className="button" type="button" disabled={cancellingImport} onClick={confirmCancelImport}>{cancellingImport ? 'Avbryter import…' : 'Ja, avbryt import'}</button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </form>
     </section>

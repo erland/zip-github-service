@@ -56,6 +56,7 @@ function renderPage() {
       <Routes>
         <Route path="projects/:projectId/imports/:importId/review" element={<ImportReviewPage />} />
         <Route path="projects/:projectId/imports/:importId/result" element={<div>Importresultat</div>} />
+        <Route path="projects/:projectId" element={<div>Projektvy</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -214,4 +215,26 @@ describe('ImportReviewPage', () => {
     await user.click(screen.getByRole('button', { name: 'Försök skapa commit igen' }));
     expect(await screen.findByText('Importresultat')).toBeInTheDocument();
   });
+  it('cancels an active review explicitly without creating selection, approval or delivery', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (!init?.method && url.endsWith('/plan')) return response(plan);
+      if (!init?.method && (url.endsWith('/selection') || url.endsWith('/plan/approval') || url.endsWith('/delivery'))) return response({}, 404);
+      if (init?.method === 'POST' && url.endsWith('/cancel')) return response({ id: 'import-1', projectId: 'project-1', baseBranch: 'main', status: 'CANCELLED', createdAt: '2026-08-06T19:00:00Z' });
+      return response({});
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderPage();
+    await screen.findByText('README.md');
+
+    await user.click(screen.getByRole('button', { name: 'Avbryt import' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Avbryt importen?');
+    await user.click(screen.getByRole('button', { name: 'Ja, avbryt import' }));
+    expect(await screen.findByText('Projektvy')).toBeInTheDocument();
+
+    const postUrls = fetchMock.mock.calls.filter(([, init]) => (init as RequestInit | undefined)?.method === 'POST').map(([url]) => String(url));
+    expect(postUrls).toEqual(['/api/imports/import-1/cancel']);
+  });
+
 });

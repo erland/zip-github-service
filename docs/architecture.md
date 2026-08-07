@@ -150,3 +150,12 @@ The active Work branch is the primary user-facing history. The backend reads bra
 ## Phase 7 resume/Work regression closure
 
 The phase-7 closure regression treats PostgreSQL resume state as authoritative after JVM loss. Temporary Git workspaces remain disposable and are rebuilt from persisted upload/snapshot/plan/selection/approval state. The primary project history is the Work branch commit history; technical import history remains owner-scoped audit data. If GitHub commit-history reads fail, persisted Work head metadata provides a degraded read-only fallback.
+
+
+## Explicit import cancellation (step 7.22)
+
+An import is an explicit lifecycle object, not merely a page visit. Before Git delivery the owner may terminate it through `POST /api/imports/{importId}/cancel`. Cancellation is persisted as `CANCELLED`, preserves plan/selection/approval audit data, removes disposable Git workspace data and makes the source ZIP eligible for normal terminal-retention cleanup. `CANCELLED` imports are not resumable active work items. Once a `GitDeliveryResult` has been recorded, cancellation is rejected because the repository has already changed.
+
+## State-based Work actions (step 7.23)
+
+Work has at most one non-terminal import. The backend serializes import creation and enforces this before creating any new import in the supported single-backend-instance deployment model. UI actions mirror the same state machine: an active import can only be resumed or cancelled; an idle open Work can accept the next ZIP; a successful commit can either be followed by another ZIP or explicitly close the Work through the existing pull-request operation. Historical import records remain audit data and do not create additional user-visible Work paths.

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   createImport: vi.fn(),
   uploadZip: vi.fn(),
   prepareImportReview: vi.fn(),
+  cancelImport: vi.fn(),
   getProject: vi.fn(),
   getCurrentUser: vi.fn(),
 }));
@@ -16,6 +17,7 @@ vi.mock('../api/imports', () => ({
   createImport: mocks.createImport,
   uploadZip: mocks.uploadZip,
   prepareImportReview: mocks.prepareImportReview,
+  cancelImport: mocks.cancelImport,
 }));
 vi.mock('../api/projects', () => ({ getProject: mocks.getProject }));
 vi.mock('../api/auth', () => ({ getCurrentUser: mocks.getCurrentUser }));
@@ -36,6 +38,7 @@ function renderPage() {
       <Routes>
         <Route path="/projects/:projectId/imports/new" element={<NewImportPage />} />
         <Route path="/projects/:projectId/imports/:importId/review" element={<h1>Granskningen öppnades</h1>} />
+        <Route path="/projects/:projectId" element={<h1>Projektet öppnades</h1>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -48,6 +51,7 @@ beforeEach(() => {
     return upload;
   });
   mocks.prepareImportReview.mockReset().mockResolvedValue({ id: 'plan-1' });
+  mocks.cancelImport.mockReset().mockResolvedValue({ id: 'import-1', projectId: 'project-1', baseBranch: 'main', status: 'CANCELLED', createdAt: '2026-08-07T10:00:00Z' });
   mocks.getProject.mockReset().mockResolvedValue(project);
   mocks.getCurrentUser.mockReset().mockResolvedValue(currentUser);
 });
@@ -110,4 +114,23 @@ describe('NewImportPage automatic review preparation', () => {
     expect(mocks.uploadZip).toHaveBeenCalledTimes(1);
     expect(mocks.prepareImportReview).toHaveBeenCalledTimes(2);
   });
+  it('can cancel a resumable import instead of retrying the upload flow', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/projects/project-1/imports/new?importId=import-1']}>
+        <Routes>
+          <Route path="/projects/:projectId/imports/new" element={<NewImportPage />} />
+          <Route path="/projects/:projectId" element={<h1>Projektet öppnades</h1>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('heading', { name: 'Ladda upp projekt-ZIP' });
+    await user.click(screen.getByRole('button', { name: 'Avbryt import' }));
+    await user.click(screen.getByRole('button', { name: 'Ja, avbryt import' }));
+
+    expect(mocks.cancelImport).toHaveBeenCalledWith('import-1');
+    expect(await screen.findByRole('heading', { name: 'Projektet öppnades' })).toBeInTheDocument();
+  });
+
 });

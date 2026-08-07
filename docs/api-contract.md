@@ -25,6 +25,7 @@ This is not a production authentication mechanism. Missing or malformed context 
 | `GET` | `/api/projects/{projectId}` | Read an owned project |
 | `POST` | `/api/projects/{projectId}/imports` | Create an empty import session for an owned project |
 | `GET` | `/api/imports/{importId}` | Read an owned import session |
+| `POST` | `/api/imports/{importId}/cancel` | Cancel an owned import before Git delivery |
 
 The existing `GET /api/health` endpoint remains available.
 
@@ -82,6 +83,13 @@ Errors include:
 - `400 INVALID_UPLOAD`
 - `409 UPLOAD_ALREADY_EXISTS`
 - `413 UPLOAD_TOO_LARGE`
+
+
+## Import cancellation (step 7.22)
+
+`POST /api/imports/{importId}/cancel` closes an owned import that the user no longer wants to commit. The operation is owner-scoped and idempotent. It is allowed before Git delivery, including after immutable selection/approval or temporary workspace preparation. The backend marks the import `CANCELLED`, removes any temporary Git workspace for that import and keeps immutable audit/review records for troubleshooting.
+
+A cancelled upload becomes eligible for the ordinary retention cleanup once its retention deadline has passed. Cancellation never rewrites Git and never removes an already delivered commit. If delivery has already been recorded, the endpoint returns `409 IMPORT_ALREADY_DELIVERED`. Unknown or cross-user imports remain `404`.
 
 ## Repository snapshot
 
@@ -252,3 +260,9 @@ Project import-history entries expose `sourceType` and nullable `sourceReference
 ## Work commit history
 
 `GET /api/projects/{projectId}/work/commits` requires the normal authenticated owner session. It returns `{ commits, githubAvailable }`; each commit contains `sha`, `message`, `authorName`, `authorEmail`, `authoredAt`, `htmlUrl` and `fallback`. GitHub is queried with a short-lived installation token. On temporary GitHub failure the response remains successful with `githubAvailable=false` and, when known, one fallback entry for the persisted Work head.
+
+## Step 7.23 Work-action lifecycle
+
+`POST /api/projects/{projectId}/imports` now enforces one active import per Work/project. If a non-terminal import already exists for the authenticated owner, the request returns `409 ACTIVE_IMPORT_EXISTS`. Terminal states (`PUSHED`, `PULL_REQUEST_CREATED`, `CANCELLED`) do not block the next import. This invariant is server-side and cannot be bypassed by calling the create-import API directly.
+
+The existing owner-scoped `POST /api/projects/{projectId}/work/pull-request` remains the single explicit Work-completion operation and may be invoked directly from the post-commit result view. Its existing idempotency and Work-head validation continue to apply.

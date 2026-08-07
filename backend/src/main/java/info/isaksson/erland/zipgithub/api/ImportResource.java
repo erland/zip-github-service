@@ -68,6 +68,20 @@ public class ImportResource {
     }
 
     @POST
+    @Path("/{importId}/cancel")
+    public ImportResponse cancel(@PathParam("importId") UUID importId) {
+        UUID ownerUserId = currentUser.requireUserId();
+        ImportResponse cancelled = service.cancelImport(ownerUserId, importId);
+        try {
+            importWorkspaces.delete(importId);
+        } catch (ImportWorkspaceException e) {
+            throw ApiException.conflict("IMPORT_CANCEL_WORKSPACE_CLEANUP_FAILED",
+                    "The import was cancelled, but its temporary workspace could not be removed yet.");
+        }
+        return cancelled;
+    }
+
+    @POST
     @Path("/{importId}/repository-snapshot")
     public RepositorySnapshotResponse createRepositorySnapshot(@PathParam("importId") UUID importId) {
         UUID ownerUserId = currentUser.requireUserId();

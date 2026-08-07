@@ -424,7 +424,35 @@ Ett steg får delas ytterligare om oväntad teknisk komplexitet uppstår. Flera 
 - Verifiera ägarskapsisolering: en annan användare får aldrig återuppta, läsa eller leverera någon annans pågående import.
 - Uppdatera releasechecklista, operations-/arkitekturdokumentation och fas-7-kvalitetsgrind efter regressionen.
 
-**Kvalitetsgrind för fas 7:** tjänsten uppfyller tidigare mobil-, säkerhets- och driftkrav, kan skapa en commit från exakt ett användarvalt filträd, har en återanvändbar ZIP-ingestion-kärna och erbjuder normalflödet `välj ZIP -> granska -> godkänn -> commit` utan onödiga mellanliggande klick. Hårt blockerade paths levereras aldrig, överstyrbara förändringar kräver explicit audit-godkännande och oförändrade skyddade paths kräver aldrig change-override. En pågående import kan återupptas efter logout/login och backend-restart utan ny ZIP-upload, och Work-vyn använder Git-commit-historiken som primär historik med högst en tydligt återupptagningsbar pågående import.
+## Steg 7.22 - Avbryt och stäng pågående import
+
+- Lägg en tydlig åtgärd `Avbryt import` i gransknings-/återupptagningsflödet så användaren kan lämna en import som inte längre ska committas.
+- Tillåt cancel före approval och efter immutable selection/approval så länge Git-delivery ännu inte har skapat/pushat committen.
+- Gör cancel owner-scoped, idempotent och beständigt; en redan avbruten import ska kunna få samma svar vid retry utan nya sidoeffekter.
+- Markera importen terminalt som avbruten och frigör Work så en ny ZIP kan startas.
+- Radera temporär workspace-data och gör den uppladdade ZIP-filen eligible för säker cleanup enligt retentionreglerna; behåll den auditmetadata som behövs för felsökning och spårbarhet.
+- Förbjud cancel efter lyckad Git-delivery; då är korrekt åtgärd att hantera committen/Work-flödet i stället för att låtsas att importen aldrig levererades.
+
+## Steg 7.23 - Gör Work-actions state-baserade och ta bort redundanta vägar
+
+- Om en aktiv import finns ska projektvyn primärt visa `Fortsätt import`/`Fortsätt granska` och `Avbryt import`; ny import får inte startas parallellt.
+- Dölj eller disable `Ladda upp nästa ZIP` medan en aktiv import finns och kontrollera samma invariant server-side så UI-bypass inte kan skapa flera samtidiga aktiva imports i samma Work.
+- Ta bort den redundanta generella `Fortsätt arbete`-knappen när den i praktiken leder till samma handling som att ladda upp nästa ZIP.
+- Om Work är öppet men ingen import är aktiv ska primär åtgärd vara `Ladda upp nästa ZIP`.
+- Efter lyckad commit/push ska resultatsidan direkt erbjuda både `Ladda upp nästa ZIP` och `Arbetet är klart – skapa pull request`.
+- PR-skapandet ska fortfarande vara ett separat explicit beslut och använda befintlig Work-head/PR-idempotens; användaren ska bara slippa ett onödigt mellansteg via projektsidan.
+
+## Steg 7.24 - Regression för cancel och state-baserade Work-actions
+
+- Testa cancel från review före selection/approval och verifiera att ingen Git-operation sker och att ny import därefter kan startas.
+- Testa cancel efter selection/approval men före delivery och verifiera terminal cancel, cleanup eligibility och bevarad auditmetadata.
+- Testa att cancel efter lyckad delivery avvisas och aldrig raderar eller döljer en skapad commit.
+- Verifiera både UI och API-invariant att högst en aktiv import kan finnas per Work och att parallell ny ZIP blockeras tills aktuell import committats eller avbrutits.
+- Verifiera knappuppsättning per state: aktiv import -> fortsätt/avbryt; öppen Work utan aktiv import -> ladda upp nästa ZIP; lyckad commit -> nästa ZIP eller avsluta Work/PR.
+- E2E-testa att `Arbetet är klart – skapa pull request` kan köras direkt från commit-resultatet utan extra navigation och utan dubbla PR:er vid retry.
+- Regressionskör logout/login och backend-restart så cancel-/Work-state fortfarande återhämtas korrekt och owner-isoleringen bibehålls.
+
+**Kvalitetsgrind för fas 7:** tjänsten uppfyller tidigare mobil-, säkerhets- och driftkrav, kan skapa en commit från exakt ett användarvalt filträd, har en återanvändbar ZIP-ingestion-kärna och erbjuder normalflödet `välj ZIP -> granska -> godkänn -> commit` utan onödiga mellanliggande klick. Hårt blockerade paths levereras aldrig, överstyrbara förändringar kräver explicit audit-godkännande och oförändrade skyddade paths kräver aldrig change-override. En pågående import kan återupptas efter logout/login och backend-restart utan ny ZIP-upload, kan explicit avbrytas före delivery och blockerar parallell ny ZIP tills den antingen committats eller avbrutits. Work-vyn använder Git-commit-historiken som primär historik med högst en aktiv import, och efter en lyckad commit kan användaren direkt välja mellan nästa ZIP och att avsluta Work genom att skapa pull request.
 
 # Fas 8 - efter MVP: integrerade Actions-resultat
 

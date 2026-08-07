@@ -294,3 +294,7 @@ export async function getImportChecks(importId: string): Promise<ImportCheckStat
 export async function getImport(importId: string): Promise<ImportResponse> {
   return requestJson(`/api/imports/${encodeURIComponent(importId)}`);
 }
+
+export async function cancelImport(importId: string): Promise<ImportResponse> {
+  return requestJson(`/api/imports/${encodeURIComponent(importId)}/cancel`, { method: 'POST' });
+}

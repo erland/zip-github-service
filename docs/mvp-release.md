@@ -51,3 +51,7 @@ Phase 8 remains post-MVP:
 - artifact links and condensed build errors;
 - controlled workflow dispatch and reruns;
 - AI-facing status/export integration.
+
+## Phase 7 Work-lifecycle completion
+
+The final phase-7 regression verifies resumable/cancellable imports, the single-active-import invariant, state-based Work actions and direct post-commit pull-request completion with idempotent recovery. Step 8.1 is the next implementation target.

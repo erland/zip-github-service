@@ -65,3 +65,13 @@ Production version `1.0.0` may be created only when every external acceptance it
 - [ ] Verify project view shows Git commits plus at most one active import, while historical imports remain available through the owner-scoped API.
 - [ ] Verify another account cannot open or resume the import.
 - [ ] Temporarily deny GitHub history access and verify the persisted Work-head fallback remains usable.
+
+## Phase 7 Work-lifecycle final regression (7.24)
+
+- [x] Cancel before approval produces no Git delivery and remains terminal after restart hydration.
+- [x] Cancel after approval remains cleanup-eligible while audit metadata is retained.
+- [x] Cancel after delivery is rejected.
+- [x] At most one active import is exposed/accepted per Work.
+- [x] Project actions are state-based: active import -> continue/cancel; idle Work -> one next-ZIP action.
+- [x] Commit result exposes direct next-ZIP and finish-Work/PR actions.
+- [x] PR creation has lost-response recovery that reuses an existing GitHub PR.

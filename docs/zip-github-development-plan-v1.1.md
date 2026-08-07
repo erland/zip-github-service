@@ -519,7 +519,7 @@ Implementation:
 
 - Extrahera kondenserade fel för Maven, Gradle, npm/Vite, Pandoc och xcodebuild där möjligt.
 
-- Tillåt manuell workflow_dispatch endast för uttryckligen tillåtna workflows.
+- Tillåt manuell workflow_dispatch/rerun endast för uttryckligen tillåtna workflows och med server-side authorization, audit och idempotens.
 
 - Bevara GitHub som källa för full logg och artifact.
 
@@ -529,7 +529,41 @@ Kvalitetsgrind:
 
 - Felutdrag är begränsade, spårbara och länkar till full logg.
 
-- Artifacts laddas inte genom modellen och behöver inte lagras permanent i appen.
+- Artifacts behöver inte lagras permanent i appen.
+
+## Fas 9 – Shortcut och kortlivad StagingImport
+
+Implementation:
+
+- Ta emot en ZIP från iOS Shortcut till en kortlivad `StagingImport` via en separat upload capability som inte är användarautentisering och aldrig ger GitHub-åtkomst.
+
+- Använd samma `ZipIngestionService`/`StoredUploadArtifact` och samma absoluta ZIP-gränser som vanlig web upload.
+
+- Returnera en högentropisk engångs-claim-token/URL, spara endast token-hash och erbjud inget anonymt list/read-API.
+
+- Låt användaren öppna claim-länken, logga in med vanlig GitHub App user authorization och atomiskt claima stagingobjektet.
+
+- Låt den autentiserade användaren välja ett projekt och promovera den redan lagrade ZIP-filen via `createImportFromStoredUpload(...)` som `STAGING_IMPORT`, utan reupload eller parallell importpipeline.
+
+- Respektera Work-invarianten om högst en aktiv import, samma owner-isolation och samma immutable plan/selection/delivery-regler.
+
+- Städa oclaimade staginguploads efter kort TTL (initialt omkring en timme), begränsa abuse med rate/volymgränser och stöd capability-rotation.
+
+- Dokumentera ett minimalt iOS Shortcut-flöde: ta emot ZIP -> HTTP-upload med capability-header -> öppna claim-URL i webbläsare. Shortcut innehåller ingen GitHub-token eller user/project-identitet.
+
+Kvalitetsgrind:
+
+- Samma ZIP och base SHA ger samma vanliga importplan oavsett om bytes kom via web upload eller Shortcut/StagingImport.
+
+- Ett stagingobjekt kan claimas av exakt en autentiserad användare och staging i sig kan aldrig läsa/skriva GitHub.
+
+- Oclaimade uploads kan inte listas eller läsas och raderas automatiskt efter TTL.
+
+- Retry/restart duplicerar varken stagingobjekt, vanlig import eller Git-delivery.
+
+## Framtida backlog – AI- och integrationsyta
+
+Det tidigare planerade integrationssteget efter Actions flyttas utanför fas 8–9 tills verklig användning visar behovet. Kandidater är ett litet read-only/status-API, Custom GPT Action/MCP-adapter och export av aktuell GitHub-branch som AI-anpassad ZIP. Även mer avancerad trevägs-/provenanceanalys av ZIP mot repositoryläge hör hit.
 
 # 9. Detaljerad domänmodell
 

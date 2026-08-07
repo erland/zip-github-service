@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0083`
+- Repository revision: `r0084`
 - Last completed step: `7.24`
 - Next step: `8.1`
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 7 COMPLETE`
+- Overall state: `MVP RELEASE CANDIDATE — PHASES 8–9 PLANNED`
 
 ## Step ledger
 
@@ -84,7 +84,14 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `8.1` | Fas 8 — efter MVP: integrerade Actions-resultat | Workflow runs och jobs | **NEXT** | — | — |
 | `8.2` | Fas 8 — efter MVP: integrerade Actions-resultat | Artifacts och kondenserade fel | **PENDING** | — | — |
 | `8.3` | Fas 8 — efter MVP: integrerade Actions-resultat | Kontrollerad workflow dispatch och omkörning | **PENDING** | — | — |
-| `8.4` | Fas 8 — efter MVP: integrerade Actions-resultat | AI- och integrationsyta | **PENDING** | — | — |
+| `8.4` | Fas 8 — tidigare plan | AI- och integrationsyta — flyttad till framtida backlog | **SKIPPED** | 2026-08-07 | `docs/r0084-phase8-9-handoff-planning.md` |
+| `9.1` | Fas 9 — Shortcut/StagingImport | Definiera och persistiera StagingImport-livscykeln | **PENDING** | — | — |
+| `9.2` | Fas 9 — Shortcut/StagingImport | Capability-skyddad staging-upload | **PENDING** | — | — |
+| `9.3` | Fas 9 — Shortcut/StagingImport | Autentiserad claim från webbläsaren | **PENDING** | — | — |
+| `9.4` | Fas 9 — Shortcut/StagingImport | Projektval och promotion till vanlig Import | **PENDING** | — | — |
+| `9.5` | Fas 9 — Shortcut/StagingImport | Retention, abuse-skydd och säkerhetsregression | **PENDING** | — | — |
+| `9.6` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **PENDING** | — | — |
+| `9.7` | Fas 9 — Shortcut/StagingImport | E2E-regression, drift och releasegrind | **PENDING** | — | — |
 
 ## Revision history
 
@@ -208,3 +215,5 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 | `r0082` | 2026-08-07 | Step 7.23 | Added state-based Work actions, server-side single-active-import enforcement and direct post-commit PR completion | `7.24` |
 | `r0083` | 2026-08-07 | Step 7.24 | Added final cancellation/Work-state regressions, restart-safe cancel coverage and pull-request retry/no-duplicate recovery checks; phase 7 complete | `8.1` |
+
+| `r0084` | 2026-08-07 | Phase 8–9 planning/handoff refinement | Moved former 8.4 AI/integration work to future backlog; detailed StagingImport/Shortcut phase 9 and new-chat handoff package; application version unchanged | `8.1` |

@@ -1,3 +1,11 @@
+## Planning revision r0084 - 2026-08-07
+
+- Moved former step 8.4 (AI/read-only API, Custom GPT/MCP and branch ZIP export) out of the active execution plan into a future backlog.
+- Expanded phase 8 steps 8.1–8.3 with explicit workflow/job, artifact/error-extraction and controlled dispatch/rerun quality requirements.
+- Added phase 9 steps 9.1–9.7 for capability-protected iOS Shortcut staging upload, authenticated claim, project promotion through the existing stored-upload path, retention/abuse protection, reference Shortcut guidance and E2E regression.
+- Added a self-contained phase 8+ continuation handoff for starting a new chat without reconstructing architecture, status or known constraints.
+- Application version remains 1.0.0-rc.39 because this revision changes planning/documentation only.
+
 ## 1.0.0-rc.39 - 2026-08-07
 
 - Completed step 7.24 with final cancel/Work-lifecycle regression coverage.

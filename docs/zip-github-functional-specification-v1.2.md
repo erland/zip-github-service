@@ -535,7 +535,21 @@ ZIP-filer och uppackade arbetsytor är temporära. Databasen behåller metadata 
 
 - Notifieringar när byggen är klara.
 
-## 14.4 Fas 4: integrations-API
+## 14.4 Fas 4: Shortcut och StagingImport
+
+- Kortlivad capability-skyddad staging-upload för exempelvis iOS Shortcut; upload capability är inte användarautentisering och ger ingen GitHub-åtkomst.
+
+- Högentropisk engångs-claim-token där endast hash lagras, utan anonym list/read-funktion.
+
+- Vanlig GitHub-inloggning före atomisk claim och projektval.
+
+- Promotion av redan lagrad ZIP till vanlig `ImportSession` med `STAGING_IMPORT` via samma `StoredUploadArtifact`-integrationspunkt, utan reupload eller parallell policy/delivery.
+
+- Kort TTL, abuse-/ratebegränsning och automatisk cleanup av oclaimade staginguploads.
+
+- Dokumenterat iOS Shortcut-flöde för Share Sheet/Filer -> upload -> öppna claim-URL.
+
+## 14.5 Framtida integrations-API
 
 - Read-only API för senaste import, PR och byggstatus.
 
@@ -544,6 +558,8 @@ ZIP-filer och uppackade arbetsytor är temporära. Databasen behåller metadata 
 - Valfri MCP-adapter ovanpå samma applikationstjänster.
 
 - Export av aktuell AI-arbets-ZIP från vald branch.
+
+Detta är framtidsbacklog och ingår inte i den aktiva fas 8–9-planen.
 
 # 15. Acceptanskriterier för MVP
 

@@ -21,9 +21,9 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0083`' docs/implementation-status.md
+grep -q 'Repository revision: `r0084`' docs/implementation-status.md
 grep -q 'Last completed step: `7.24`' docs/implementation-status.md
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 7 COMPLETE`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASES 8–9 PLANNED`' docs/implementation-status.md
 grep -q '| `7.9` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.10` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.11` .*\*\*DONE\*\*' docs/implementation-status.md
@@ -40,6 +40,12 @@ grep -q '| `7.22` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.23` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.24` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `8.1` .*\*\*NEXT\*\*' docs/implementation-status.md
+grep -q '| `8.4` .*\*\*SKIPPED\*\*' docs/implementation-status.md
+grep -q '| `9.1` .*\*\*PENDING\*\*' docs/implementation-status.md
+grep -q 'Fas 9 - Shortcut och kortlivad StagingImport' docs/implementation-steps.md
+grep -q 'Framtida backlog - AI- och integrationsyta' docs/implementation-steps.md
+test -s docs/phase8-plus-continuation-handoff.md
+test -s docs/shortcut-stagingimport-design.md
 grep -q 'CREATE TABLE import_resume_payload' backend/src/main/resources/db/migration/V8__resumable_import_state.sql
 grep -q 'class ImportResumePersistenceStore' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/ImportResumePersistenceStore.java
 grep -q 'persistentImports.find(ownerUserId, importId)' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java

@@ -183,3 +183,15 @@ For an interrupted delivery, use the idempotent delivery and PR endpoints. Do no
 ## Capacity and scaling
 
 The MVP is a single backend replica because sessions and several application stores are still in memory. Do not horizontally scale until those stores are moved to PostgreSQL or a shared session store. Temporary workspace capacity must accommodate configured ZIP expansion limits plus one or more concurrent Git workspaces.
+
+
+## Container storage initialization
+
+The production Compose stack includes a one-shot `storage-init` service. It runs as root only long enough to prepare the named upload/delivery volumes for backend UID/GID 10001, then exits. The backend remains non-root and depends on successful storage initialization.
+
+The backend runtime image must include the Git CLI because repository snapshot, approved-workspace verification and delivery execute Git as an external process. Verify after deployment with:
+
+```bash
+docker compose exec backend git --version
+docker compose exec backend sh -c 'id; ls -ld /var/lib/zip-github/uploads /var/lib/zip-github/delivery'
+```

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.11"
+expected_version="1.0.0-rc.12"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
@@ -21,11 +21,18 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0051`' docs/implementation-status.md
+grep -q 'Repository revision: `r0052`' docs/implementation-status.md
 grep -q 'Last completed step: `7.5`' docs/implementation-status.md
 grep -q 'Overall state: `MVP RELEASE CANDIDATE`' docs/implementation-status.md
 grep -q '| `7.5` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `8.1` .*\*\*NEXT\*\*' docs/implementation-status.md
+
+
+# Container runtime requirements used by repository snapshot/workspace/delivery.
+grep -q 'apt-get install -y --no-install-recommends curl git' backend/Dockerfile
+grep -q '^  storage-init:' docker-compose.yml
+grep -q 'condition: service_completed_successfully' docker-compose.yml
+grep -q 'chown -R 10001:10001' docker-compose.yml
 
 ./scripts/verify-structure.sh
 ./scripts/verify-implementation-status.sh

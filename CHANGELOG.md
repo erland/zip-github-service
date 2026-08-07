@@ -1,3 +1,15 @@
+## 1.0.0-rc.12 — 2026-08-07
+
+Corrective release candidate for production container runtime prerequisites and persistent-volume ownership.
+
+### Fixed
+
+- Installed `git` in the backend runtime image; repository snapshot, workspace and delivery services invoke the Git CLI at runtime.
+- Added a one-shot `storage-init` Compose service that prepares upload and delivery volumes for backend UID/GID `10001:10001`.
+- Backend waits for storage initialization to complete successfully before starting.
+- Kept the backend itself non-root; no `chmod 777` or Docker socket access is introduced.
+- Preserved the RC11 GitHub App user-authorization flow and earlier backup/restore fixes.
+
 ## 1.0.0-rc.11 — 2026-08-07
 
 Corrective release candidate aligning browser authentication with the GitHub App user-access-token model required by `/user/installations`.

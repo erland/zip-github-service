@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0045`
+- Repository revision: `r0047`
 - Last completed step: `7.5`
 - Next step: `8.1`
 - Overall state: `MVP RELEASE CANDIDATE`
@@ -143,3 +143,5 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0042` | 2026-08-07 | MVP RC compile/test correction | Fixed backend merge regressions and updated frontend routing test mocks; repository checks passed, full Maven/Vitest rerun delegated to local/CI environment | `8.1` |
 | `r0043` | 2026-08-07 | MVP RC test correction | Corrected policy blocker expectation, Git ls-tree fixture delimiter, and asynchronous route-heading focus; repository release/security/status checks passed | `8.1` |
 | `r0045` | 2026-08-07 | MVP RC CI Flyway correction | Added Flyway PostgreSQL database module required by Flyway 11+ and updated relocated Quarkus test artifacts; `8.1` remains next | `8.1` |
+| `r0046` | 2026-08-07 | MVP RC frontend build correction | Removed unused Vitest `describe` import that failed TypeScript `noUnusedLocals`; `8.1` remains next | `8.1` |
+| `r0047` | 2026-08-07 | MVP RC PostgreSQL CI test correction | Bound `Instant` test parameters explicitly as JDBC `TIMESTAMP_WITH_TIMEZONE`; `8.1` remains next | `8.1` |

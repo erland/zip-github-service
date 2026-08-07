@@ -9,7 +9,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -50,7 +52,14 @@ class DatabaseMigrationTest {
 
     private static void execute(Connection connection, String sql, Object... values) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            for (int i = 0; i < values.length; i++) statement.setObject(i + 1, values[i]);
+            for (int i = 0; i < values.length; i++) {
+                Object value = values[i];
+                if (value instanceof Instant instant) {
+                    statement.setObject(i + 1, instant.atOffset(ZoneOffset.UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+                } else {
+                    statement.setObject(i + 1, value);
+                }
+            }
             statement.executeUpdate();
         }
     }

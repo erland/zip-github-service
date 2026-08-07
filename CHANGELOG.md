@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0-rc.7 - 2026-08-07
+
+- Fixed PostgreSQL migration integration test parameter binding for `Instant` values by using JDBC `TIMESTAMP_WITH_TIMEZONE`.
+- CI can now execute the owner-isolation migration test consistently with PostgreSQL 16.
+
+## 1.0.0-rc.6 - 2026-08-07
+
+- Fixed frontend production build by removing an unused `describe` import from `ImportResultPage.test.tsx`.
+
 ## 1.0.0-rc.5 - 2026-08-07
 
 ### Fixed

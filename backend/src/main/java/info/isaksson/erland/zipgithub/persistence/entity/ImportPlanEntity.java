@@ -27,6 +27,12 @@ public class ImportPlanEntity {
     @Column(name = "policy_version", nullable = false)
     public String policyVersion;
 
+    @Column(name = "source_upload_sha256", nullable = true)
+    public String sourceUploadSha256;
+
+    @Column(name = "plan_digest_sha256", nullable = true)
+    public String planDigestSha256;
+
     @Column(name = "status", nullable = false)
     public String status;
 
@@ -35,5 +41,8 @@ public class ImportPlanEntity {
 
     @Column(name = "approved_at", nullable = true)
     public Instant approvedAt;
+
+    @Column(name = "approved_by_user_id", nullable = true)
+    public UUID approvedByUserId;
 
 }

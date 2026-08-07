@@ -20,12 +20,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verify active project structure
         run: ./scripts/verify-structure.sh
+      - name: Run security regression baseline
+        run: ./scripts/security-regression.sh
       - name: Validate shell scripts
         run: |
           find scripts backend -type f \( -name '*.sh' -o -name 'mvnw' \) -print0 \
             | xargs -0 -r -n1 bash -n
       - name: Verify implementation ledger
         run: ./scripts/verify-implementation-status.sh
+      - name: Verify MVP release artifacts
+        run: ./scripts/verify-release.sh
       - name: Verify ignored generated files
         run: |
           test -f .gitignore

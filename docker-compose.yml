@@ -1,30 +1,82 @@
 services:
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-zip_github}
       POSTGRES_USER: ${POSTGRES_USER:-zip_github}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zip_github}
-    ports: ["${POSTGRES_PORT:-5432}:5432"]
-    volumes: [postgres-data:/var/lib/postgresql/data]
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
+
   backend:
     build: ./backend
+    restart: unless-stopped
     depends_on:
-      postgres: {condition: service_healthy}
+      postgres:
+        condition: service_healthy
     environment:
       QUARKUS_HTTP_HOST: 0.0.0.0
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-zip_github}
       QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-zip_github}
-      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-zip_github}
-    ports: ["${BACKEND_PORT:-8080}:8080"]
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID:?Set GITHUB_OAUTH_CLIENT_ID in .env}
+      GITHUB_OAUTH_CLIENT_SECRET: ${GITHUB_OAUTH_CLIENT_SECRET:?Set GITHUB_OAUTH_CLIENT_SECRET in .env}
+      GITHUB_OAUTH_CALLBACK_URL: ${GITHUB_OAUTH_CALLBACK_URL:?Set GITHUB_OAUTH_CALLBACK_URL in .env}
+      GITHUB_APP_ID: ${GITHUB_APP_ID:?Set GITHUB_APP_ID in .env}
+      GITHUB_APP_PRIVATE_KEY: ${GITHUB_APP_PRIVATE_KEY:?Set GITHUB_APP_PRIVATE_KEY in .env}
+      ZIP_GITHUB_FRONTEND_URL: ${ZIP_GITHUB_FRONTEND_URL:?Set ZIP_GITHUB_FRONTEND_URL in .env}
+      ZIP_GITHUB_SECURE_COOKIES: ${ZIP_GITHUB_SECURE_COOKIES:-true}
+      ZIP_GITHUB_CSRF_ENABLED: ${ZIP_GITHUB_CSRF_ENABLED:-true}
+      ZIP_GITHUB_UPLOAD_STORAGE_ROOT: /var/lib/zip-github/uploads
+      ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES: ${ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES:-104857600}
+      ZIP_GITHUB_UPLOAD_RETENTION_HOURS: ${ZIP_GITHUB_UPLOAD_RETENTION_HOURS:-24}
+      ZIP_GITHUB_UPLOAD_CLEANUP_INTERVAL: ${ZIP_GITHUB_UPLOAD_CLEANUP_INTERVAL:-1h}
+      ZIP_GITHUB_ARCHIVE_MAX_UNCOMPRESSED_BYTES: ${ZIP_GITHUB_ARCHIVE_MAX_UNCOMPRESSED_BYTES:-524288000}
+      ZIP_GITHUB_ARCHIVE_MAX_ENTRIES: ${ZIP_GITHUB_ARCHIVE_MAX_ENTRIES:-20000}
+      ZIP_GITHUB_ARCHIVE_MAX_SINGLE_FILE_BYTES: ${ZIP_GITHUB_ARCHIVE_MAX_SINGLE_FILE_BYTES:-52428800}
+      ZIP_GITHUB_ARCHIVE_MAX_PATH_LENGTH: ${ZIP_GITHUB_ARCHIVE_MAX_PATH_LENGTH:-1024}
+      ZIP_GITHUB_ARCHIVE_MAX_COMPRESSION_RATIO: ${ZIP_GITHUB_ARCHIVE_MAX_COMPRESSION_RATIO:-100.0}
+      ZIP_GITHUB_SNAPSHOT_WORKSPACE_ROOT: /tmp/zip-github/snapshots
+      ZIP_GITHUB_DELIVERY_WORKSPACE_ROOT: /var/lib/zip-github/delivery
+      ZIP_GITHUB_GIT_AUTHOR_NAME: ${ZIP_GITHUB_GIT_AUTHOR_NAME:-zip-github}
+      ZIP_GITHUB_GIT_AUTHOR_EMAIL: ${ZIP_GITHUB_GIT_AUTHOR_EMAIL:-zip-github@users.noreply.github.com}
+    volumes:
+      - upload-data:/var/lib/zip-github/uploads
+      - delivery-data:/var/lib/zip-github/delivery
+    tmpfs:
+      - /tmp:size=1g,mode=1770,uid=10001,gid=10001
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/q/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   frontend:
     build: ./frontend
-    depends_on: [backend]
-    ports: ["${FRONTEND_PORT:-5173}:80"]
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 volumes:
   postgres-data:
+  upload-data:
+  delivery-data:

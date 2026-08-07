@@ -1,7 +1,7 @@
 # Implementation status — zip-github
 
 Version 1.0  
-Updated: 6 August 2026
+Updated: 7 August 2026
 
 ## Purpose
 
@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0021`
-- Last completed step: `3.6`
-- Next step: `4.1`
-- Overall state: `IN IMPLEMENTATION`
+- Repository revision: `r0043`
+- Last completed step: `7.5`
+- Next step: `8.1`
+- Overall state: `MVP RELEASE CANDIDATE`
 
 ## Step ledger
 
@@ -44,25 +44,25 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `3.4` | Fas 3 — uppladdning och säker ZIP-inspektion | Implementera normalisering och filinventering | **DONE** | 2026-08-06 | `docs/step-3.4-report.md` |
 | `3.5` | Fas 3 — uppladdning och säker ZIP-inspektion | Implementera retention och mobil uppladdningsvy | **DONE** | 2026-08-06 | `docs/upload-retention-and-mobile-ui.md`, `docs/step-3.5-report.md` |
 | `3.6` | Fas 3 — uppladdning och säker ZIP-inspektion | Etablera komplett CI-baslinje | **DONE** | 2026-08-06 | `docs/ci-baseline.md`, `docs/step-3.6-report.md` |
-| `4.1` | Fas 4 — repositorysnapshot och importplan | Välj och implementera repositorysnapshot | **NEXT** | — | — |
-| `4.2` | Fas 4 — repositorysnapshot och importplan | Implementera hashbaserad jämförelse | **PENDING** | — | — |
-| `4.3` | Fas 4 — repositorysnapshot och importplan | Implementera importpolicy och blockerare | **PENDING** | — | — |
-| `4.4` | Fas 4 — repositorysnapshot och importplan | Spara immutable importplan | **PENDING** | — | — |
-| `4.5` | Fas 4 — repositorysnapshot och importplan | Bygg granskningsvyn | **PENDING** | — | — |
-| `5.1` | Fas 5 — godkännande och Git-leverans | Implementera godkännande av exakt plan | **PENDING** | — | — |
-| `5.2` | Fas 5 — godkännande och Git-leverans | Implementera temporär Git-arbetsyta och filapplicering | **PENDING** | — | — |
-| `5.3` | Fas 5 — godkännande och Git-leverans | Implementera branch, atomisk commit och push | **PENDING** | — | — |
-| `5.4` | Fas 5 — godkännande och Git-leverans | Implementera pull request och resultatmetadata | **PENDING** | — | — |
-| `5.5` | Fas 5 — godkännande och Git-leverans | Implementera idempotens, retry och felåterhämtning | **PENDING** | — | — |
-| `6.1` | Fas 6 — Actions-länkar och resultatsida | Bygg resultatsidan med beständiga GitHub-länkar | **PENDING** | — | — |
-| `6.2` | Fas 6 — Actions-länkar och resultatsida | Lägg grundläggande checkstatus | **PENDING** | — | — |
-| `6.3` | Fas 6 — Actions-länkar och resultatsida | Lägg importhistorik och återöppning | **PENDING** | — | — |
-| `7.1` | Fas 7 — mobil, säkerhet och driftsättning | Genomför komplett mobil- och tillgänglighetsgenomgång | **PENDING** | — | — |
-| `7.2` | Fas 7 — mobil, säkerhet och driftsättning | Härda webb- och API-säkerheten | **PENDING** | — | — |
-| `7.3` | Fas 7 — mobil, säkerhet och driftsättning | Skapa driftmodell och operationsdokumentation | **PENDING** | — | — |
-| `7.4` | Fas 7 — mobil, säkerhet och driftsättning | Genomför hotmodell och slutlig säkerhetsregression | **PENDING** | — | — |
-| `7.5` | Fas 7 — mobil, säkerhet och driftsättning | MVP-release och Definition of Done | **PENDING** | — | — |
-| `8.1` | Fas 8 — efter MVP: integrerade Actions-resultat | Workflow runs och jobs | **PENDING** | — | — |
+| `4.1` | Fas 4 — repositorysnapshot och importplan | Välj och implementera repositorysnapshot | **DONE** | 2026-08-06 | `docs/repository-snapshot.md`, `docs/step-4.1-report.md` |
+| `4.2` | Fas 4 — repositorysnapshot och importplan | Implementera hashbaserad jämförelse | **DONE** | 2026-08-06 | `docs/hash-based-comparison.md`, `docs/step-4.2-report.md` |
+| `4.3` | Fas 4 — repositorysnapshot och importplan | Implementera importpolicy och blockerare | **DONE** | 2026-08-06 | `docs/import-policy.md`, `docs/step-4.3-report.md` |
+| `4.4` | Fas 4 — repositorysnapshot och importplan | Spara immutable importplan | **DONE** | 2026-08-06 | `docs/immutable-import-plan.md`, `docs/step-4.4-report.md` |
+| `4.5` | Fas 4 — repositorysnapshot och importplan | Bygg granskningsvyn | **DONE** | 2026-08-06 | `docs/import-review-view.md`, `docs/step-4.5-report.md` |
+| `5.1` | Fas 5 — godkännande och Git-leverans | Implementera godkännande av exakt plan | **DONE** | 2026-08-06 | `docs/exact-plan-approval.md`, `docs/step-5.1-report.md` |
+| `5.2` | Fas 5 — godkännande och Git-leverans | Implementera temporär Git-arbetsyta och filapplicering | **DONE** | 2026-08-06 | `docs/temporary-git-workspace.md`, `docs/step-5.2-report.md` |
+| `5.3` | Fas 5 — godkännande och Git-leverans | Implementera branch, atomisk commit och push | **DONE** | 2026-08-06 | `docs/branch-commit-and-push.md`, `docs/step-5.3-report.md` |
+| `5.4` | Fas 5 — godkännande och Git-leverans | Implementera pull request och resultatmetadata | **DONE** | 2026-08-06 | `docs/pull-request-and-result-metadata.md`, `docs/step-5.4-report.md` |
+| `5.5` | Fas 5 — godkännande och Git-leverans | Implementera idempotens, retry och felåterhämtning | **DONE** | 2026-08-06 | `docs/idempotency-retry-and-recovery.md`, `docs/step-5.5-report.md` |
+| `6.1` | Fas 6 — Actions-länkar och resultatsida | Bygg resultatsidan med beständiga GitHub-länkar | **DONE** | 2026-08-06 | `docs/import-result-page.md`, `docs/step-6.1-report.md` |
+| `6.2` | Fas 6 — Actions-länkar och resultatsida | Lägg grundläggande checkstatus | **DONE** | 2026-08-06 | `docs/basic-check-status.md`, `docs/step-6.2-report.md` |
+| `6.3` | Fas 6 — Actions-länkar och resultatsida | Lägg importhistorik och återöppning | **DONE** | 2026-08-06 | `docs/import-history-and-reopening.md`, `docs/step-6.3-report.md` |
+| `7.1` | Fas 7 — mobil, säkerhet och driftsättning | Genomför komplett mobil- och tillgänglighetsgenomgång | **DONE** | 2026-08-06 | `docs/mobile-and-accessibility-review.md`, `docs/step-7.1-report.md` |
+| `7.2` | Fas 7 — mobil, säkerhet och driftsättning | Härda webb- och API-säkerheten | **DONE** | 2026-08-06 | `docs/web-and-api-security-hardening.md`, `docs/step-7.2-report.md` |
+| `7.3` | Fas 7 — mobil, säkerhet och driftsättning | Skapa driftmodell och operationsdokumentation | **DONE** | 2026-08-06 | `docs/operations.md`, `docs/github-app-setup.md`, `docs/step-7.3-report.md` |
+| `7.4` | Fas 7 — mobil, säkerhet och driftsättning | Genomför hotmodell och slutlig säkerhetsregression | **DONE** | 2026-08-06 | `docs/threat-model.md`, `docs/security-regression.md`, `docs/step-7.4-report.md` |
+| `7.5` | Fas 7 — mobil, säkerhet och driftsättning | MVP-release och Definition of Done | **DONE** | 2026-08-06 | `docs/mvp-release.md`, `docs/release-checklist.md`, `docs/step-7.5-report.md` |
+| `8.1` | Fas 8 — efter MVP: integrerade Actions-resultat | Workflow runs och jobs | **NEXT** | — | — |
 | `8.2` | Fas 8 — efter MVP: integrerade Actions-resultat | Artifacts och kondenserade fel | **PENDING** | — | — |
 | `8.3` | Fas 8 — efter MVP: integrerade Actions-resultat | Kontrollerad workflow dispatch och omkörning | **PENDING** | — | — |
 | `8.4` | Fas 8 — efter MVP: integrerade Actions-resultat | AI- och integrationsyta | **PENDING** | — | — |
@@ -94,6 +94,11 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0020` | 2026-08-06 | Corrective follow-up to `3.6` | Added missing Quarkus Scheduler dependency and isolated frontend routing tests with DOM cleanup after first full local run | `4.1` |
 | `r0021` | 2026-08-06 | Corrective follow-up to `3.6` | Marked `StreamingUploadService` configuration constructor as the explicit CDI injection constructor after Quarkus Arc validation failure | `4.1` |
 | `r0023` | 2026-08-06 | Corrective follow-up to `3.6` | Made GitHub App private-key configuration optional at startup, added runtime credential validation, and removed deprecated Hibernate schema-generation configuration | `4.1` |
+| `r0024` | 2026-08-06 | `4.1` repository snapshot implemented | Exact branch SHA locking, shallow fetch, deterministic Git-tree inventory and temporary workspace cleanup implemented and tested | `4.2` |
+
+| `r0039` | 2026-08-06 | `7.3` Operations model and documentation completed | Compose health checks, backup/restore scripts, configuration/GitHub setup docs, structure/status/shell/YAML/ZIP checks | `7.4` |
+
+| `r0040` | 2026-08-06 | `7.4` Threat model and final security regression completed | Threat model, CI security baseline, rate-limit self-test, structure/status/shell/ZIP checks passed | `7.5` |
 
 ## Required update after every step
 
@@ -105,3 +110,35 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 6. Increment the ZIP revision.
 
 - r0023: Isolated Quarkus API tests by clearing the temporary in-memory project/import/upload store before each ProjectResourceTest.
+- r0024: Locked import branches to exact Git commit SHAs and created deterministic shallow repository snapshots.
+
+| `r0025` | 2026-08-06 | `4.2` Hash-based comparison implemented | Java 21 compilation with framework stubs and standalone comparison self-test passed; Maven download unavailable in this environment | `4.3` |
+
+| `r0026` | 2026-08-06 | `4.3` Import policy and blockers implemented | Java 21 policy compilation and standalone self-test passed; structure/status/ZIP checks passed | `4.4` |
+
+| `r0027` | 2026-08-06 | `4.4` Immutable import plan stored | Canonical digest self-test, structure/status checks and ZIP integrity passed | `4.5` |
+| `r0028` | 2026-08-06 | `4.5` Import review view built | Static TypeScript/route/API review; structure/status/XML/JSON/ZIP checks passed; full npm execution delegated to CI/local environment | `5.1` |
+
+| `r0029` | 2026-08-06 | `5.1` Exact immutable plan approval implemented | Java model compilation/self-test, frontend approval test added, structure/status/ZIP checks | `5.2` |
+
+| `r0030` | 2026-08-06 | `5.2` Temporary Git workspace and approved file application | Java 21 self-test with real local Git remote, exact diff/hash verification, structure/status/ZIP checks | `5.3` |
+
+| `r0031` | 2026-08-06 | `5.3` Branch, atomic commit and push implemented | Java compilation, local bare-repository integration self-test, structure/status and ZIP checks passed | `5.4` |
+
+| `r0032` | 2026-08-06 | `5.4` Draft pull request and immutable result metadata implemented | Java self-test, structure/status and ZIP integrity checks passed | `5.5` |
+
+| `r0033` | 2026-08-06 | `5.5` Idempotency, retry and failure recovery implemented | Standalone PR reuse and Git failure classification tests; structure/status/ZIP checks | `6.1` |
+
+| `r0034` | 2026-08-06 | `6.1` Persistent GitHub result page built | Result metadata links, route/component tests, structure/status and ZIP checks | `6.2` |
+
+| `r0035` | 2026-08-06 | `6.2` Basic delivered-commit check status implemented | Java aggregation self-test, bounded frontend polling, structure/status and ZIP checks | `6.3` |
+
+| `r0036` | 2026-08-06 | `6.3` Import history and stage-aware reopening implemented | Owner-scoped history API, project UI, reopen routing, structure/status and ZIP checks | `7.1` |
+
+| `r0037` | 2026-08-06 | `7.1` Mobile and accessibility review completed | Skip link, route focus, touch targets, compact breakpoints, accessibility semantics and static/status/ZIP checks | `7.2` |
+
+| `r0038` | 2026-08-06 | `7.2` Web and API security hardening completed | Same-origin CSRF, restricted CORS, security headers, safe error logging and structure/status/ZIP checks | `7.3` |
+
+| `r0041` | 2026-08-06 | `7.5` MVP release candidate and Definition of Done completed | Release artifacts, structure, status, security regression, shell/XML/JSON and ZIP checks passed; external production acceptance remains required | `8.1` |
+| `r0042` | 2026-08-07 | MVP RC compile/test correction | Fixed backend merge regressions and updated frontend routing test mocks; repository checks passed, full Maven/Vitest rerun delegated to local/CI environment | `8.1` |
+| `r0043` | 2026-08-07 | MVP RC test correction | Corrected policy blocker expectation, Git ls-tree fixture delimiter, and asynchronous route-heading focus; repository release/security/status checks passed | `8.1` |

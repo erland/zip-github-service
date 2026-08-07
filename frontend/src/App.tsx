@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from './components/AppLayout';
 import AboutPage from './pages/AboutPage';
 import NewImportPage from './pages/NewImportPage';
+import ImportReviewPage from './pages/ImportReviewPage';
+import ImportResultPage from './pages/ImportResultPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import ProjectListPage from './pages/ProjectListPage';
@@ -15,6 +17,8 @@ export default function App() {
         <Route path="projects" element={<ProjectListPage />} />
         <Route path="projects/:projectId" element={<ProjectDetailPage />} />
         <Route path="projects/:projectId/imports/new" element={<NewImportPage />} />
+        <Route path="projects/:projectId/imports/:importId/review" element={<ImportReviewPage />} />
+        <Route path="projects/:projectId/imports/:importId/result" element={<ImportResultPage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

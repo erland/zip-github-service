@@ -1,0 +1,155 @@
+# Operations model
+
+## Runtime topology
+
+The supported MVP topology is three containers behind a TLS-terminating reverse proxy:
+
+1. `frontend`: static React assets served by nginx and reverse proxying `/api` and `/q` to the backend.
+2. `backend`: Quarkus API running as an unprivileged user.
+3. `postgres`: PostgreSQL 16 with a named persistent volume.
+
+The application does **not** mount or use the Docker socket. Project builds remain the responsibility of GitHub Actions in each target repository.
+
+## Persistent and temporary data
+
+| Data | Location | Persistence | Recovery expectation |
+|---|---|---|---|
+| PostgreSQL | `postgres-data` volume | durable | restored from database backup |
+| Uploaded ZIP files | `upload-data` volume | temporary | not backed up; retention cleanup removes expired files |
+| Delivery workspaces | `delivery-data` volume | temporary until delivery completes | not backed up; retry/reconciliation rebuilds from immutable plan |
+| Snapshot workspaces | backend `/tmp` tmpfs | ephemeral | always recreated |
+| Application logs | container stdout/stderr | external log platform | retained according to operator policy |
+
+Uploaded ZIPs and Git workspaces are not system-of-record data. GitHub and PostgreSQL metadata are the authoritative sources.
+
+## Startup and shutdown
+
+1. Copy `.env.example` to `.env` and replace every placeholder.
+2. Configure GitHub OAuth and GitHub App settings as described in `docs/github-app-setup.md`.
+3. Start with `docker compose up -d --build`.
+4. Verify `docker compose ps` reports all services healthy.
+5. Verify frontend `/`, backend `/q/health/live`, and `/q/health/ready`.
+
+Use `docker compose down` for a normal stop. Do not add `--volumes` unless permanent database deletion is intended and a verified backup exists.
+
+## Health checks
+
+- PostgreSQL readiness: `pg_isready`.
+- Backend readiness: `/q/health/ready`.
+- Backend liveness: `/q/health/live`.
+- Frontend: HTTP request to `/`.
+
+A failed readiness check removes the service from normal traffic but does not itself delete or recreate data.
+
+## Backups
+
+Run:
+
+```bash
+./scripts/postgres-backup.sh
+```
+
+The script creates a PostgreSQL custom-format dump, writes a SHA-256 sidecar, uses restrictive file permissions and prunes backups older than `ZIP_GITHUB_BACKUP_RETENTION_DAYS`.
+
+Recommended minimum schedule for an MVP installation:
+
+- daily database backup,
+- at least 14 daily restore points,
+- one copy outside the Docker host,
+- encrypted storage with restricted operator access,
+- monthly restore drill.
+
+The backup directory must not be located inside the PostgreSQL Docker volume.
+
+## Restore
+
+Restores are destructive. Stop user traffic first, preserve the current database and verify the backup checksum.
+
+```bash
+export ZIP_GITHUB_CONFIRM_RESTORE='RESTORE zip_github'
+./scripts/postgres-restore.sh backups/postgres/zip_github-YYYYMMDDTHHMMSSZ.dump
+```
+
+After restore:
+
+1. restart backend,
+2. confirm Flyway reports no migration error,
+3. check `/q/health/ready`,
+4. verify project/import history,
+5. reconcile any import whose GitHub operation may have completed after the backup timestamp.
+
+## Retention and cleanup
+
+The backend scheduler removes expired uploaded ZIPs using:
+
+- `ZIP_GITHUB_UPLOAD_RETENTION_HOURS`,
+- `ZIP_GITHUB_UPLOAD_CLEANUP_INTERVAL`.
+
+Snapshot workspaces use tmpfs and disappear on restart. Delivery workspaces are deleted after successful push and on handled failure. Operators should alert on unexpectedly growing `upload-data` or `delivery-data` volumes.
+
+## Logging and observability
+
+Container logs are written to stdout/stderr. Central logging should capture:
+
+- timestamp,
+- severity,
+- service/container,
+- correlation ID,
+- import/project identifiers where safe,
+- error category and retryability.
+
+Never log OAuth secrets, GitHub App private keys, installation tokens, session cookies, ZIP contents or private key file contents. API clients receive a correlation ID rather than stack traces.
+
+Initial alerts should cover:
+
+- backend or database not ready for more than five minutes,
+- repeated `5xx` or `GIT_DELIVERY_RETRYABLE` responses,
+- backup failure or stale backup age,
+- disk/volume usage above 80%,
+- repeated OAuth callback failures,
+- retention cleanup failures.
+
+## Secret rotation
+
+Rotate one credential at a time and keep a rollback value until verification succeeds.
+
+### GitHub OAuth client secret
+
+1. Generate a new secret in GitHub.
+2. update the deployment secret source,
+3. restart backend,
+4. verify a new login and callback,
+5. revoke the old secret.
+
+Existing server sessions may remain valid, but a deliberate session invalidation is recommended after suspected exposure.
+
+### GitHub App private key
+
+1. Generate an additional private key in the GitHub App settings.
+2. convert/store it in the expected PKCS#8 PEM representation,
+3. deploy and restart backend,
+4. verify installation listing, snapshot and a test delivery,
+5. delete the old GitHub App key.
+
+GitHub permits overlapping keys, enabling rotation without downtime.
+
+### PostgreSQL password
+
+Coordinate database and backend changes in a maintenance window. Change the database role password, update the secret source and restart backend. Verify readiness and a read/write operation before ending the window.
+
+## Incident handling
+
+For suspected credential exposure:
+
+1. stop or isolate backend traffic,
+2. rotate the affected credential,
+3. invalidate sessions if OAuth/session material may be involved,
+4. review GitHub App audit events and created branches/PRs,
+5. review logs by correlation ID without copying sensitive values,
+6. document affected imports and recovery actions.
+
+For an interrupted delivery, use the idempotent delivery and PR endpoints. Do not manually force-push an import branch unless incident procedures explicitly approve it.
+
+## Capacity and scaling
+
+The MVP is a single backend replica because sessions and several application stores are still in memory. Do not horizontally scale until those stores are moved to PostgreSQL or a shared session store. Temporary workspace capacity must accommodate configured ZIP expansion limits plus one or more concurrent Git workspaces.

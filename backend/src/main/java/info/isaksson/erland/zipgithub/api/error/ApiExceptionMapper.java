@@ -33,6 +33,7 @@ public class ApiExceptionMapper implements ExceptionMapper<ApiException> {
         return switch (status) {
             case 400 -> "Bad request";
             case 401 -> "Unauthorized";
+            case 403 -> "Forbidden";
             case 404 -> "Not found";
             case 409 -> "Conflict";
             default -> "Request failed";

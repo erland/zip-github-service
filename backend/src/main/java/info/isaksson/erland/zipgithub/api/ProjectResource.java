@@ -39,6 +39,11 @@ public class ProjectResource {
         return service.updateProject(session.userId(), session.githubUserAccessToken(), projectId, request);
     }
 
+    @GET @Path("/{projectId}/imports")
+    public List<ImportHistoryResponse> listImports(@PathParam("projectId") UUID projectId) {
+        return service.listProjectImports(currentUser.requireUserId(), projectId);
+    }
+
     @POST @Path("/{projectId}/imports")
     public Response createImport(@PathParam("projectId") UUID projectId, CreateImportRequest request, @Context UriInfo uriInfo) {
         ImportResponse created = service.createImport(currentUser.requireUserId(), projectId, request);

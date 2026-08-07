@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
-public class GitHubAppClient implements GitHubProjectCatalog {
+public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallationTokenProvider, GitHubPullRequestClient, GitHubCheckStatusClient {
     @ConfigProperty(name = "zipgithub.github.app-id") long appId;
     @ConfigProperty(name = "zipgithub.github.app-private-key") Optional<String> privateKeyPem;
     @Inject ObjectMapper mapper;
@@ -63,6 +63,66 @@ public class GitHubAppClient implements GitHubProjectCatalog {
 
 
     @Override
+    public GitHubPullRequest createDraftPullRequest(String installationToken, String repositoryFullName,
+                                                     String title, String headBranch, String baseBranch, String body) {
+        try {
+            String payload = mapper.createObjectNode()
+                    .put("title", title)
+                    .put("head", headBranch)
+                    .put("base", baseBranch)
+                    .put("body", body)
+                    .put("draft", true)
+                    .toString();
+            HttpRequest request = baseRequest(URI.create("https://api.github.com/repos/" + repositoryFullName + "/pulls"))
+                    .header("Authorization", "Bearer " + installationToken)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
+                    .build();
+            JsonNode json = sendJson(request);
+            return new GitHubPullRequest(json.path("number").asLong(), json.path("html_url").asText(),
+                    json.path("state").asText(), json.path("draft").asBoolean());
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not create draft pull request", e);
+        }
+    }
+
+
+    @Override
+    public Optional<GitHubPullRequest> findOpenPullRequest(String installationToken, String repositoryFullName,
+                                                           String headBranch, String baseBranch) {
+        try {
+            String head = java.net.URLEncoder.encode(repositoryFullName.split("/", 2)[0] + ":" + headBranch, StandardCharsets.UTF_8);
+            String base = java.net.URLEncoder.encode(baseBranch, StandardCharsets.UTF_8);
+            JsonNode root = getJson("https://api.github.com/repos/" + repositoryFullName
+                    + "/pulls?state=open&head=" + head + "&base=" + base + "&per_page=10", installationToken);
+            for (JsonNode json : root) {
+                return Optional.of(new GitHubPullRequest(json.path("number").asLong(), json.path("html_url").asText(),
+                        json.path("state").asText(), json.path("draft").asBoolean()));
+            }
+            return Optional.empty();
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not search for an existing pull request", e);
+        }
+    }
+
+    @Override
+    public GitHubCheckStatus readCommitChecks(String installationToken, String repositoryFullName, String commitSha) {
+        String detailsUrl = "https://github.com/" + repositoryFullName + "/commit/" + commitSha + "/checks";
+        try {
+            JsonNode root = getJson("https://api.github.com/repos/" + repositoryFullName
+                    + "/commits/" + commitSha + "/check-runs?per_page=100", installationToken);
+            List<GitHubCheckStatusAggregator.Run> runs = new ArrayList<>();
+            for (JsonNode run : root.path("check_runs")) {
+                runs.add(new GitHubCheckStatusAggregator.Run(run.path("status").asText(),
+                        run.path("conclusion").asText("")));
+            }
+            return GitHubCheckStatusAggregator.aggregate(runs, detailsUrl);
+        } catch (Exception e) {
+            return new GitHubCheckStatus("unavailable", true, 0, 0, 0, 0, 0, detailsUrl);
+        }
+    }
+
+    @Override
     public boolean branchExists(String userAccessToken, String repositoryFullName, String branch) {
         try {
             String encodedBranch = java.net.URLEncoder.encode(branch, StandardCharsets.UTF_8).replace("+", "%20");
@@ -74,6 +134,7 @@ public class GitHubAppClient implements GitHubProjectCatalog {
         }
     }
 
+    @Override
     public String createInstallationToken(long installationId) {
         try {
             HttpRequest request = baseRequest(URI.create("https://api.github.com/app/installations/" + installationId + "/access_tokens"))

@@ -4,7 +4,10 @@ COPY pom.xml .
 COPY src ./src
 RUN mvn -B package -DskipTests
 FROM eclipse-temurin:21-jre
-RUN useradd --system --uid 10001 zipgithub
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --uid 10001 zipgithub
 WORKDIR /app
 COPY --from=build /workspace/target/quarkus-app/ ./
 USER zipgithub

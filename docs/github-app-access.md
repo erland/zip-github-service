@@ -32,10 +32,10 @@ Installation tokens are created on demand, are not included in API DTOs, are not
 
 ## Configuration
 
-Required server-side environment variables:
+Required server-side environment variables (all from the same GitHub App):
 
-- `GITHUB_OAUTH_CLIENT_ID` — the GitHub App client ID used for user authorization;
-- `GITHUB_OAUTH_CLIENT_SECRET` — the GitHub App client secret;
+- `GITHUB_APP_CLIENT_ID` — the GitHub App client ID used for user authorization;
+- `GITHUB_APP_CLIENT_SECRET` — the GitHub App client secret used for user authorization;
 - `GITHUB_APP_ID` — numeric GitHub App ID, distinct from the client ID;
 - `GITHUB_APP_PRIVATE_KEY` — PKCS#8 RSA private key in PEM form. Literal `\\n` sequences are accepted.
 

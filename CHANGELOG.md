@@ -1,3 +1,17 @@
+## 1.0.0-rc.11 — 2026-08-07
+
+Corrective release candidate aligning browser authentication with the GitHub App user-access-token model required by `/user/installations`.
+
+### Fixed
+
+- Removed the separate GitHub OAuth App requirement.
+- Browser login now uses the GitHub App Client ID and Client Secret to mint a GitHub App user access token.
+- Renamed production variables to `GITHUB_APP_CLIENT_ID`, `GITHUB_APP_CLIENT_SECRET` and `GITHUB_APP_CALLBACK_URL`.
+- Kept `GITHUB_APP_ID` and `GITHUB_APP_PRIVATE_KEY` for short-lived installation access tokens.
+- Added clearer token-exchange/user-lookup HTTP diagnostics without logging tokens.
+- Updated GitHub App setup/configuration documentation.
+- Preserved the RC10 real project frontend and the direct-GitHub backup/restore fixes.
+
 ## 1.0.0-rc.10 — 2026-08-07
 
 Corrective release candidate replacing the remaining frontend demo shell with the real GitHub-authenticated project flow.

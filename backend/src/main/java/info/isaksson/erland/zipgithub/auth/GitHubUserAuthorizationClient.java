@@ -14,7 +14,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
 @ApplicationScoped
-public class GitHubOAuthClient {
+public class GitHubUserAuthorizationClient {
     @ConfigProperty(name="zipgithub.github.client-id") String clientId;
     @ConfigProperty(name="zipgithub.github.client-secret") String clientSecret;
     @ConfigProperty(name="zipgithub.github.callback-url") String callbackUrl;
@@ -32,17 +32,28 @@ public class GitHubOAuthClient {
             HttpRequest tokenRequest = HttpRequest.newBuilder(URI.create("https://github.com/login/oauth/access_token"))
                     .header("Accept", "application/json").header("Content-Type", "application/x-www-form-urlencoded")
                     .POST(HttpRequest.BodyPublishers.ofString(body)).build();
-            JsonNode tokenJson = mapper.readTree(http.send(tokenRequest, HttpResponse.BodyHandlers.ofString()).body());
+            HttpResponse<String> tokenResponse = http.send(tokenRequest, HttpResponse.BodyHandlers.ofString());
+            if (tokenResponse.statusCode() < 200 || tokenResponse.statusCode() >= 300) {
+                throw new IllegalStateException("GitHub App user token exchange returned HTTP " + tokenResponse.statusCode());
+            }
+            JsonNode tokenJson = mapper.readTree(tokenResponse.body());
             String accessToken = tokenJson.path("access_token").asText(null);
-            if (accessToken == null) throw new IllegalStateException("GitHub did not return an access token");
+            if (accessToken == null || accessToken.isBlank()) {
+                String error = tokenJson.path("error_description").asText(tokenJson.path("error").asText("unknown error"));
+                throw new IllegalStateException("GitHub App did not return a user access token: " + error);
+            }
             HttpRequest userRequest = HttpRequest.newBuilder(URI.create("https://api.github.com/user"))
                     .header("Accept", "application/vnd.github+json")
                     .header("Authorization", "Bearer " + accessToken)
                     .header("X-GitHub-Api-Version", "2022-11-28").GET().build();
-            JsonNode user = mapper.readTree(http.send(userRequest, HttpResponse.BodyHandlers.ofString()).body());
+            HttpResponse<String> userResponse = http.send(userRequest, HttpResponse.BodyHandlers.ofString());
+            if (userResponse.statusCode() < 200 || userResponse.statusCode() >= 300) {
+                throw new IllegalStateException("GitHub App user lookup returned HTTP " + userResponse.statusCode());
+            }
+            JsonNode user = mapper.readTree(userResponse.body());
             return new GitHubUser(user.path("id").asLong(), user.path("login").asText(), user.path("avatar_url").asText(null), accessToken);
         } catch (Exception e) {
-            throw new IllegalStateException("GitHub OAuth exchange failed", e);
+            throw new IllegalStateException("GitHub App user authorization exchange failed", e);
         }
     }
 

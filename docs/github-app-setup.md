@@ -1,104 +1,94 @@
-# GitHub OAuth and GitHub App setup
+# GitHub App setup
 
-zip-github uses two separate GitHub integrations:
+zip-github uses **one GitHub App** for both user authorization and repository automation. A separate GitHub OAuth App is not used.
 
-- a GitHub OAuth App identifies the browser user,
-- a GitHub App grants repository access and creates branches, commits, pull requests and check-status reads.
+The GitHub App serves two authentication roles:
 
-Do not reuse a personal access token or embed a token in the frontend.
+1. **User authorization:** the browser OAuth-style web application flow exchanges the GitHub App Client ID and Client Secret for a GitHub App user access token. This token is kept server-side in the zip-github session and is used to discover only installations/repositories that the current user can access.
+2. **Installation authentication:** the backend signs a GitHub App JWT with the App ID and private key, then creates short-lived installation access tokens for Git/repository operations.
+
+Do not use a personal access token and do not expose any GitHub token to frontend JavaScript.
 
 ## Public URLs
 
-Choose the final HTTPS origin before configuring GitHub. Example:
+Production example:
 
 ```text
-Frontend origin: https://zip-github.example.com
-OAuth callback:  https://zip-github.example.com/api/auth/github/callback
+Homepage URL: https://zip-github.isaksson.info
+Callback URL: https://zip-github.isaksson.info/api/auth/github/callback
 ```
 
-When frontend nginx proxies `/api` to the backend on the same public host, the callback should use that public host. The exact values must match `ZIP_GITHUB_FRONTEND_URL` and `GITHUB_OAUTH_CALLBACK_URL`.
+The callback must exactly match `GITHUB_APP_CALLBACK_URL`.
 
-## GitHub OAuth App
+## GitHub App: identifying and authorizing users
 
-Create an OAuth App in the owning GitHub account or organization.
+On the GitHub App settings page configure:
 
-- Homepage URL: public frontend origin.
-- Authorization callback URL: exact callback URL above.
+- **Homepage URL:** `https://zip-github.isaksson.info`
+- **Callback URL:** `https://zip-github.isaksson.info/api/auth/github/callback`
+- Generate a **Client Secret** and store it with the GitHub App **Client ID**.
+- **Request user authorization (OAuth) during installation:** leave this **off** for zip-github. The application's own **Logga in med GitHub** button starts the web application flow and explicitly supplies the callback URL.
+- **Enable Device Flow:** off; the current web UI does not use device flow.
 
-Store the generated values as:
+Configure the server with:
 
 ```text
-GITHUB_OAUTH_CLIENT_ID
-GITHUB_OAUTH_CLIENT_SECRET
+GITHUB_APP_CLIENT_ID
+GITHUB_APP_CLIENT_SECRET
+GITHUB_APP_CALLBACK_URL
 ```
 
-The OAuth App is used for user identity. Repository write access comes from the GitHub App.
+The Client ID is not the same as the numeric App ID.
 
-## GitHub App
+## Repository permissions
 
-Create a GitHub App with a clear production name and homepage URL.
+Recommended MVP permissions:
 
-Recommended repository permissions for the MVP:
+- Contents: Read and write
+- Pull requests: Read and write
+- Checks: Read-only
+- Metadata: Read-only (implicit/required)
 
-- Contents: Read and write.
-- Pull requests: Read and write.
-- Checks: Read-only.
-- Metadata: Read-only (implicit).
-
-No organization administration permission is required. Do not request Actions write permission for the MVP.
-
-The app does not require a webhook for the current polling-based implementation. Leave webhook delivery disabled unless a later step explicitly introduces it.
+No Actions write permission is needed. The current polling implementation does not require webhooks.
 
 ## Installation
 
-Install the GitHub App only on repositories that users are allowed to import into. Prefer **Only select repositories** rather than all repositories.
+Install the GitHub App on the repositories that zip-github may use. Prefer **Only select repositories** during controlled rollout.
 
-The service intersects:
+The service uses the GitHub App user access token to call the user-scoped installation endpoints. GitHub therefore returns the intersection of repositories available to the user and repositories granted to the GitHub App installation.
 
-1. repositories available to the authenticated user,
-2. repositories granted to the GitHub App installation.
+## App ID and private key
 
-Both checks must pass before a project can be configured.
-
-## Private key
-
-Generate a GitHub App private key and store it only in the server-side secret manager. The backend expects a PKCS#8 PEM value. Environment-file deployments can encode line breaks as literal `\n` sequences.
-
-Configure:
+The same GitHub App also provides:
 
 ```text
 GITHUB_APP_ID
 GITHUB_APP_PRIVATE_KEY
 ```
 
-Never commit the PEM file, copy it into a container image, expose it to the frontend or place it in logs.
+`GITHUB_APP_ID` is the numeric App ID and is distinct from `GITHUB_APP_CLIENT_ID`. Generate a private key in the GitHub App settings. The backend expects a PKCS#8 PEM value; environment-file deployments may encode line breaks as literal `\n`.
 
-## Callback and proxy requirements
+Never commit the private key, include it in a container image, expose it to the frontend or log it.
 
-The reverse proxy must preserve:
+## Production environment summary
 
-- `Host`,
-- `X-Forwarded-For`,
-- `X-Forwarded-Proto`.
-
-TLS must terminate at the proxy or load balancer. In production set:
-
-```text
-ZIP_GITHUB_SECURE_COOKIES=true
-ZIP_GITHUB_CSRF_ENABLED=true
+```dotenv
+ZIP_GITHUB_FRONTEND_URL=https://zip-github.isaksson.info
+GITHUB_APP_CALLBACK_URL=https://zip-github.isaksson.info/api/auth/github/callback
+GITHUB_APP_CLIENT_ID=<GitHub App Client ID>
+GITHUB_APP_CLIENT_SECRET=<GitHub App Client Secret>
+GITHUB_APP_ID=<numeric GitHub App ID>
+GITHUB_APP_PRIVATE_KEY=<PKCS#8 PEM with \n escapes>
 ```
 
-The configured frontend URL must be one exact origin, without a trailing path, wildcard or comma-separated alternatives.
+The old `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET` and `GITHUB_OAUTH_CALLBACK_URL` variables are no longer used.
 
 ## Verification checklist
 
-1. Open the login endpoint and complete GitHub authorization.
-2. Confirm the callback returns to the configured frontend origin.
-3. List GitHub App installations.
-4. Confirm only user-accessible, installation-approved repositories appear.
-5. Create a project against a test repository.
-6. Create a snapshot and confirm an installation token can read contents.
-7. Complete a test delivery and draft pull request.
-8. Confirm check status can be read for the delivered commit.
-
-Use a dedicated private test repository before enabling production repositories.
+1. Open the login endpoint and authorize the GitHub App.
+2. Confirm callback returns to `https://zip-github.isaksson.info`.
+3. `GET /api/github/installations` returns the installations accessible to that user.
+4. Repository selection contains only repositories available to both the user and the installation.
+5. Create a project in a dedicated test repository.
+6. Complete a test ZIP delivery and draft pull request.
+7. Confirm check status can be read.

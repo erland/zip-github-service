@@ -17,7 +17,7 @@ import java.util.UUID;
 public class AuthResource {
     public static final String STATE_COOKIE = "zip_github_oauth_state";
     @Inject WebSessionStore sessions;
-    @Inject GitHubOAuthClient github;
+    @Inject GitHubUserAuthorizationClient github;
     @Inject CurrentUserProvider currentUser;
     @ConfigProperty(name="zipgithub.frontend-url") String frontendUrl;
     @ConfigProperty(name="zipgithub.cookies.secure", defaultValue="true") boolean secureCookies;
@@ -38,7 +38,7 @@ public class AuthResource {
         }
         WebSessionStore.StateRecord stateRecord = sessions.consumeState(state)
                 .orElseThrow(() -> ApiException.unauthorized("INVALID_OAUTH_STATE", "The GitHub login state is invalid, expired or already used."));
-        GitHubOAuthClient.GitHubUser githubUser = github.exchangeAndLoadUser(code);
+        GitHubUserAuthorizationClient.GitHubUser githubUser = github.exchangeAndLoadUser(code);
         UUID userId = UUID.nameUUIDFromBytes(("github:" + githubUser.id()).getBytes(StandardCharsets.UTF_8));
         String session = sessions.createSession(userId, githubUser.id(), githubUser.login(), githubUser.avatarUrl(), githubUser.accessToken());
         URI target = URI.create(frontendUrl + stateRecord.returnTo());

@@ -324,7 +324,7 @@ Kvalitetsgrind:
 
 Implementation:
 
-- Skapa en GitHub OAuth App eller använd GitHub App user authorization för login.
+- Använd GitHub App user authorization för login; samma GitHub App används även för installation access tokens.
 
 - Implementera authorization redirect, callback, state-validering och sessionscookie.
 

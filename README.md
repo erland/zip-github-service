@@ -48,7 +48,7 @@ The project includes `.github/workflows/ci.yml`. It runs structure/security chec
 - Server/container topology using published GHCR images: [`docker-compose.yml`](docker-compose.yml)
 - Local image build override: [`docker-compose.build.yml`](docker-compose.build.yml)
 - Operations, backup, retention and incidents: [`docs/operations.md`](docs/operations.md)
-- GitHub OAuth/App configuration: [`docs/github-app-setup.md`](docs/github-app-setup.md)
+- GitHub App user authorization/App configuration: [`docs/github-app-setup.md`](docs/github-app-setup.md)
 - Configuration reference: [`docs/configuration-reference.md`](docs/configuration-reference.md)
 
 The runtime never mounts the Docker socket. GitHub Actions remains responsible for target-project builds and tests.

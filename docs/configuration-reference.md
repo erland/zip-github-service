@@ -5,9 +5,9 @@
 | Variable | Purpose |
 |---|---|
 | `POSTGRES_PASSWORD` | PostgreSQL application-role password |
-| `GITHUB_OAUTH_CLIENT_ID` | OAuth browser-login client ID |
-| `GITHUB_OAUTH_CLIENT_SECRET` | OAuth browser-login secret |
-| `GITHUB_OAUTH_CALLBACK_URL` | Exact public OAuth callback URL |
+| `GITHUB_APP_CLIENT_ID` | GitHub App Client ID used for user authorization |
+| `GITHUB_APP_CLIENT_SECRET` | GitHub App Client Secret used for user authorization |
+| `GITHUB_APP_CALLBACK_URL` | Exact public GitHub App user-authorization callback URL |
 | `GITHUB_APP_ID` | GitHub App numeric ID |
 | `GITHUB_APP_PRIVATE_KEY` | GitHub App PKCS#8 private key |
 | `ZIP_GITHUB_FRONTEND_URL` | Exact public frontend origin used by redirects, CORS and CSRF |
@@ -50,7 +50,7 @@ Enables the in-process request throttle for unsafe API operations. Keep `true` i
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `ZIP_GITHUB_VERSION` | `1.0.0-rc.8` | Exact backend/frontend image tag used by server Compose. |
+| `ZIP_GITHUB_VERSION` | `1.0.0-rc.11` | Exact backend/frontend image tag used by server Compose. |
 | `ZIP_GITHUB_BACKEND_IMAGE` | `ghcr.io/erland/zip-github-service-backend` | Backend image repository. |
 | `ZIP_GITHUB_FRONTEND_IMAGE` | `ghcr.io/erland/zip-github-service-frontend` | Frontend image repository. |
 

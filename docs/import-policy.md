@@ -1,10 +1,10 @@
 # Import policy and blockers
 
-Step 4.3 introduced deterministic policy evaluation after archive normalization and hash comparison. Step 7.6 refines that model so a policy-blocked path no longer necessarily blocks the entire ZIP.
+Step 4.3 introduced deterministic policy evaluation after archive normalization and hash comparison. Step 7.6 refined that model so a policy-blocked path no longer necessarily blocks the entire ZIP. Step 7.15 makes path-based change blockers diff-aware so an unchanged protected file is not treated as a write risk.
 
 ## Policy version
 
-The flexible-review policy is identified as `mvp-2`. The version is returned by the API and is included in the immutable plan digest so approval can always be tied to the exact rules that were applied.
+The flexible-review policy is identified as `mvp-3`. The version is returned by the API and is included in the immutable plan digest so approval can always be tied to the exact rules that were applied.
 
 ## Outcomes and blocker types
 
@@ -30,10 +30,10 @@ These paths are visible in the plan for transparency but cannot become part of a
 
 ## Overridable blockers
 
-- `.github` and `.github/**`: excluded by default; explicit override support is introduced in steps 7.7–7.9.
+- `.github` and `.github/**`: `ADDED`, `MODIFIED` and `WOULD_DELETE` entries are excluded by default and require an explicit override. `UNCHANGED` entries remain ordinary unchanged entries and never require a change override merely because of the protected path.
 - `WOULD_DELETE`: deletion is excluded by default; explicit override is required before a later selection may include it.
 
-Step 7.6 only introduces the taxonomy and non-fatal default exclusion. It intentionally does not yet provide a UI/API for selecting an overridable blocker.
+Steps 7.7–7.9 provide immutable selection, explicit override audit and exact selected delivery. Step 7.15 narrows protected-path override classification to actual repository changes.
 
 ## Warning rules
 

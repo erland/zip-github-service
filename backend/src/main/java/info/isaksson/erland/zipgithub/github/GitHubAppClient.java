@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
-public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallationTokenProvider, GitHubPullRequestClient, GitHubCheckStatusClient {
+public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallationTokenProvider, GitHubPullRequestClient, GitHubCheckStatusClient, GitHubCommitHistoryClient {
     @ConfigProperty(name = "zipgithub.github.app-id") long appId;
     @ConfigProperty(name = "zipgithub.github.app-private-key") Optional<String> privateKeyPem;
     @Inject ObjectMapper mapper;
@@ -102,6 +102,33 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
             return Optional.empty();
         } catch (Exception e) {
             throw new IllegalStateException("Could not search for an existing pull request", e);
+        }
+    }
+
+
+    @Override
+    public List<GitHubCommitHistoryClient.Commit> listBranchCommits(String installationToken, String repositoryFullName, String branch, int limit) {
+        try {
+            int pageSize = Math.max(1, Math.min(limit, 100));
+            String encodedBranch = java.net.URLEncoder.encode(branch, StandardCharsets.UTF_8).replace("+", "%20");
+            JsonNode root = getJson("https://api.github.com/repos/" + repositoryFullName
+                    + "/commits?sha=" + encodedBranch + "&per_page=" + pageSize, installationToken);
+            List<GitHubCommitHistoryClient.Commit> result = new ArrayList<>();
+            for (JsonNode item : root) {
+                JsonNode commit = item.path("commit");
+                JsonNode author = commit.path("author");
+                String date = author.path("date").asText(null);
+                result.add(new GitHubCommitHistoryClient.Commit(
+                        item.path("sha").asText(),
+                        commit.path("message").asText(),
+                        author.path("name").asText("Unknown author"),
+                        author.path("email").asText(""),
+                        date == null || date.isBlank() ? Instant.EPOCH : Instant.parse(date),
+                        item.path("html_url").asText(null)));
+            }
+            return List.copyOf(result);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not read branch commit history", e);
         }
     }
 

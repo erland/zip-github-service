@@ -17,8 +17,10 @@ public final class UploadStorage {
         this.root = Objects.requireNonNull(root, "root").toAbsolutePath().normalize();
     }
 
-    public PendingUpload begin(UUID ownerUserId, UUID importId, UUID uploadId) throws IOException {
-        Path directory = root.resolve(ownerUserId.toString()).resolve(importId.toString()).normalize();
+    public PendingUpload begin(UUID storageScopeId, UUID uploadId) throws IOException {
+        Objects.requireNonNull(storageScopeId, "storageScopeId");
+        Objects.requireNonNull(uploadId, "uploadId");
+        Path directory = root.resolve(storageScopeId.toString()).normalize();
         requireInsideRoot(directory);
         Files.createDirectories(directory);
         Path temporary = directory.resolve(uploadId + ".part").normalize();

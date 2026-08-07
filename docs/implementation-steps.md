@@ -339,7 +339,92 @@ Ett steg får delas ytterligare om oväntad teknisk komplexitet uppstår. Flera 
 - Verifiera att committen är byte-/path-ekvivalent med exakt godkänd selection och att stale base fortfarande stoppas.
 - Uppdatera hotmodell, säkerhetsregression, API-/arkitekturdokumentation och releasechecklista.
 
-**Kvalitetsgrind för fas 7:** tjänsten uppfyller tidigare mobil-, säkerhets- och driftkrav och kan dessutom skapa en commit från exakt ett användarvalt filträd där hårt blockerade paths aldrig levereras och överstyrbara blockerare endast levereras efter explicit, auditerat godkännande.
+## Steg 7.11 - Generalisera ZIP-ingestion och lagring
+
+- Bryt ut återanvändbar streaming-, storleks-, filnamns-, SHA-256- och lagringslogik från den användar-/importbundna uppladdningsorkestreringen.
+- Inför ett neutralt lagringsresultat, exempelvis `StoredUpload`, som kan ägas av en vanlig import eller av en framtida staging-import utan att fejka användaridentitet.
+- Behåll samma absoluta ZIP-gränser, checksummeberäkning och säkra filhantering oavsett ingestion-källa.
+- Säkerställ att befintlig webbuppladdning fortsätter fungera oförändrat efter refaktoreringen.
+
+## Steg 7.12 - Skapa vanlig Import från redan lagrad ZIP
+
+- Separera skapandet av en vanlig import från själva HTTP-uppladdningen.
+- Gör det möjligt att registrera/promovera en redan säkert lagrad ZIP som en vanlig användarägd `ImportSession` utan ny nätverksuppladdning.
+- Återanvänd samma inventory-, snapshot-, comparison-, policy-, plan-, selection- och delivery-pipeline som för webbuppladdning.
+- Säkerställ idempotens så retry inte skapar dubbla importer eller duplicerar fysisk ZIP-data.
+
+## Steg 7.13 - Formalisera importkälla och auditmetadata
+
+- Inför en liten, explicit källmodell, exempelvis `ImportSource`, med minst `WEB_UPLOAD` och förberett `STORED_UPLOAD`/`STAGING_IMPORT`.
+- Spara källtyp och en icke-hemlig, valfri källreferens i auditmetadata utan att blanda in capability-/claim-tokenvärden.
+- Visa källan där den hjälper felsökning och historik men låt den inte påverka policy-, selection- eller Git-semantik.
+- Dokumentera att framtida ingestion-kanaler måste konvergera till samma vanliga Import före jämförelse och delivery.
+
+## Steg 7.14 - Regression för alternativ ZIP-ingestion
+
+- Testa att vanlig browser-upload och en redan lagrad ZIP når samma importpipeline och producerar ekvivalent inventering/plan vid samma bytes och base SHA.
+- Verifiera att en lagrad ZIP kan överlämnas utan andra upload och utan att säkerhetsgränser kringgås.
+- Testa retry/idempotens, cleanup/ägarskap och att källmetadata inte påverkar plan- eller selection-digest.
+- Dokumentera integrationspunkten som framtida `StagingImport`/iOS Shortcut ska använda.
+
+## Steg 7.15 - Korrigera policy för oförändrade skyddade sökvägar
+
+- Tillämpa `.github/**`-override endast när importen faktiskt skulle ändra repositoryt: `ADDED`, `MODIFIED` eller `WOULD_DELETE`.
+- `UNCHANGED` under `.github/**` ska visas som oförändrad vid behov men får inte klassas som en förändring som kräver override.
+- Samma princip ska gälla andra pathbaserade change-blockerare: ingen write-risk finns när bytes/path inte ändras.
+- Behåll arkiv- och innehållssäkerhetsregler som gäller själva ZIP-filen oberoende av diffstatus.
+- Lägg regression för oförändrat workflow, ändrat workflow, nytt workflow och borttaget workflow.
+
+## Steg 7.16 - Automatisera upload till granskningsplan
+
+- När ZIP-uppladdningen lyckats ska backend/frontend automatiskt fortsätta med inventory, snapshot, comparison, policy och immutable plan utan ett separat användarklick på “Skapa granskningsplan”.
+- Navigera automatiskt till granskningsvyn när planen är klar.
+- Visa tydlig bearbetningsstatus under långsamma steg och behåll en explicit retry-åtgärd endast vid återhämtningsbart fel.
+- Gör orkestreringen idempotent så refresh/retry inte skapar flera planer eller använder en annan base SHA än den användaren ska granska.
+
+## Steg 7.17 - Gör godkännande och commit till en användaråtgärd
+
+- Knappen “Godkänn valda förändringar” ska vara det enda normala användarklicket mellan granskning och commit.
+- Vid klick: skapa/lås immutable selection, registrera explicit approval och fortsätt direkt med workspace, exakt diffverifiering, commit och push.
+- Behåll den interna säkerhetsgränsen: ingen GitHub-skrivning får ske förrän selection + overrides är validerade och approval är beständigt registrerat.
+- Visa progress/resultat och säkra idempotent retry om commit/push misslyckas efter att approval skapats.
+- Separat “skapa commit”-knapp ska endast finnas som återhämtningsåtgärd om ett tidigare godkännande finns men delivery inte slutfördes.
+
+## Steg 7.18 - E2E-regression för det förenklade importflödet
+
+- Testa normal happy path som `välj ZIP -> bearbetning -> granska -> godkänn -> commit/resultat` utan mellanliggande manuella steg.
+- Testa långsam planbyggnad, refresh, retry och fel mellan approval och push utan dubbla planer eller commits.
+- Verifiera att oförändrade `.github/**`-filer aldrig kräver override medan nya/ändrade/borttagna workflows fortfarande gör det.
+- Testa delurval, overrides, author-val och aktiv Work-branch i det förenklade flödet på desktop och mobil.
+
+## Steg 7.19 - Gör pågående import fullt återupptagningsbar — DONE
+
+- Säkerställ att en import som har laddats upp och nått granskningsvyn kan återupptas efter logout/login utan ny ZIP-uppladdning.
+- Säkerställ att samma import även kan återupptas efter backend-restart/deploy; kvarvarande import-, upload-, plan-, selection- och approval-state som behövs för återupptagning får därför inte vara beroende av JVM-minne.
+- Låt projekt-/Work-vyn tydligt identifiera högst en pågående import och ge en direkt åtgärd för att fortsätta från rätt steg.
+- Återöppna granskningen mot exakt samma låsta plan/base SHA; om selection eller approval redan finns ska de återläsas i stället för att skapas om.
+- Behåll befintliga retention- och cleanupregler men förhindra att en aktiv, återupptagningsbar import gallras som om den vore övergiven.
+- Lägg regression för logout/login, ny webbsession, backend-restart och direkt återöppning från projektet utan ny upload.
+
+## Steg 7.20 - Förenkla Work-vyn till Git-historik och pågående import
+
+- Gör Work-branchen och dess Git-commits till den primära användarsynliga historiken för ett pågående arbete.
+- Visa högst en aktiv/pågående import som en separat arbetsuppgift med tydlig fortsättningsåtgärd.
+- Tona ned eller ta bort den generella listan över tidigare importer från huvudvyn när de redan motsvaras av commits på Work-branchen.
+- Behåll full importhistorik och import-ID:n i backend för audit, felsökning, idempotens och teknisk återöppning; förändringen gäller primärt användargränssnittet.
+- Visa commit-SHA, commitmeddelande, author och relevanta GitHub-länkar i Work-historiken utan att duplicera GitHubs fullständiga commitvy.
+- Säkerställ att Work-vyn fortfarande fungerar när GitHub-status/historikläsning är tillfälligt otillgänglig genom att visa beständig lokal Work-/resultatmetadata där det behövs.
+
+## Steg 7.21 - Slutregression för resume och Work-vy
+
+- E2E-testa `upload -> review -> logout -> login -> fortsätt review` utan ny upload eller ny plan.
+- Testa backend-restart mellan upload/review, efter selection och efter approval och verifiera korrekt återupptagning utan dubbla selectioner, approvals eller commits.
+- Testa att projekt-/Work-vyn visar aktiv branch, relevant commit-historik och högst en pågående import med rätt återupptagningslänk.
+- Verifiera att historiska importer fortfarande finns åtkomliga som audit-/felsökningsdata även om de inte dominerar huvud-UX.
+- Verifiera ägarskapsisolering: en annan användare får aldrig återuppta, läsa eller leverera någon annans pågående import.
+- Uppdatera releasechecklista, operations-/arkitekturdokumentation och fas-7-kvalitetsgrind efter regressionen.
+
+**Kvalitetsgrind för fas 7:** tjänsten uppfyller tidigare mobil-, säkerhets- och driftkrav, kan skapa en commit från exakt ett användarvalt filträd, har en återanvändbar ZIP-ingestion-kärna och erbjuder normalflödet `välj ZIP -> granska -> godkänn -> commit` utan onödiga mellanliggande klick. Hårt blockerade paths levereras aldrig, överstyrbara förändringar kräver explicit audit-godkännande och oförändrade skyddade paths kräver aldrig change-override. En pågående import kan återupptas efter logout/login och backend-restart utan ny ZIP-upload, och Work-vyn använder Git-commit-historiken som primär historik med högst en tydligt återupptagningsbar pågående import.
 
 # Fas 8 - efter MVP: integrerade Actions-resultat
 

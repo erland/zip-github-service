@@ -81,6 +81,26 @@ class ImportSelectionResourceTest {
     }
 
     @Test
+    void readsRecordedApprovalForRecoveryAfterRefresh() {
+        String selectionBody = """
+                {"planDigestSha256":"%s","baseCommitSha":"%s","selectedPaths":["src/App.java"],"overrides":[]}
+                """.formatted(PLAN_DIGEST, BASE);
+        String selectionDigest = given().cookie(CurrentUserProvider.SESSION_COOKIE, cookieA).contentType(ContentType.JSON)
+                .body(selectionBody).post("/api/imports/{id}/selection", importId).then().statusCode(201)
+                .extract().path("selectionDigestSha256");
+
+        given().cookie(CurrentUserProvider.SESSION_COOKIE, cookieA).contentType(ContentType.JSON)
+                .body("{\"planDigestSha256\":\"%s\",\"selectionDigestSha256\":\"%s\"}".formatted(PLAN_DIGEST, selectionDigest))
+                .post("/api/imports/{id}/plan/approval", importId).then().statusCode(200);
+
+        given().cookie(CurrentUserProvider.SESSION_COOKIE, cookieA)
+                .get("/api/imports/{id}/plan/approval", importId).then().statusCode(200)
+                .body("planDigestSha256", equalTo(PLAN_DIGEST))
+                .body("selectionDigestSha256", equalTo(selectionDigest))
+                .body("status", equalTo("APPROVED"));
+    }
+
+    @Test
     void rejectsStaleHardBlockedAndCrossUserRequests() {
         given().cookie(CurrentUserProvider.SESSION_COOKIE, cookieA).contentType(ContentType.JSON)
                 .body("{\"planDigestSha256\":\"%s\",\"baseCommitSha\":\"%s\",\"selectedPaths\":[\"src/App.java\"],\"overrides\":[]}".formatted("b".repeat(64), BASE))
@@ -99,7 +119,7 @@ class ImportSelectionResourceTest {
 
     private static ImmutableImportPlan plan(UUID importId) {
         return new ImmutableImportPlan(UUID.randomUUID(), importId, USER_A, "f".repeat(64), BASE,
-                "mvp-2", PLAN_DIGEST, "READY", true, List.of(
+                "mvp-3", PLAN_DIGEST, "READY", true, List.of(
                 new ImmutableImportPlanEntry("src/App.java", "MODIFIED", "MODIFIED", "NONE", "NONE",
                         null, null, 1L, "c".repeat(64), 1L, "d".repeat(64), true),
                 new ImmutableImportPlanEntry(".git/config", "BLOCKED", "MODIFIED", "BLOCKING", "HARD_BLOCKED",

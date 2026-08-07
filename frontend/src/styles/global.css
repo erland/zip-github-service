@@ -298,3 +298,22 @@ code, pre, .repository-name, .review-file__path { overflow-wrap: anywhere; word-
 }
 .review-tree__override input { flex: 0 0 auto; margin-top: .2rem; width: auto; }
 .review-tree__override span { color: #7a3e00; font-size: .9rem; font-weight: 600; }
+
+.active-import-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--border-color, #d8dee4);
+  border-radius: 0.75rem;
+}
+.active-import-card h3 { margin: 0.15rem 0 0.35rem; }
+.work-history { margin-top: 1rem; }
+.work-commit-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.75rem; }
+.work-commit-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.9rem 0; border-top: 1px solid var(--border-color, #d8dee4); }
+.work-commit-item p { margin: 0.3rem 0 0; }
+@media (max-width: 640px) {
+  .active-import-card, .work-commit-item { align-items: stretch; flex-direction: column; }
+}

@@ -2,7 +2,7 @@
 
 ## Release decision
 
-Revision `r0063` / version `1.0.0-rc.22` is the current MVP release candidate after completion of the flexible-review security extension through step 7.10. It includes the CI and integration-test corrections from RC2–RC7 and adds reproducible GHCR publication plus image-based server deployment. The implementation scope through phase 7 is complete in the repository. The candidate is suitable for deployment to a controlled test environment and live acceptance testing.
+Revision `r0073` / version `1.0.0-rc.31` is the current MVP release candidate after completion of the full phase-7 import-core refinement through step 7.18. The normal flow is now `choose ZIP -> automatic preparation -> review/select/override -> approve -> commit/push -> result`, with immutable exact-selection delivery, unchanged protected-path semantics and reusable source-neutral ZIP ingestion. The candidate is suitable for deployment to a controlled test environment and live acceptance testing.
 
 It is not yet declared production-ready because several acceptance tests require external infrastructure, real GitHub credentials, Docker/PostgreSQL and physical browser/device testing.
 

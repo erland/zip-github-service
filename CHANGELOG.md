@@ -1,3 +1,189 @@
+## 1.0.0-rc.36 - 2026-08-07
+
+- Corrected two backend promotion/regression tests to match step 7.19 retention semantics: active resumable imports are intentionally excluded from expired-upload cleanup until terminal delivery.
+- Updated the authenticated app-routing test to mock the Work commit-history endpoint introduced in step 7.20.
+- Made the streamlined import E2E regression await the loaded review tree instead of using the review heading as a readiness signal.
+- No intended production behavior change; phase 8 step 8.1 remains NEXT.
+
+## 1.0.0-rc.35 - 2026-08-07
+
+- Corrected pure unit-test compatibility after restart-safe import persistence: `ProjectApplicationService` now treats `ImportResumePersistenceStore` as optional when the service is manually constructed outside CDI.
+- Corrected `ImportReviewPage.test.tsx` fixture typing by using the exported `ImportSelectionResponse` type, preventing empty arrays from being inferred as `never[]`.
+- No intended production behavior change; phase 8 step 8.1 remains NEXT.
+
+# 1.0.0-rc.33 — 2026-08-07
+
+Completed step 7.20: Git-centric Work view with one resumable active import.
+
+### Added
+
+- Added owner-scoped `GET /api/projects/{projectId}/work/commits` backed by a short-lived GitHub App installation token.
+- Added Work commit rows with SHA, first-line commit message, author, timestamp and direct GitHub commit link.
+- Added a degraded fallback that shows the latest locally persisted Work head when GitHub commit history is temporarily unavailable.
+
+### Changed
+
+- Removed the full technical import-history list from the primary project view; import history remains available from the existing backend API for audit and diagnostics.
+- The project page now shows at most one non-terminal import as a dedicated resumable task.
+- Pull-request completion is disabled while an import is still active.
+- Step 7.21 is now NEXT.
+
+# 1.0.0-rc.32 — 2026-08-07
+
+Completed step 7.19: restart-safe resumable imports.
+
+### Added
+
+- Added PostgreSQL-backed resume payload state for source upload, repository snapshot, immutable plan, selection, approval, Git identity and completed delivery.
+- Added lazy owner-scoped hydration so review/delivery state survives logout/login and backend restart without re-upload.
+- Added Flyway V8 owner-bound resume storage and migration regression coverage.
+
+### Changed
+
+- Active, not-yet-delivered imports are no longer source-ZIP cleanup candidates solely because their original retention deadline passed.
+- Temporary Git workspaces remain ephemeral and are safely recreated from persisted approved state after restart.
+- Step 7.20 is now NEXT.
+
+# Planning update r0074 — 2026-08-07
+
+Extended phase 7 with restart-safe import resume and a Git-centric Work view. Application version remains `1.0.0-rc.31` because this revision changes planning/status documentation only.
+
+### Planned
+
+- Step 7.19: resume an uploaded/reviewable import after logout/login or backend restart without re-uploading the ZIP.
+- Step 7.20: make Work-branch Git commit history the primary user-facing history and show at most one active import as a resumable task.
+- Step 7.21: final E2E/security regression for resume persistence, Work UI and ownership isolation.
+- Phase 8 step 8.1 is deferred until 7.19–7.21 are complete.
+
+# 1.0.0-rc.31 — 2026-08-07
+
+Completed step 7.18: end-to-end regression for the streamlined import flow.
+
+### Added
+
+- Added a cross-page frontend regression covering `upload -> automatic review -> selection/override -> one-click commit/result` in one router flow.
+- Added explicit slow-plan-build coverage proving preparation cannot be triggered twice while the automatic preparation is pending.
+- Added post-approval delivery failure/retry coverage proving immutable selection and approval are not recreated when push is retried.
+
+### Verified
+
+- Custom author choice survives the streamlined upload path.
+- Unchanged `.github/**` workflow entries expose no override control, while an actually modified workflow still requires explicit override.
+- Partial selection and explicit override reach the immutable selection API exactly once.
+- Successful delivery targets an active `zip-github/work-*` branch and opens the result without a separate commit step.
+- Phase 7 quality gate is complete; step 8.1 is now NEXT.
+
+# 1.0.0-rc.30 — 2026-08-07
+
+- Step 7.17: review approval and Git delivery are now one normal user action.
+- The review page performs immutable selection, persistent approval, verified workspace, commit and push before opening the result page.
+- Added owner-scoped approval readback so a refresh can restore a previously approved selection and offer only safe delivery retry.
+- Reopening review after an already recorded delivery redirects to the result page rather than risking a duplicate commit.
+
+# 1.0.0-rc.29 — 2026-08-07
+
+Completed step 7.16: automatic upload-to-review preparation.
+
+### Added
+
+- Added idempotent `POST /api/imports/{importId}/prepare-review` orchestration that reuses an existing immutable plan or locked repository snapshot before doing any new work.
+- Added frontend regression coverage for automatic upload -> preparation -> review navigation and retry without re-upload.
+- Added backend retry coverage proving an already locked immutable plan is returned unchanged.
+
+### Changed
+
+- Successful ZIP upload now immediately starts archive/repository preparation and navigates to the review view when the immutable plan is ready.
+- Removed the normal separate “Skapa granskningsplan” user step; a retry action is shown only when preparation fails after upload.
+- The uploaded ZIP/file input is locked after successful upload so recovery cannot accidentally attempt a second upload to the same import.
+- Step 7.17 is now the single `NEXT` step.
+
+# 1.0.0-rc.28 — 2026-08-07
+
+Completed step 7.15: unchanged protected-path policy semantics.
+
+### Changed
+
+- Bumped import policy identity to `mvp-3`.
+- `.github/**` now requires explicit override only for actual repository changes: `ADDED`, `MODIFIED` or `WOULD_DELETE`.
+- `UNCHANGED` workflow/protected entries remain unchanged and require no change override.
+- Preserved archive/content hard-safety rules that are intentionally independent of repository diff status.
+- Added regression for unchanged, modified, added and deleted workflow files.
+- Step 7.16 is now the single `NEXT` step.
+
+# 1.0.0-rc.27 — 2026-08-07
+
+Completed step 7.14: alternative ZIP-ingestion regression.
+
+### Added
+
+- Added end-to-end regression coverage showing browser upload and an already stored ZIP converge on equivalent inventory, comparison, policy and immutable plan entries for identical bytes/base content.
+- Added shared size-boundary coverage proving both paths use the same source-neutral `ZipIngestionService` limit.
+- Added promotion retry, ownership, retention/cleanup and plan/selection digest-stability regression assertions.
+- Documented the exact future `StagingImport`/iOS Shortcut convergence point.
+
+### Changed
+
+- Test-state reset now clears import-source audit metadata as well as the other in-memory import state.
+- Step 7.15 is now the single `NEXT` step.
+
+# 1.0.0-rc.26 — 2026-08-07
+
+Completed step 7.13: explicit import-source and audit metadata.
+
+### Added
+
+- Added `ImportSource` (`WEB_UPLOAD`, `STORED_UPLOAD`, reserved `STAGING_IMPORT`) and bounded non-secret `ImportAuditMetadata`.
+- Added Flyway V7 source columns on `import_session` and corresponding entity fields.
+- Added import-history source metadata and human-readable source labels in the project history UI.
+- Added regression tests for browser/stored source classification and safe source-reference handling.
+
+### Changed
+
+- Stored-upload promotion now records an internal `stored-upload:<artifact UUID>` correlation reference without copying any secret token material.
+- Step 7.14 is now the single `NEXT` step.
+
+# 1.0.0-rc.25 — 2026-08-07
+
+Completed step 7.12: create a normal Import from an already stored ZIP.
+
+### Added
+
+- Added an internal stored-upload promotion operation that attaches an existing neutral `StoredUploadArtifact` to the ordinary user-owned import model without re-uploading or copying the ZIP bytes.
+- Added owner/project-scoped idempotency for promotion retries and duplicate-artifact protection.
+- Added regression tests for same-request retries, idempotency-key misuse and duplicate artifact promotion.
+
+### Changed
+
+- Stored artifacts can now converge on the existing normal import pipeline before inventory/comparison/policy rather than requiring an HTTP upload path.
+- Step 7.13 is now the single `NEXT` step.
+
+# 1.0.0-rc.24 — 2026-08-07
+
+Completed step 7.11: reusable, source-neutral ZIP ingestion and storage.
+
+### Added
+
+- Added `ZipIngestionService` as the single source-neutral implementation of filename validation, declared/actual compressed-size enforcement, streaming storage, SHA-256 calculation and retention metadata.
+- Added `StoredUploadArtifact`, which deliberately contains no user ID or import ID and can therefore be attached to a normal import or a future staging import without fake identity data.
+- Added focused ingestion tests proving neutral storage, checksum/retention equivalence, preflight size rejection, streaming-limit cleanup and filename safety.
+
+### Changed
+
+- `StreamingUploadService` is now a thin authenticated-web-import adapter that calls the neutral ingestion service and attaches the artifact to the existing `StoredUpload` ownership model.
+- `UploadStorage` now receives an opaque storage scope UUID rather than user/import semantics. Normal web uploads use the import UUID as that storage scope.
+- Upload cleanup now removes only the empty opaque scope directory and never attempts to remove the configured storage root.
+- The public upload endpoint and returned metadata remain unchanged.
+- Step 7.12 is now the single `NEXT` step.
+
+# Planning revision r0065 — 2026-08-07
+
+- Extended phase 7 with steps 7.11–7.14 for reusable ZIP ingestion, creation of a normal Import from an already stored ZIP, import-source audit metadata and alternative-ingestion regression.
+- Added step 7.15 so unchanged `.github/**` entries never require a change override; only actual added/modified/deleted protected paths do.
+- Added step 7.16 to automatically continue from successful ZIP upload to immutable plan/review without a separate “Skapa granskningsplan” action.
+- Added step 7.17 so “Godkänn valda förändringar” is the single normal user action that records approval and continues directly to exact commit/push.
+- Added step 7.18 for E2E regression of the streamlined flow.
+- Added functional specification v1.2 and made it authoritative. Application version remains `1.0.0-rc.23`; this revision changes planning/specification only.
+
 # 1.0.0-rc.23 — 2026-08-07
 
 - Correct backend `ImportSelectionResourceTest` list assertions to use an unambiguous Hamcrest matcher accepted by RestAssured.
@@ -203,6 +389,14 @@ Corrective release candidate for the GHCR backend image build.
 - Kept the Maven Wrapper as the authoritative host/CI test entry point; only the Docker build stage uses the matching preinstalled Maven binary.
 
 # Changelog
+
+## 1.0.0-rc.34 - 2026-08-07
+
+- Closed phase 7 with restart/resume regression coverage across review, selection, approval and completed delivery.
+- Added owner-isolation regression ensuring another user cannot hydrate or resume durable import state.
+- Strengthened Work-view tests so only the newest active import is shown while Git commits remain primary history.
+- Added degraded GitHub-history regression using the persisted Work-head fallback.
+- Updated release/operations/architecture acceptance guidance for restart-safe imports.
 
 ## 1.0.0-rc.8 - 2026-08-07
 

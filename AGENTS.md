@@ -7,7 +7,7 @@ Before implementing any step, read in this order:
 1. `docs/implementation-status.md`
 2. `docs/implementation-steps.md`
 3. `docs/zip-github-development-plan-v1.1.md`
-4. `docs/zip-github-functional-specification-v1.1.md`
+4. `docs/zip-github-functional-specification-v1.2.md`
 5. relevant completed step reports and legacy references
 
 ## Selecting the next step

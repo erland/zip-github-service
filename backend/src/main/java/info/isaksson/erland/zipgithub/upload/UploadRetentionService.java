@@ -57,12 +57,6 @@ public class UploadRetentionService {
                 if (entries.findAny().isEmpty()) Files.deleteIfExists(importDirectory);
             }
         }
-        var ownerDirectory = importDirectory == null ? null : importDirectory.getParent();
-        if (ownerDirectory != null && Files.isDirectory(ownerDirectory)) {
-            try (var entries = Files.list(ownerDirectory)) {
-                if (entries.findAny().isEmpty()) Files.deleteIfExists(ownerDirectory);
-            }
-        }
     }
 
     public record CleanupResult(int deleted, int failed) { }

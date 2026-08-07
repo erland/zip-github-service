@@ -1,10 +1,10 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { createImport, createImportPlan, createRepositorySnapshot, SourceUploadResponse, uploadZip } from '../api/imports';
+import { createImport, prepareImportReview, SourceUploadResponse, uploadZip } from '../api/imports';
 import { getProject, ProjectResponse } from '../api/projects';
 import { getCurrentUser, type AuthenticatedUser } from '../api/auth';
 
-type UploadState = 'idle' | 'creating' | 'uploading' | 'complete' | 'preparing' | 'error' | 'cancelled';
+type UploadState = 'idle' | 'creating' | 'uploading' | 'preparing' | 'error' | 'cancelled';
 
 export default function NewImportPage() {
   const { projectId } = useParams();
@@ -38,17 +38,16 @@ export default function NewImportPage() {
     return () => { active = false; };
   }, [projectId, existingImportId]);
 
-  async function prepareReview() {
-    if (!project || !result || busy) return;
+  async function prepareReview(importId: string) {
+    if (!project) return;
+    setState('preparing');
+    setMessage('Analyserar ZIP-filen, låser GitHub-versionen och skapar granskningsplan…');
     try {
-      setState('preparing');
-      setMessage('Låser GitHub-versionen och skapar granskningsplan…');
-      await createRepositorySnapshot(result.importId);
-      await createImportPlan(result.importId);
-      navigate(`/projects/${project.id}/imports/${result.importId}/review`);
+      await prepareImportReview(importId);
+      navigate(`/projects/${project.id}/imports/${importId}/review`);
     } catch (error) {
       setState('error');
-      setMessage(error instanceof Error ? error.message : 'Granskningsplanen kunde inte skapas.');
+      setMessage(error instanceof Error ? error.message : 'Granskningsplanen kunde inte skapas. Försök igen utan att ladda upp ZIP-filen på nytt.');
     }
   }
 
@@ -67,8 +66,7 @@ export default function NewImportPage() {
       setState('uploading');
       const uploaded = await uploadZip(importId, file, setProgress, abortController.signal);
       setResult(uploaded);
-      setState('complete');
-      setMessage('ZIP-filen är uppladdad och redo för säker inspektion.');
+      await prepareReview(uploaded.importId);
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         setState('cancelled');
@@ -128,7 +126,7 @@ export default function NewImportPage() {
           name="zip-file"
           type="file"
           accept=".zip,application/zip,application/x-zip-compressed"
-          disabled={!project || busy}
+          disabled={!project || busy || Boolean(result)}
           aria-describedby="zip-file-help"
           onChange={(event) => {
             setFile(event.target.files?.[0] ?? null);
@@ -152,12 +150,14 @@ export default function NewImportPage() {
         {message && <p className={`status-message status-message--${state}`} role={state === 'error' ? 'alert' : 'status'}>{message}</p>}
         {result && <p className="upload-result"><strong>SHA-256:</strong> <code>{result.sha256}</code><br /><strong>Retention:</strong> till {new Date(result.retentionDeadline).toLocaleString('sv-SE')}</p>}
 
-        {result ? (
-          <button className="button" type="button" disabled={busy} onClick={prepareReview}>
-            {state === 'preparing' ? 'Förbereder granskning…' : 'Skapa granskningsplan'}
+        {result && state === 'error' ? (
+          <button className="button" type="button" disabled={busy} onClick={() => prepareReview(result.importId)}>
+            Försök skapa granskningsplan igen
           </button>
         ) : (
-          <button className="button" type="submit" disabled={!project || !file || busy || (authorMode === 'other' && (!authorName.trim() || !authorEmail.trim()))}>Ladda upp ZIP</button>
+          <button className="button" type="submit" disabled={!project || !file || busy || Boolean(result) || (authorMode === 'other' && (!authorName.trim() || !authorEmail.trim()))}>
+            {state === 'preparing' ? 'Förbereder granskning…' : 'Ladda upp ZIP'}
+          </button>
         )}
       </form>
     </section>

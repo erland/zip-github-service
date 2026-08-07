@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { approveImportPlan, createImportSelection, deliverImport, getImportPlan, ImportPlanApprovalResponse, ImportPlanEntry, ImportPlanResponse, prepareImportWorkspace } from '../api/imports';
+import { approveImportPlan, createImportSelection, deliverImport, findDelivery, getImportPlan, getImportPlanApproval, getImportSelection, ImportPlanApprovalResponse, ImportPlanEntry, ImportPlanResponse, prepareImportWorkspace } from '../api/imports';
 import { defaultSelectedPaths, ReviewFileTree } from '../components/ReviewFileTree';
 
 type ReviewFilter = 'CHANGES' | 'BLOCKED' | 'WARNINGS' | 'UNCHANGED' | 'IGNORED' | 'ALL';
@@ -35,23 +35,46 @@ export default function ImportReviewPage() {
       return;
     }
     let active = true;
-    getImportPlan(importId)
-      .then((loaded) => {
-        if (active) {
-          setPlan(loaded);
-          setSelectedPaths(defaultSelectedPaths(loaded.entries));
+    async function loadReviewState() {
+      try {
+        const loadedPlan = await getImportPlan(importId!);
+        if (!active) return;
+        setPlan(loadedPlan);
+
+        const [existingSelection, existingApproval, existingDelivery] = await Promise.all([
+          getImportSelection(importId!),
+          getImportPlanApproval(importId!),
+          findDelivery(importId!),
+        ]);
+        if (!active) return;
+        if (existingDelivery && projectId) {
+          navigate(`/projects/${projectId}/imports/${importId}/result`, { replace: true });
+          return;
         }
-      })
-      .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : 'Importplanen kunde inte hämtas.'); })
-      .finally(() => { if (active) setLoading(false); });
+        if (existingSelection) {
+          setSelectedPaths(new Set(existingSelection.selectedPaths));
+          setOverridePaths(new Set(existingSelection.overrides.map((item) => item.path)));
+          setSelectionDigest(existingSelection.selectionDigestSha256);
+        } else {
+          setSelectedPaths(defaultSelectedPaths(loadedPlan.entries));
+        }
+        if (existingApproval) setApproval(existingApproval);
+      } catch (reason) {
+        if (active) setError(reason instanceof Error ? reason.message : 'Importplanen kunde inte hämtas.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    void loadReviewState();
     return () => { active = false; };
-  }, [importId]);
+  }, [importId, navigate, projectId]);
 
   const visibleEntries = useMemo(() => plan?.entries.filter((entry) => matchesFilter(entry, filter)) ?? [], [plan, filter]);
 
-  async function approveExactPlan() {
-    if (!importId || !plan || approving || selectedPaths.size === 0) return;
+  async function approveAndDeliver() {
+    if (!importId || !projectId || !plan || approving || delivering || selectedPaths.size === 0) return;
     setApproving(true);
+    setDelivering(false);
     setError('');
     try {
       let digest = selectionDigest;
@@ -61,24 +84,38 @@ export default function ImportReviewPage() {
         digest = selection.selectionDigestSha256;
         setSelectionDigest(digest);
       }
-      setApproval(await approveImportPlan(importId, plan.planDigestSha256, digest));
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'De valda förändringarna kunde inte godkännas.');
-    } finally {
+      let recordedApproval = approval;
+      if (!recordedApproval) {
+        recordedApproval = await approveImportPlan(importId, plan.planDigestSha256, digest);
+        setApproval(recordedApproval);
+      }
       setApproving(false);
-    }
-  }
-
-  async function deliverApprovedPlan() {
-    if (!importId || !projectId || !approval || delivering) return;
-    setDelivering(true);
-    setError('');
-    try {
+      setDelivering(true);
       await prepareImportWorkspace(importId);
       await deliverImport(importId);
       navigate(`/projects/${projectId}/imports/${importId}/result`);
     } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Godkännandet eller leveransen till GitHub kunde inte slutföras.');
+    } finally {
+      setApproving(false);
+      setDelivering(false);
+    }
+  }
+
+  async function retryApprovedDelivery() {
+    if (!importId || !projectId || !approval || delivering) return;
+    setDelivering(true);
+    setError('');
+    try {
+      const existingDelivery = await findDelivery(importId);
+      if (!existingDelivery) {
+        await prepareImportWorkspace(importId);
+        await deliverImport(importId);
+      }
+      navigate(`/projects/${projectId}/imports/${importId}/result`);
+    } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Leveransen till GitHub kunde inte slutföras.');
+    } finally {
       setDelivering(false);
     }
   }
@@ -99,15 +136,15 @@ export default function ImportReviewPage() {
       {loading && <p className="status-message" role="status">Hämtar den sparade importplanen…</p>}
       {error && <p className="status-message status-message--error" role="alert">{error}</p>}
       {plan && <ReviewContent plan={plan} filter={filter} setFilter={setFilter} entries={visibleEntries}
-        approving={approving} approval={approval} approveExactPlan={approveExactPlan}
-        delivering={delivering} deliverApprovedPlan={deliverApprovedPlan}
+        approving={approving} approval={approval} approveAndDeliver={approveAndDeliver}
+        delivering={delivering} retryApprovedDelivery={retryApprovedDelivery}
         selectedPaths={selectedPaths} setSelectedPaths={setSelectedPaths}
         overridePaths={overridePaths} setOverridePaths={setOverridePaths} selectionLocked={Boolean(selectionDigest)} />}
     </section>
   );
 }
 
-function ReviewContent({ plan, filter, setFilter, entries, approving, approval, approveExactPlan, delivering, deliverApprovedPlan,
+function ReviewContent({ plan, filter, setFilter, entries, approving, approval, approveAndDeliver, delivering, retryApprovedDelivery,
   selectedPaths, setSelectedPaths, overridePaths, setOverridePaths, selectionLocked }: {
   plan: ImportPlanResponse;
   filter: ReviewFilter;
@@ -115,9 +152,9 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
   entries: ImportPlanEntry[];
   approving: boolean;
   approval: ImportPlanApprovalResponse | null;
-  approveExactPlan: () => void;
+  approveAndDeliver: () => void;
   delivering: boolean;
-  deliverApprovedPlan: () => void;
+  retryApprovedDelivery: () => void;
   selectedPaths: ReadonlySet<string>;
   setSelectedPaths: (paths: Set<string>) => void;
   overridePaths: ReadonlySet<string>;
@@ -186,22 +223,22 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
       <div className="review-actions">
         {approval ? (
           <div className="approval-confirmation" role="status">
-            <strong>Planen är godkänd</strong>
-            <p>Godkännandet gäller plan <code>{approval.planDigestSha256}</code> och urval <code>{approval.selectionDigestSha256}</code>.</p>
-            <button className="button" type="button" disabled={delivering} onClick={deliverApprovedPlan}>
-              {delivering ? 'Skapar commit på arbetsbranchen…' : 'Skapa commit på arbetsbranchen'}
+            <strong>Förändringarna är godkända</strong>
+            <p>Urvalet är låst och godkänt. Föregående commit/push slutfördes inte, så du kan säkert försöka leveransen igen.</p>
+            <button className="button" type="button" disabled={delivering} onClick={retryApprovedDelivery}>
+              {delivering ? 'Försöker skapa commit igen…' : 'Försök skapa commit igen'}
             </button>
           </div>
         ) : (
           <>
             <p>{selectionLocked
-              ? 'Urvalet är låst. Försök godkänna igen om föregående approval-anrop avbröts.'
+              ? 'Urvalet är låst. Samma urval används när godkännandet och committen försöks igen.'
               : selectedPaths.size > 0
-                ? 'Godkännandet låser exakt de valda paths och eventuella explicita overrides som visas ovan.'
+                ? 'Ett klick låser urvalet, registrerar godkännandet och skapar sedan commit på arbetsbranchen.'
                 : 'Välj minst en förändring innan urvalet kan godkännas.'}</p>
-            <button className="button" type="button" disabled={selectedPaths.size === 0 || approving}
-              onClick={approveExactPlan}>
-              {approving ? 'Godkänner…' : 'Godkänn valda förändringar'}
+            <button className="button" type="button" disabled={selectedPaths.size === 0 || approving || delivering}
+              onClick={approveAndDeliver}>
+              {approving ? 'Godkänner…' : delivering ? 'Skapar commit på arbetsbranchen…' : 'Godkänn valda förändringar'}
             </button>
           </>
         )}

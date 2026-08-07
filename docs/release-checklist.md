@@ -26,6 +26,9 @@ This checklist separates repository-complete controls from environment-dependent
 - [x] Operations, backup, restore, incident and GitHub App setup are documented.
 - [x] Version, changelog, architecture and release notes are present.
 
+- [x] Phase 7 streamlined-flow regression covers automatic preparation, exact selection/override, one-click approval-to-delivery and retry without duplicate approval/commit intent.
+- [x] Unchanged `.github/**` entries are regression-tested as non-overridable/no-change while actual workflow changes require explicit override.
+
 ## External acceptance checks required before production 1.0.0
 
 - [ ] GitHub Actions CI is green on the release commit.
@@ -53,3 +56,12 @@ This checklist separates repository-complete controls from environment-dependent
 ## Promotion rule
 
 Production version `1.0.0` may be created only when every external acceptance item is checked, evidence is linked from the release record and no unresolved blocking security finding remains.
+
+
+## Phase 7 resume/Work acceptance
+
+- [ ] Create an import, reach review, sign out/in and continue without a second ZIP upload.
+- [ ] Restart backend at review, after selection and after approval; continue without duplicate selection/approval/commit.
+- [ ] Verify project view shows Git commits plus at most one active import, while historical imports remain available through the owner-scoped API.
+- [ ] Verify another account cannot open or resume the import.
+- [ ] Temporarily deny GitHub history access and verify the persisted Work-head fallback remains usable.

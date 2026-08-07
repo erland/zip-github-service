@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.23"
+expected_version="1.0.0-rc.36"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
@@ -21,12 +21,39 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0064`' docs/implementation-status.md
-grep -q 'Last completed step: `7.10`' docs/implementation-status.md
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — FLEXIBLE REVIEW COMPLETE`' docs/implementation-status.md
+grep -q 'Repository revision: `r0079`' docs/implementation-status.md
+grep -q 'Last completed step: `7.21`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 7 COMPLETE, PHASE 8 ACTIONS INTEGRATION NEXT`' docs/implementation-status.md
 grep -q '| `7.9` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.10` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `7.11` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `7.12` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `7.13` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `7.14` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `7.15` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `7.16` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `7.18` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `7.17` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `7.20` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `7.21` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `8.1` .*\*\*NEXT\*\*' docs/implementation-status.md
+grep -q 'CREATE TABLE import_resume_payload' backend/src/main/resources/db/migration/V8__resumable_import_state.sql
+grep -q 'class ImportResumePersistenceStore' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/ImportResumePersistenceStore.java
+grep -q 'persistentImports.find(ownerUserId, importId)' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -q 'listExpiredTerminalUploads' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/ImportResumePersistenceStore.java
+grep -q 'Step 7.19 report' docs/step-7.19-report.md
+grep -q 'Step 7.20 report' docs/step-7.20-report.md
+grep -q 'class ImportResumeRecoveryTest' backend/src/test/java/info/isaksson/erland/zipgithub/application/ImportResumeRecoveryTest.java
+grep -q 'resumesReviewSelectionApprovalAndCompletedDeliveryAfterInMemoryRestart' backend/src/test/java/info/isaksson/erland/zipgithub/application/ImportResumeRecoveryTest.java
+grep -q 'anotherOwnerCannotHydrateOrResumeTheImport' backend/src/test/java/info/isaksson/erland/zipgithub/application/ImportResumeRecoveryTest.java
+grep -q 'older-draft.zip' frontend/src/pages/ProjectDetailPage.test.tsx
+grep -q 'degraded Work history' frontend/src/pages/ProjectDetailPage.test.tsx
+grep -q 'Step 7.21 report' docs/step-7.21-report.md
+grep -q 'work/commits' backend/src/main/java/info/isaksson/erland/zipgithub/api/ProjectResource.java
+grep -q 'listBranchCommits' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'Commits i arbetet' frontend/src/pages/ProjectDetailPage.tsx
+grep -q 'Pågående import' frontend/src/pages/ProjectDetailPage.tsx
+! grep -q 'Importhistorik' frontend/src/pages/ProjectDetailPage.tsx
 
 
 grep -q 'public enum ImportPolicyBlockerType' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyBlockerType.java
@@ -50,7 +77,35 @@ grep -q 'Jag förstår risken och vill ta med denna blockerade förändring' fro
 grep -q 'hardBlockCannotBeBypassedWithAnOverrideRecord' backend/src/test/java/info/isaksson/erland/zipgithub/selection/ImportSelectionFactoryTest.java
 grep -q 'workspace diff did not exactly match selection' backend/src/test/java/info/isaksson/erland/zipgithub/workspace/ImportWorkspaceServiceSelfTest.java
 grep -q 'stale base branch was accepted' backend/src/test/java/info/isaksson/erland/zipgithub/delivery/GitDeliveryServiceSelfTest.java
-grep -q 'submits the exact partial selection and explicit override audit' frontend/src/pages/ImportReviewPage.test.tsx
+grep -q 'submits explicit override audit and never includes a hard blocker' frontend/src/pages/ImportReviewPage.test.tsx
+grep -q 'public class ZipIngestionService' backend/src/main/java/info/isaksson/erland/zipgithub/upload/ZipIngestionService.java
+grep -q 'public record StoredUploadArtifact' backend/src/main/java/info/isaksson/erland/zipgithub/upload/StoredUploadArtifact.java
+grep -q 'StoredUpload.attach' backend/src/main/java/info/isaksson/erland/zipgithub/upload/StreamingUploadService.java
+grep -q 'createImportFromStoredUpload' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -q 'STORED_UPLOAD_PROMOTION_KEY_REUSED' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -q 'record StoredUploadImportResult' backend/src/main/java/info/isaksson/erland/zipgithub/application/StoredUploadImportResult.java
+grep -q 'public enum ImportSource' backend/src/main/java/info/isaksson/erland/zipgithub/domain/model/ImportSource.java
+grep -q 'STAGING_IMPORT' backend/src/main/java/info/isaksson/erland/zipgithub/domain/model/ImportSource.java
+grep -q 'source_type' backend/src/main/resources/db/migration/V7__import_source_audit_metadata.sql
+grep -q 'ImportSource.STORED_UPLOAD' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -q 'class AlternativeZipIngestionRegressionTest' backend/src/test/java/info/isaksson/erland/zipgithub/application/AlternativeZipIngestionRegressionTest.java
+grep -q 'browserAndStoredZipProduceEquivalentInventoryPolicyAndPlanEntries' backend/src/test/java/info/isaksson/erland/zipgithub/application/AlternativeZipIngestionRegressionTest.java
+grep -q 'Alternative ingestion convergence (step 7.14)' docs/architecture.md
+grep -q 'POLICY_VERSION = "mvp-3"' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java
+grep -q 'unchangedWorkflowDoesNotRequireOverrideButActualWorkflowChangesDo' backend/src/test/java/info/isaksson/erland/zipgithub/policy/ImportPolicyServiceTest.java
+grep -q '@Path("/{importId}/prepare-review")' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
+grep -q 'prepareImportReview' frontend/src/pages/NewImportPage.tsx
+grep -q 'Försök skapa granskningsplan igen' frontend/src/pages/NewImportPage.tsx
+grep -q 'automatic review preparation' frontend/src/pages/NewImportPage.test.tsx
+grep -q 'retryReturnsTheAlreadyLockedImmutablePlan' backend/src/test/java/info/isaksson/erland/zipgithub/api/ImportReviewPreparationResourceTest.java
+grep -q 'getPlanApproval' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
+grep -q 'getImportPlanApproval' frontend/src/pages/ImportReviewPage.tsx
+grep -q 'Försök skapa commit igen' frontend/src/pages/ImportReviewPage.tsx
+grep -q 'one click to lock selection, approve, prepare workspace, deliver and open the result' frontend/src/pages/ImportReviewPage.test.tsx
+grep -q 'simplified import flow E2E regression' frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -q 'does not allow a slow automatic plan build to trigger duplicate preparation' frontend/src/pages/NewImportPage.test.tsx
+grep -q 'retries delivery after approval without creating a second selection or approval' frontend/src/pages/ImportReviewPage.test.tsx
+grep -q 'readsRecordedApprovalForRecoveryAfterRefresh' backend/src/test/java/info/isaksson/erland/zipgithub/api/ImportSelectionResourceTest.java
 
 # Container runtime requirements used by repository snapshot/workspace/delivery.
 grep -q 'apt-get install -y --no-install-recommends curl git' backend/Dockerfile

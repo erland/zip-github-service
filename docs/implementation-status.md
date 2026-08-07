@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0064`
-- Last completed step: `7.10`
+- Repository revision: `r0079`
+- Last completed step: `7.21`
 - Next step: `8.1`
-- Overall state: `MVP RELEASE CANDIDATE — FLEXIBLE REVIEW COMPLETE`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 7 COMPLETE, PHASE 8 ACTIONS INTEGRATION NEXT`
 
 ## Step ledger
 
@@ -67,6 +67,17 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `7.8` | Fas 7 — flexibel granskning | Bygg hierarkiskt fil- och katalogurval i granskningsvyn | **DONE** | 2026-08-07 | `docs/step-7.8-report.md` |
 | `7.9` | Fas 7 — flexibel granskning | Implementera explicita overrides och exakt selected delivery | **DONE** | 2026-08-07 | `docs/step-7.9-report.md` |
 | `7.10` | Fas 7 — flexibel granskning | Genomför selection-, override- och säkerhetsregression | **DONE** | 2026-08-07 | `docs/step-7.10-report.md`, `docs/threat-model.md`, `docs/release-checklist.md` |
+| `7.11` | Fas 7 — importkärna | Generalisera ZIP-ingestion och lagring | **DONE** | 2026-08-07 | `docs/upload-streaming.md`, `docs/step-7.11-report.md` |
+| `7.12` | Fas 7 — importkärna | Skapa vanlig Import från redan lagrad ZIP | **DONE** | 2026-08-07 | `docs/upload-streaming.md`, `docs/step-7.12-report.md` |
+| `7.13` | Fas 7 — importkärna | Formalisera importkälla och auditmetadata | **DONE** | 2026-08-07 | `docs/step-7.13-report.md`, `docs/domain-model.md`, `docs/database-model.md` |
+| `7.14` | Fas 7 — importkärna | Regression för alternativ ZIP-ingestion | **DONE** | 2026-08-07 | `docs/step-7.14-report.md` |
+| `7.15` | Fas 7 — policy/UX | Korrigera policy för oförändrade skyddade sökvägar | **DONE** | 2026-08-07 | `docs/step-7.15-report.md`, `docs/import-policy.md` |
+| `7.16` | Fas 7 — policy/UX | Automatisera upload till granskningsplan | **DONE** | 2026-08-07 | `docs/step-7.16-report.md`, `docs/api-contract.md` |
+| `7.17` | Fas 7 — policy/UX | Gör godkännande och commit till en användaråtgärd | **DONE** | 2026-08-07 | `docs/step-7.17-report.md`, `docs/api-contract.md` |
+| `7.18` | Fas 7 — policy/UX | E2E-regression för det förenklade importflödet | **DONE** | 2026-08-07 | `docs/step-7.18-report.md`, `frontend/src/pages/SimplifiedImportFlow.test.tsx` |
+| `7.19` | Fas 7 — resume/Work UX | Gör pågående import fullt återupptagningsbar | **DONE** | 2026-08-07 | `docs/step-7.19-report.md` |
+| `7.20` | Fas 7 — resume/Work UX | Förenkla Work-vyn till Git-historik och pågående import | **DONE** | 2026-08-07 | `docs/step-7.20-report.md` |
+| `7.21` | Fas 7 — resume/Work UX | Slutregression för resume och Work-vy | **DONE** | 2026-08-07 | `docs/step-7.21-report.md` |
 | `8.1` | Fas 8 — efter MVP: integrerade Actions-resultat | Workflow runs och jobs | **NEXT** | — | — |
 | `8.2` | Fas 8 — efter MVP: integrerade Actions-resultat | Artifacts och kondenserade fel | **PENDING** | — | — |
 | `8.3` | Fas 8 — efter MVP: integrerade Actions-resultat | Kontrollerad workflow dispatch och omkörning | **PENDING** | — | — |
@@ -171,3 +182,21 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0062` | 2026-08-07 | `7.9` explicit overrides and exact selected delivery | Bound approval to immutable selection digest, enabled per-path overrides/deletions, and made workspace/commit path-exact to selected changes | `7.10` |
 | `r0063` | 2026-08-07 | `7.10` selection, override and security regression | Mixed-tree frontend regressions, exact-selection real-Git workspace regression, hard-block/override audit tests, stale-work-branch delivery test, threat model/security/release checks | `8.1` |
 | `r0064` | 2026-08-07 | RC23 test correction | RestAssured list matcher correction and hierarchical review-tree path assertion correction; no production behavior change | `8.1` |
+| `r0065` | 2026-08-07 | Phase 7 planning refinement | Added 7.11–7.18 for reusable ZIP ingestion, stored-upload promotion, source audit, unchanged protected-path semantics and streamlined upload/review/approval/commit UX; no production behavior change | `7.11` |
+| `r0066` | 2026-08-07 | Step 7.11 | Extracted source-neutral ZIP ingestion/storage into `ZipIngestionService` + `StoredUploadArtifact`; kept web upload as an ownership adapter with unchanged API semantics | `7.12` |
+
+| `r0067` | 2026-08-07 | Step 7.12 | Added idempotent promotion from neutral stored ZIP artifact to the normal user-owned import without re-upload/copy; repository checks documented in step report | `7.13` |
+| `r0068` | 2026-08-07 | Step 7.13 | Added explicit non-secret import-source audit metadata, V7 schema columns and history source labels; source remains outside policy/selection/Git semantics | `7.14` |
+| `r0069` | 2026-08-07 | Step 7.14 | Added alternative-ingestion regression proving browser/stored ZIP convergence, shared limits, idempotency/ownership/cleanup and digest stability | `7.15` |
+
+| `r0070` | 2026-08-07 | Step 7.15 | Made `.github/**` override classification diff-aware so unchanged workflows require no override; actual add/modify/delete changes remain explicitly overridable | `7.16` |
+| `r0071` | 2026-08-07 | Step 7.16 | Automatic idempotent upload-to-review preparation, direct review navigation and retry without re-upload; repository/release checks documented in step report | `7.17` |
+| `r0072` | 2026-08-07 | Step 7.17 | One-click review approval through commit/push, persisted approval readback and refresh-safe delivery recovery | `7.18` |
+
+| `r0073` | 2026-08-07 | Step 7.18 | Added cross-page streamlined-flow regression, slow preparation guard, post-approval retry/no-duplicate assertions, unchanged-workflow/override and work-branch coverage; phase 7 quality gate complete | `8.1` |
+| `r0074` | 2026-08-07 | Phase 7 planning refinement | Added steps 7.19–7.21 for restart-safe import resume, Git-centric Work history and final resume/Work regression; application version unchanged | `7.19` |
+| `r0075` | 2026-08-07 | Step 7.19 | Persisted owner-bound import resume state in PostgreSQL and protected active uploads from terminal cleanup | `7.20` |
+| `r0076` | 2026-08-07 | Step 7.20 | Replaced primary import-history UI with Git branch commits plus at most one resumable active import; GitHub history has persisted Work-head fallback | `7.21` |
+| `r0077` | 2026-08-07 | Step 7.21 | Added restart/resume, owner-isolation, single-active-import and degraded Work-history regressions; phase 7 quality gate complete | `8.1` |
+| `r0078` | 2026-08-07 | RC35 build/test correction | Made resume persistence optional for manually constructed unit-test services and fixed frontend selection fixture typing; no production behavior change | `8.1` |
+| `r0079` | 2026-08-07 | RC36 regression correction | Aligned stored-upload cleanup tests with restart-safe active-import retention, added Work commit-history route mock, and awaited loaded review tree in streamlined E2E; no production behavior change | `8.1` |

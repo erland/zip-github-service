@@ -75,6 +75,30 @@ class ImportPolicyServiceTest {
         assertEquals(2, result.overridableBlockers());
     }
 
+
+    @Test
+    void unchangedWorkflowDoesNotRequireOverrideButActualWorkflowChangesDo() {
+        var comparison = new ImportComparison(UUID.randomUUID(), "e".repeat(40), List.of(
+                entry(".github/workflows/unchanged.yml", ImportFileStatus.UNCHANGED, 10L),
+                entry(".github/workflows/modified.yml", ImportFileStatus.MODIFIED, 10L),
+                entry(".github/workflows/added.yml", ImportFileStatus.ADDED, 10L),
+                entry(".github/workflows/deleted.yml", ImportFileStatus.WOULD_DELETE, null)));
+
+        var result = new ImportPolicyService(100).evaluate(new ArchiveInventory(null, List.of(), List.of()), comparison);
+
+        var unchanged = result.entries().stream().filter(e -> e.path().endsWith("unchanged.yml")).findFirst().orElseThrow();
+        assertEquals(ImportFileStatus.UNCHANGED, unchanged.status());
+        assertEquals(ImportPolicyBlockerType.NONE, unchanged.blockerType());
+        assertNull(unchanged.policyCode());
+
+        for (String filename : List.of("modified.yml", "added.yml", "deleted.yml")) {
+            var changed = result.entries().stream().filter(e -> e.path().endsWith(filename)).findFirst().orElseThrow();
+            assertEquals(ImportFileStatus.BLOCKED, changed.status(), filename);
+            assertEquals(ImportPolicyBlockerType.OVERRIDABLE_BLOCKED, changed.blockerType(), filename);
+            assertEquals("GITHUB_WORKFLOW_PROTECTED", changed.policyCode(), filename);
+        }
+    }
+
     @Test
     void exampleEnvironmentFileIsAllowedWithoutWarning() {
         var comparison = new ImportComparison(UUID.randomUUID(), "b".repeat(40),

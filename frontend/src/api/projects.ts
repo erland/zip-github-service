@@ -22,6 +22,8 @@ export type ImportHistoryItem = {
   planDigestSha256: string | null;
   pullRequestNumber: number | null;
   pullRequestUrl: string | null;
+  sourceType?: 'WEB_UPLOAD' | 'STORED_UPLOAD' | 'STAGING_IMPORT';
+  sourceReference?: string | null;
   resumeStage: 'UPLOAD' | 'REVIEW' | 'RESULT';
 };
 
@@ -73,6 +75,26 @@ export async function getProjectWork(projectId: string): Promise<WorkSessionResp
   if (response.status === 204) return null;
   if (!response.ok) throw new Error(`API-fel ${response.status}`);
   return response.json() as Promise<WorkSessionResponse>;
+}
+
+
+export type WorkCommit = {
+  sha: string;
+  message: string;
+  authorName: string;
+  authorEmail: string;
+  authoredAt: string;
+  htmlUrl: string | null;
+  fallback: boolean;
+};
+
+export type WorkHistoryResponse = {
+  commits: WorkCommit[];
+  githubAvailable: boolean;
+};
+
+export async function getProjectWorkCommits(projectId: string): Promise<WorkHistoryResponse> {
+  return requestJson(`/api/projects/${encodeURIComponent(projectId)}/work/commits`);
 }
 
 export async function createWorkPullRequest(projectId: string) {

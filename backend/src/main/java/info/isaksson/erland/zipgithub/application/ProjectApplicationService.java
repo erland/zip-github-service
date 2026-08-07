@@ -3,6 +3,9 @@ package info.isaksson.erland.zipgithub.application;
 import info.isaksson.erland.zipgithub.api.dto.*;
 import info.isaksson.erland.zipgithub.api.error.ApiException;
 import info.isaksson.erland.zipgithub.upload.StoredUpload;
+import info.isaksson.erland.zipgithub.upload.StoredUploadArtifact;
+import info.isaksson.erland.zipgithub.domain.model.ImportAuditMetadata;
+import info.isaksson.erland.zipgithub.domain.model.ImportSource;
 import info.isaksson.erland.zipgithub.snapshot.RepositorySnapshot;
 import info.isaksson.erland.zipgithub.plan.ImmutableImportPlan;
 import info.isaksson.erland.zipgithub.plan.ImportPlanApproval;
@@ -12,6 +15,7 @@ import info.isaksson.erland.zipgithub.delivery.GitDeliveryResult;
 import info.isaksson.erland.zipgithub.delivery.GitCommitIdentity;
 import info.isaksson.erland.zipgithub.persistence.ProjectPersistenceStore;
 import info.isaksson.erland.zipgithub.persistence.WorkPersistenceStore;
+import info.isaksson.erland.zipgithub.persistence.ImportResumePersistenceStore;
 import info.isaksson.erland.zipgithub.pullrequest.PullRequestResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -33,10 +37,14 @@ public class ProjectApplicationService {
     private final Map<UUID, GitDeliveryResult> deliveriesByImport = new ConcurrentHashMap<>();
     private final Map<UUID, PullRequestResult> pullRequestsByImport = new ConcurrentHashMap<>();
     private final Map<UUID, GitCommitIdentity> gitIdentitiesByImport = new ConcurrentHashMap<>();
+    private final Map<UUID, ImportAuditMetadata> auditMetadataByImport = new ConcurrentHashMap<>();
     private final Map<UUID, WorkSession> workByProject = new ConcurrentHashMap<>();
+    private final Map<StoredUploadPromotionKey, StoredUploadPromotion> storedUploadPromotions = new ConcurrentHashMap<>();
+    private final Map<UUID, StoredUploadPromotion> storedUploadPromotionsByArtifact = new ConcurrentHashMap<>();
     @Inject GitHubProjectConfigurationService githubConfiguration;
     @Inject ProjectPersistenceStore persistentProjects;
     @Inject WorkPersistenceStore persistentWork;
+    @Inject ImportResumePersistenceStore persistentImports;
 
     /** Clears the temporary in-memory store between Quarkus tests.
      *  This method must be removed when persistent repositories replace the prototype store.
@@ -53,7 +61,10 @@ public class ProjectApplicationService {
         deliveriesByImport.clear();
         pullRequestsByImport.clear();
         gitIdentitiesByImport.clear();
+        auditMetadataByImport.clear();
         workByProject.clear();
+        storedUploadPromotions.clear();
+        storedUploadPromotionsByArtifact.clear();
     }
 
     public List<ProjectResponse> listProjects(UUID ownerUserId) {
@@ -140,6 +151,13 @@ public class ProjectApplicationService {
 
     public ImportResponse createImport(UUID ownerUserId, UUID projectId, CreateImportRequest request,
                                        String committerName, String committerEmail) {
+        return createImport(ownerUserId, projectId, request, committerName, committerEmail,
+                new ImportAuditMetadata(ImportSource.WEB_UPLOAD, null));
+    }
+
+    private ImportResponse createImport(UUID ownerUserId, UUID projectId, CreateImportRequest request,
+                                        String committerName, String committerEmail,
+                                        ImportAuditMetadata auditMetadata) {
         ProjectResponse project = requireOwnedProject(ownerUserId, projectId).response;
         if (!project.active()) throw ApiException.conflict("PROJECT_INACTIVE", "The project is inactive.");
         WorkSession work = getOrCreateWork(ownerUserId, projectId, project.defaultBranch());
@@ -157,10 +175,78 @@ public class ProjectApplicationService {
             ImportResponse response = new ImportResponse(UUID.randomUUID(), projectId, branch, "CREATED", Instant.now());
             imports.put(response.id(), new OwnedImport(ownerUserId, response));
             gitIdentitiesByImport.put(response.id(), identity);
+            ImportAuditMetadata lockedAudit = Objects.requireNonNull(auditMetadata, "auditMetadata");
+            auditMetadataByImport.put(response.id(), lockedAudit);
+            if (persistentImportsEnabled()) persistentImports.insertImport(ownerUserId, response, identity, lockedAudit);
             return response;
         } catch (IllegalArgumentException e) {
             throw ApiException.badRequest("INVALID_GIT_IDENTITY", e.getMessage());
         }
+    }
+
+
+    /**
+     * Creates a normal user-owned import from an already safely stored ZIP artifact without
+     * copying or re-streaming the physical ZIP. The idempotency key is scoped to owner/project.
+     */
+    public synchronized StoredUploadImportResult createImportFromStoredUpload(
+            UUID ownerUserId, UUID projectId, CreateImportRequest request,
+            String committerName, String committerEmail,
+            StoredUploadArtifact artifact, String idempotencyKey) {
+        Objects.requireNonNull(artifact, "artifact");
+        requireOwnedProject(ownerUserId, projectId);
+        String normalizedKey = requireText(idempotencyKey, "idempotencyKey");
+        if (normalizedKey.length() > 200)
+            throw ApiException.badRequest("INVALID_IDEMPOTENCY_KEY", "idempotencyKey is too long.");
+
+        StoredUploadPromotionKey key = new StoredUploadPromotionKey(ownerUserId, projectId, normalizedKey);
+        StoredUploadPromotion existingByKey = storedUploadPromotions.get(key);
+        if (existingByKey != null) {
+            if (!existingByKey.artifactId().equals(artifact.id())
+                    || !existingByKey.artifactSha256().equals(artifact.sha256()))
+                throw ApiException.conflict("STORED_UPLOAD_PROMOTION_KEY_REUSED",
+                        "The idempotency key is already bound to another stored ZIP.");
+            return storedUploadImportResult(ownerUserId, existingByKey.importId());
+        }
+
+        StoredUploadPromotion existingByArtifact = storedUploadPromotionsByArtifact.get(artifact.id());
+        if (existingByArtifact != null) {
+            if (existingByArtifact.ownerUserId().equals(ownerUserId)
+                    && existingByArtifact.projectId().equals(projectId)
+                    && existingByArtifact.artifactSha256().equals(artifact.sha256()))
+                return storedUploadImportResult(ownerUserId, existingByArtifact.importId());
+            throw ApiException.conflict("STORED_UPLOAD_ALREADY_PROMOTED",
+                    "The stored ZIP is already attached to another import.");
+        }
+
+        ImportResponse created = createImport(ownerUserId, projectId, request, committerName, committerEmail,
+                new ImportAuditMetadata(ImportSource.STORED_UPLOAD, "stored-upload:" + artifact.id()));
+        StoredUpload attached = StoredUpload.attach(ownerUserId, created.id(), artifact);
+        SourceUploadResponse upload = recordUpload(ownerUserId, created.id(), attached);
+        StoredUploadPromotion promotion = new StoredUploadPromotion(ownerUserId, projectId, created.id(),
+                artifact.id(), artifact.sha256(), normalizedKey);
+        storedUploadPromotions.put(key, promotion);
+        storedUploadPromotionsByArtifact.put(artifact.id(), promotion);
+        return new StoredUploadImportResult(created, upload);
+    }
+
+    private StoredUploadImportResult storedUploadImportResult(UUID ownerUserId, UUID importId) {
+        ImportResponse imported = getImport(ownerUserId, importId);
+        StoredUpload upload = uploadsByImport.get(importId);
+        if (upload == null)
+            throw ApiException.conflict("STORED_UPLOAD_PROMOTION_INCOMPLETE",
+                    "The promoted import is missing its stored ZIP attachment.");
+        return new StoredUploadImportResult(imported, toSourceUploadResponse(upload));
+    }
+
+    private static SourceUploadResponse toSourceUploadResponse(StoredUpload upload) {
+        return new SourceUploadResponse(upload.id(), upload.importId(), upload.originalFilename(), upload.sizeBytes(),
+                upload.sha256(), "STORED", upload.createdAt(), upload.retentionDeadline());
+    }
+
+    public ImportAuditMetadata importAuditMetadata(UUID ownerUserId, UUID importId) {
+        requireOwnedImport(ownerUserId, importId);
+        return auditMetadataByImport.getOrDefault(importId, ImportAuditMetadata.webUpload());
     }
 
     public GitCommitIdentity gitCommitIdentity(UUID ownerUserId, UUID importId) {
@@ -176,6 +262,9 @@ public class ProjectApplicationService {
 
     public List<ImportHistoryResponse> listProjectImports(UUID ownerUserId, UUID projectId) {
         requireOwnedProject(ownerUserId, projectId);
+        if (persistentImportsEnabled()) {
+            persistentImports.list(ownerUserId, projectId).forEach(this::hydrate);
+        }
         return imports.values().stream()
                 .filter(item -> item.ownerUserId.equals(ownerUserId) && item.response.projectId().equals(projectId))
                 .map(item -> {
@@ -190,6 +279,8 @@ public class ProjectApplicationService {
                             plan == null ? null : plan.planDigestSha256(),
                             pullRequest == null ? null : pullRequest.pullRequestNumber(),
                             pullRequest == null ? null : pullRequest.pullRequestUrl(),
+                            auditMetadataByImport.getOrDefault(itemResponse.id(), ImportAuditMetadata.webUpload()).source().name(),
+                            auditMetadataByImport.getOrDefault(itemResponse.id(), ImportAuditMetadata.webUpload()).sourceReference(),
                             resumeStage(itemResponse.status(), plan, pullRequest));
                 })
                 .sorted(Comparator.comparing(ImportHistoryResponse::createdAt).reversed())
@@ -215,9 +306,10 @@ public class ProjectApplicationService {
         if (existing != null) throw ApiException.conflict("UPLOAD_ALREADY_EXISTS", "This import already has a source upload.");
         OwnedImport owned = imports.get(importId);
         ImportResponse current = owned.response;
-        imports.put(importId, new OwnedImport(ownerUserId, new ImportResponse(current.id(), current.projectId(), current.baseBranch(), "UPLOADING", current.createdAt())));
-        return new SourceUploadResponse(upload.id(), upload.importId(), upload.originalFilename(), upload.sizeBytes(),
-                upload.sha256(), "STORED", upload.createdAt(), upload.retentionDeadline());
+        ImportResponse updated = new ImportResponse(current.id(), current.projectId(), current.baseBranch(), "UPLOADING", current.createdAt());
+        imports.put(importId, new OwnedImport(ownerUserId, updated));
+        if (persistentImportsEnabled()) { persistentImports.saveUpload(ownerUserId, importId, upload); persistentImports.updateStatus(ownerUserId, importId, updated.status(), null); }
+        return toSourceUploadResponse(upload);
     }
 
     public SnapshotTarget snapshotTarget(UUID ownerUserId, UUID importId) {
@@ -235,7 +327,9 @@ public class ProjectApplicationService {
             throw ApiException.conflict("REPOSITORY_SNAPSHOT_EXISTS", "This import is already locked to a repository snapshot.");
         }
         ImportResponse current = ownedImport.response;
-        imports.put(importId, new OwnedImport(ownerUserId, new ImportResponse(current.id(), current.projectId(), current.baseBranch(), "INSPECTING", current.createdAt())));
+        ImportResponse updated = new ImportResponse(current.id(), current.projectId(), current.baseBranch(), "INSPECTING", current.createdAt());
+        imports.put(importId, new OwnedImport(ownerUserId, updated));
+        if (persistentImportsEnabled()) { persistentImports.saveSnapshot(ownerUserId, importId, snapshot); persistentImports.updateStatus(ownerUserId, importId, updated.status(), snapshot.baseCommitSha()); }
         return snapshot;
     }
 
@@ -267,16 +361,21 @@ public class ProjectApplicationService {
         }
         OwnedImport owned = imports.get(importId);
         ImportResponse current = owned.response;
-        imports.put(importId, new OwnedImport(ownerUserId, new ImportResponse(current.id(), current.projectId(),
-                current.baseBranch(), plan.approvable() ? "READY_FOR_REVIEW" : "BLOCKED", current.createdAt())));
+        ImportResponse updated = new ImportResponse(current.id(), current.projectId(), current.baseBranch(),
+                plan.approvable() ? "READY_FOR_REVIEW" : "BLOCKED", current.createdAt());
+        imports.put(importId, new OwnedImport(ownerUserId, updated));
+        if (persistentImportsEnabled()) { persistentImports.savePlan(ownerUserId, importId, plan); persistentImports.updateStatus(ownerUserId, importId, updated.status(), plan.baseCommitSha()); }
         return plan;
     }
 
-    public ImmutableImportPlan getImportPlan(UUID ownerUserId, UUID importId) {
+    public Optional<ImmutableImportPlan> findImportPlan(UUID ownerUserId, UUID importId) {
         requireOwnedImport(ownerUserId, importId);
-        ImmutableImportPlan plan = plansByImport.get(importId);
-        if (plan == null) throw ApiException.notFound("IMPORT_PLAN_NOT_FOUND", "The import plan was not found.");
-        return plan;
+        return Optional.ofNullable(plansByImport.get(importId));
+    }
+
+    public ImmutableImportPlan getImportPlan(UUID ownerUserId, UUID importId) {
+        return findImportPlan(ownerUserId, importId)
+                .orElseThrow(() -> ApiException.notFound("IMPORT_PLAN_NOT_FOUND", "The import plan was not found."));
     }
 
     public ImportPlanApproval approveImportPlan(UUID ownerUserId, UUID importId, String submittedDigest, String submittedSelectionDigest) {
@@ -312,8 +411,9 @@ public class ProjectApplicationService {
 
         OwnedImport owned = imports.get(importId);
         ImportResponse current = owned.response;
-        imports.put(importId, new OwnedImport(ownerUserId, new ImportResponse(current.id(), current.projectId(),
-                current.baseBranch(), "APPROVED", current.createdAt())));
+        ImportResponse updated = new ImportResponse(current.id(), current.projectId(), current.baseBranch(), "APPROVED", current.createdAt());
+        imports.put(importId, new OwnedImport(ownerUserId, updated));
+        if (persistentImportsEnabled()) { persistentImports.saveApproval(ownerUserId, importId, approval); persistentImports.updateStatus(ownerUserId, importId, updated.status(), plan.baseCommitSha()); }
         return approval;
     }
 
@@ -340,6 +440,7 @@ public class ProjectApplicationService {
             throw ApiException.conflict("IMPORT_SELECTION_IMMUTABLE",
                     "An immutable selection already exists for this import.");
         }
+        if (persistentImportsEnabled()) persistentImports.saveSelection(ownerUserId, importId, result);
         return result;
     }
 
@@ -402,8 +503,9 @@ public class ProjectApplicationService {
         }
         OwnedImport owned = imports.get(importId);
         ImportResponse current = owned.response;
-        imports.put(importId, new OwnedImport(ownerUserId, new ImportResponse(current.id(), current.projectId(),
-                current.baseBranch(), "FILES_APPLIED", current.createdAt())));
+        ImportResponse updated = new ImportResponse(current.id(), current.projectId(), current.baseBranch(), "FILES_APPLIED", current.createdAt());
+        imports.put(importId, new OwnedImport(ownerUserId, updated));
+        if (persistentImportsEnabled()) persistentImports.updateStatus(ownerUserId, importId, updated.status(), workspace.baseCommitSha());
         return result;
     }
 
@@ -432,6 +534,7 @@ public class ProjectApplicationService {
         imports.put(importId, new OwnedImport(ownerUserId, new ImportResponse(current.id(), current.projectId(),
                 current.baseBranch(), "PUSHED", current.createdAt())));
         recordWorkCommit(ownerUserId, current.projectId(), importId, delivery);
+        if (persistentImportsEnabled()) { persistentImports.saveDelivery(ownerUserId, importId, result); persistentImports.updateStatus(ownerUserId, importId, "PUSHED", delivery.baseCommitSha()); }
         return result;
     }
 
@@ -458,8 +561,9 @@ public class ProjectApplicationService {
                     "This import already has different pull request metadata.");
         }
         ImportResponse current = owned.response;
-        imports.put(importId, new OwnedImport(ownerUserId, new ImportResponse(current.id(), current.projectId(),
-                current.baseBranch(), "PULL_REQUEST_CREATED", current.createdAt())));
+        ImportResponse updated = new ImportResponse(current.id(), current.projectId(), current.baseBranch(), "PULL_REQUEST_CREATED", current.createdAt());
+        imports.put(importId, new OwnedImport(ownerUserId, updated));
+        if (persistentImportsEnabled()) persistentImports.updateStatus(ownerUserId, importId, updated.status(), delivery.baseCommitSha());
         return stored;
     }
 
@@ -490,21 +594,59 @@ public class ProjectApplicationService {
     }
 
     public List<StoredUpload> expiredUploads(Instant now) {
-        return uploadsByImport.values().stream()
+        Map<UUID, StoredUpload> candidates = new LinkedHashMap<>();
+        if (persistentImportsEnabled()) {
+            for (StoredUpload upload : persistentImports.listExpiredTerminalUploads(now)) {
+                candidates.put(upload.id(), upload);
+                uploadsByImport.putIfAbsent(upload.importId(), upload);
+            }
+        }
+        uploadsByImport.values().stream()
                 .filter(upload -> !upload.retentionDeadline().isAfter(now))
-                .toList();
+                .filter(upload -> {
+                    OwnedImport item = imports.get(upload.importId());
+                    return item != null && Set.of("PUSHED", "PULL_REQUEST_CREATED").contains(item.response.status());
+                })
+                .forEach(upload -> candidates.put(upload.id(), upload));
+        return List.copyOf(candidates.values());
     }
 
     public boolean removeExpiredUpload(UUID importId, UUID uploadId, Instant now) {
         StoredUpload current = uploadsByImport.get(importId);
         if (current == null || !current.id().equals(uploadId) || current.retentionDeadline().isAfter(now)) return false;
-        return uploadsByImport.remove(importId, current);
+        OwnedImport item = imports.get(importId);
+        if (item != null && !Set.of("PUSHED", "PULL_REQUEST_CREATED").contains(item.response.status())) return false;
+        if (item == null && !persistentImportsEnabled()) return false;
+        boolean removed = uploadsByImport.remove(importId, current);
+        if (persistentImportsEnabled()) persistentImports.clearUpload(current.ownerUserId(), importId);
+        return removed || persistentImportsEnabled();
+    }
+
+    private boolean persistentImportsEnabled() {
+        return persistentImports != null && persistentImports.enabled();
     }
 
     private OwnedImport requireOwnedImport(UUID ownerUserId, UUID importId) {
         OwnedImport item = imports.get(importId);
+        if (item == null && persistentImportsEnabled()) {
+            persistentImports.find(ownerUserId, importId).ifPresent(this::hydrate);
+            item = imports.get(importId);
+        }
         if (item == null || !item.ownerUserId.equals(ownerUserId)) throw ApiException.notFound("IMPORT_NOT_FOUND", "The import was not found.");
         return item;
+    }
+
+    private void hydrate(ImportResumePersistenceStore.ResumeState state) {
+        UUID importId = state.response().id();
+        imports.putIfAbsent(importId, new OwnedImport(state.ownerUserId(), state.response()));
+        if (state.upload() != null) uploadsByImport.putIfAbsent(importId, state.upload());
+        if (state.snapshot() != null) snapshotsByImport.putIfAbsent(importId, state.snapshot());
+        if (state.plan() != null) plansByImport.putIfAbsent(importId, state.plan());
+        if (state.selection() != null) selectionsByImport.putIfAbsent(importId, state.selection());
+        if (state.approval() != null) approvalsByImport.putIfAbsent(importId, state.approval());
+        if (state.identity() != null) gitIdentitiesByImport.putIfAbsent(importId, state.identity());
+        auditMetadataByImport.putIfAbsent(importId, state.auditMetadata());
+        if (state.delivery() != null) deliveriesByImport.putIfAbsent(importId, state.delivery());
     }
 
     private OwnedProject requireOwnedProject(UUID ownerUserId, UUID projectId) {
@@ -548,6 +690,9 @@ public class ProjectApplicationService {
                                   ImportPlanApproval approval) {}
     public record ProjectWorkSource(long githubInstallationId, String repositoryFullName, WorkSession work) {}
 
+    private record StoredUploadPromotionKey(UUID ownerUserId, UUID projectId, String idempotencyKey) {}
+    private record StoredUploadPromotion(UUID ownerUserId, UUID projectId, UUID importId, UUID artifactId,
+                                         String artifactSha256, String idempotencyKey) {}
     private record OwnedProject(UUID ownerUserId, ProjectResponse response) {}
     private record OwnedImport(UUID ownerUserId, ImportResponse response) {}
 }

@@ -133,6 +133,28 @@ public class ImportResource {
 
 
     @POST
+    @Path("/{importId}/prepare-review")
+    public ImportPlanResponse prepareReview(@PathParam("importId") UUID importId) {
+        UUID ownerUserId = currentUser.requireUserId();
+
+        var existingPlan = service.findImportPlan(ownerUserId, importId);
+        if (existingPlan.isPresent()) return toPlanResponse(existingPlan.get());
+
+        if (service.findRepositorySnapshot(ownerUserId, importId).isEmpty()) {
+            var target = service.snapshotTarget(ownerUserId, importId);
+            try {
+                var snapshot = snapshots.create(importId, target.githubInstallationId(), target.repositoryFullName(), target.branch());
+                service.recordRepositorySnapshot(ownerUserId, importId, snapshot);
+            } catch (RepositorySnapshotException e) {
+                throw ApiException.badGateway("REPOSITORY_SNAPSHOT_FAILED", e.getMessage());
+            }
+        }
+
+        return createPlan(importId);
+    }
+
+
+    @POST
     @Path("/{importId}/plan")
     public ImportPlanResponse createPlan(@PathParam("importId") UUID importId) {
         UUID ownerUserId = currentUser.requireUserId();
@@ -190,6 +212,16 @@ public class ImportResource {
         var approval = service.approveImportPlan(ownerUserId, importId,
                 request == null ? null : request.planDigestSha256(),
                 request == null ? null : request.selectionDigestSha256());
+        return new ImportPlanApprovalResponse(approval.importId(), approval.planId(),
+                approval.planDigestSha256(), approval.selectionDigestSha256(), "APPROVED", approval.approvedAt());
+    }
+
+    @GET
+    @Path("/{importId}/plan/approval")
+    public ImportPlanApprovalResponse getPlanApproval(@PathParam("importId") UUID importId) {
+        var approval = service.findImportPlanApproval(currentUser.requireUserId(), importId)
+                .orElseThrow(() -> ApiException.notFound("IMPORT_PLAN_APPROVAL_NOT_FOUND",
+                        "No approval has been recorded for this import."));
         return new ImportPlanApprovalResponse(approval.importId(), approval.planId(),
                 approval.planDigestSha256(), approval.selectionDigestSha256(), "APPROVED", approval.approvedAt());
     }

@@ -102,6 +102,10 @@ export async function createImportPlan(importId: string): Promise<ImportPlanResp
   return requestJson(`/api/imports/${encodeURIComponent(importId)}/plan`, { method: 'POST' });
 }
 
+export async function prepareImportReview(importId: string): Promise<ImportPlanResponse> {
+  return requestJson(`/api/imports/${encodeURIComponent(importId)}/prepare-review`, { method: 'POST' });
+}
+
 export async function getImportPlan(importId: string): Promise<ImportPlanResponse> {
   return requestJson(`/api/imports/${encodeURIComponent(importId)}/plan`);
 }
@@ -129,6 +133,14 @@ export async function approveImportPlan(importId: string, planDigestSha256: stri
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ planDigestSha256, selectionDigestSha256 }),
   });
+}
+
+export async function getImportSelection(importId: string): Promise<ImportSelectionResponse | null> {
+  return requestOptionalJson(`/api/imports/${encodeURIComponent(importId)}/selection`);
+}
+
+export async function getImportPlanApproval(importId: string): Promise<ImportPlanApprovalResponse | null> {
+  return requestOptionalJson(`/api/imports/${encodeURIComponent(importId)}/plan/approval`);
 }
 
 export function uploadZip(
@@ -166,6 +178,13 @@ async function requestJson<T>(url: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   if (init.method && !['GET', 'HEAD'].includes(init.method.toUpperCase())) headers.set('X-Zip-GitHub-Request', '1');
   const response = await fetch(url, { ...init, headers, credentials: 'include' });
+  if (!response.ok) throw await apiError(response);
+  return response.json() as Promise<T>;
+}
+
+async function requestOptionalJson<T>(url: string): Promise<T | null> {
+  const response = await fetch(url, { credentials: 'include' });
+  if (response.status === 404) return null;
   if (!response.ok) throw await apiError(response);
   return response.json() as Promise<T>;
 }
@@ -237,6 +256,10 @@ export async function deliverImport(importId: string): Promise<GitDeliveryRespon
 
 export async function getDelivery(importId: string): Promise<GitDeliveryResponse> {
   return requestJson(`/api/imports/${encodeURIComponent(importId)}/delivery`);
+}
+
+export async function findDelivery(importId: string): Promise<GitDeliveryResponse | null> {
+  return requestOptionalJson(`/api/imports/${encodeURIComponent(importId)}/delivery`);
 }
 
 export async function createPullRequest(importId: string): Promise<PullRequestResponse> {

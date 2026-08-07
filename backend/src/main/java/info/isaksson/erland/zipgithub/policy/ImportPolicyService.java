@@ -16,7 +16,7 @@ import java.util.Set;
 /** Applies the deterministic MVP import policy without mutating either source inventory. */
 @ApplicationScoped
 public class ImportPolicyService {
-    public static final String POLICY_VERSION = "mvp-2";
+    public static final String POLICY_VERSION = "mvp-3";
     private static final Set<String> PRIVATE_KEY_FILENAMES = Set.of(
             "id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", "identity", "credentials.json", "service-account.json");
 
@@ -57,7 +57,7 @@ public class ImportPolicyService {
         if (lower.equals(".git") || lower.startsWith(".git/")) {
             return hardBlocked(entry, "GIT_METADATA_PROTECTED", "Git repository metadata may never be imported or selected.");
         }
-        if (lower.equals(".github") || lower.startsWith(".github/")) {
+        if ((lower.equals(".github") || lower.startsWith(".github/")) && isRepositoryChange(entry.status())) {
             return overridableBlocked(entry, "GITHUB_WORKFLOW_PROTECTED", "Changes under .github/** are excluded by default and require explicit override before inclusion.");
         }
         if (entry.status() == ImportFileStatus.WOULD_DELETE) {
@@ -73,6 +73,12 @@ public class ImportPolicyService {
             return warning(entry, "ENVIRONMENT_FILE_WARNING", "Environment files may contain secrets and require careful review.");
         }
         return unchangedPolicy(entry);
+    }
+
+    private static boolean isRepositoryChange(ImportFileStatus status) {
+        return status == ImportFileStatus.ADDED
+                || status == ImportFileStatus.MODIFIED
+                || status == ImportFileStatus.WOULD_DELETE;
     }
 
     private static boolean isDefaultIncludedChange(ImportPolicyEntry entry) {

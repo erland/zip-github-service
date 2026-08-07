@@ -45,6 +45,15 @@ class DatabaseMigrationTest {
                     "INSERT INTO import_session (id, project_id, owner_user_id, base_branch, status, created_at, updated_at) VALUES (?, ?, ?, 'main', 'CREATED', now(), now())",
                     UUID.randomUUID(), project, ownerB));
             assertTrue(violation.getSQLState().startsWith("23"));
+
+            UUID resumableImport = UUID.randomUUID();
+            execute(connection, "INSERT INTO import_session (id, project_id, owner_user_id, base_branch, status, created_at, updated_at) VALUES (?, ?, ?, 'main', 'READY_FOR_REVIEW', now(), now())",
+                    resumableImport, project, ownerA);
+            execute(connection, "INSERT INTO import_resume_payload (import_session_id, owner_user_id, git_identity_json, updated_at) VALUES (?, ?, '{}', now())",
+                    resumableImport, ownerA);
+            SQLException resumeOwnerViolation = assertThrows(SQLException.class, () -> execute(connection,
+                    "UPDATE import_resume_payload SET owner_user_id = ? WHERE import_session_id = ?", ownerB, resumableImport));
+            assertTrue(resumeOwnerViolation.getSQLState().startsWith("23"));
         }
     }
 

@@ -97,7 +97,7 @@ Requires a stored upload and repository snapshot. Returns stable SHA-256 based c
 
 `POST /api/imports/{importId}/policy`
 
-Recreates the normalized archive inventory and hash comparison against the import's locked repository snapshot, then applies policy version `mvp-2`.
+Recreates the normalized archive inventory and hash comparison against the import's locked repository snapshot, then applies policy version `mvp-3`.
 
 The response contains deterministic path-sorted entries and an `approvable` flag. Policy blockers are typed. `.git/**`, oversized files and high-risk private-key/credential filenames are `HARD_BLOCKED`; `.github/**` and repository deletions are `OVERRIDABLE_BLOCKED` and require explicit per-path override before selection. Transport noise is returned as `IGNORED`; `.env` and environment-specific `.env.*` files are warnings, while `.env.example` remains allowed.
 
@@ -121,6 +121,18 @@ Repeated calls are idempotent when the canonical plan digest is unchanged. If a 
 
 `GET /api/imports/{importId}/plan` returns the stored plan without recomputing it.
 
+## Automatic review preparation
+
+`POST /api/imports/{importId}/prepare-review` is the normal post-upload orchestration endpoint. It requires the owned source upload and then:
+
+1. returns the already stored immutable plan immediately when one exists;
+2. otherwise reuses an already locked repository snapshot when preparation previously progressed that far;
+3. otherwise resolves and records one exact repository snapshot;
+4. runs the existing archive inventory, comparison, `mvp-3` policy and immutable plan creation;
+5. returns the resulting `ImportPlanResponse`.
+
+The endpoint does not introduce a second plan implementation: it delegates to the existing snapshot and plan services. Retry/refresh therefore preserves the first locked base SHA and immutable plan identity rather than resolving a new moving branch after partial success. The older granular snapshot/plan endpoints remain available for diagnostics and compatibility, but the normal UI no longer requires separate user actions for them.
+
 ### Approve exact immutable plan
 
 `POST /api/imports/{importId}/plan/approval`
@@ -137,6 +149,14 @@ Request:
 ```
 
 The server requires ownership and exact equality with both the stored plan digest and immutable selection digest. A plan containing blockers may still be approved when the immutable selection contains at least one valid selected change and every selected overridable blocker has its explicit audit record. Repeating the same approval is idempotent.
+
+`GET /api/imports/{importId}/plan/approval` returns the owner-scoped recorded approval, or `404` if no approval exists. This is a recovery/readback endpoint: it never creates or changes an approval.
+
+### Normal review-to-commit orchestration (step 7.17)
+
+The normal UI exposes one action, **Godkänn valda förändringar**. That one click still preserves the internal security boundaries in this order: create/reuse immutable selection, record/reuse approval, prepare and exactly verify the workspace, then commit and push. The browser calls the existing endpoints in that order; no GitHub write occurs before approval has been recorded.
+
+If approval exists but delivery did not complete, refresh restores the immutable selection and approval and exposes only the recovery action **Försök skapa commit igen**. Delivery/workspace retries reuse existing identities and are idempotent. If delivery is already recorded, reopening review proceeds to the result page.
 
 ## Prepare approved Git workspace
 
@@ -222,3 +242,13 @@ As of step 7.9 the immutable selection is the exact delivery contract. Plan appr
 - Workspace preparation applies only `selectedPaths`; selected deletions are removed explicitly.
 - The complete Git diff must equal the selected path set before delivery.
 - Delivery rejects a stale reviewed base/work-branch SHA.
+
+
+## Import history source metadata
+
+Project import-history entries expose `sourceType` and nullable `sourceReference` for troubleshooting/audit. These fields are informational only and never authorize access or alter policy/delivery behavior. Current source types are `WEB_UPLOAD`, `STORED_UPLOAD`, and reserved `STAGING_IMPORT`.
+
+
+## Work commit history
+
+`GET /api/projects/{projectId}/work/commits` requires the normal authenticated owner session. It returns `{ commits, githubAvailable }`; each commit contains `sha`, `message`, `authorName`, `authorEmail`, `authoredAt`, `htmlUrl` and `fallback`. GitHub is queried with a short-lived installation token. On temporary GitHub failure the response remains successful with `githubAvailable=false` and, when known, one fallback entry for the persisted Work head.

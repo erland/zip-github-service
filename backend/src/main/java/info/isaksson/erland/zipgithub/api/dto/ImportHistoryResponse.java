@@ -14,4 +14,6 @@ public record ImportHistoryResponse(
         String planDigestSha256,
         Long pullRequestNumber,
         String pullRequestUrl,
+        String sourceType,
+        String sourceReference,
         String resumeStage) {}

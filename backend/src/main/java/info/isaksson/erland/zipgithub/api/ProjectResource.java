@@ -3,6 +3,8 @@ package info.isaksson.erland.zipgithub.api;
 import info.isaksson.erland.zipgithub.api.dto.*;
 import info.isaksson.erland.zipgithub.application.ProjectApplicationService;
 import info.isaksson.erland.zipgithub.delivery.GitDeliveryResult;
+import info.isaksson.erland.zipgithub.github.GitHubCommitHistoryClient;
+import info.isaksson.erland.zipgithub.github.GitHubInstallationTokenProvider;
 import info.isaksson.erland.zipgithub.pullrequest.PullRequestService;
 import info.isaksson.erland.zipgithub.security.CurrentUserProvider;
 import jakarta.inject.Inject;
@@ -19,6 +21,8 @@ public class ProjectResource {
     @Inject CurrentUserProvider currentUser;
     @Inject ProjectApplicationService service;
     @Inject PullRequestService pullRequests;
+    @Inject GitHubInstallationTokenProvider installationTokens;
+    @Inject GitHubCommitHistoryClient commitHistory;
 
     @GET
     public List<ProjectResponse> list() { return service.listProjects(currentUser.requireUserId()); }
@@ -54,6 +58,29 @@ public class ProjectResource {
         var item = work.get();
         return Response.ok(new WorkSessionResponse(item.id(), item.projectId(), item.baseBranch(), item.branchName(),
                 item.status(), item.headCommitSha(), item.pullRequestNumber(), item.pullRequestUrl(), item.createdAt(), item.updatedAt())).build();
+    }
+
+
+    @GET @Path("/{projectId}/work/commits")
+    public WorkHistoryResponse getWorkCommits(@PathParam("projectId") UUID projectId) {
+        UUID ownerUserId = currentUser.requireUserId();
+        ProjectResponse project = service.getProject(ownerUserId, projectId);
+        var work = service.activeWork(ownerUserId, projectId);
+        if (work.isEmpty() || work.get().headCommitSha() == null) return new WorkHistoryResponse(List.of(), true);
+        try {
+            String installationToken = installationTokens.createInstallationToken(project.githubInstallationId());
+            var commits = commitHistory.listBranchCommits(installationToken, project.repositoryFullName(), work.get().branchName(), 50)
+                    .stream()
+                    .map(item -> new WorkCommitResponse(item.sha(), item.message(), item.authorName(), item.authorEmail(),
+                            item.authoredAt(), item.htmlUrl(), false))
+                    .toList();
+            return new WorkHistoryResponse(commits, true);
+        } catch (RuntimeException e) {
+            String sha = work.get().headCommitSha();
+            String url = "https://github.com/" + project.repositoryFullName() + "/commit/" + sha;
+            return new WorkHistoryResponse(List.of(new WorkCommitResponse(sha, "Senaste kända Work-commit",
+                    "", "", work.get().updatedAt(), url, true)), false);
+        }
     }
 
     @POST @Path("/{projectId}/work/pull-request")

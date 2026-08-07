@@ -57,6 +57,7 @@ describe('App routing and authentication', () => {
       if (url === '/api/projects/project-1') return json(project);
       if (url === '/api/projects/project-1/imports') return json([]);
       if (url === '/api/projects/project-1/work') return Promise.resolve(new Response(null, { status: 204 }));
+      if (url === '/api/projects/project-1/work/commits') return json({ githubAvailable: true, commits: [] });
       return Promise.reject(new Error(`Unexpected fetch: ${url}`));
     }));
     renderAt('/projects');

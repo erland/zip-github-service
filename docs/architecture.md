@@ -29,7 +29,7 @@ The Java 21 backend owns:
 - OAuth callback and server-side session handling;
 - GitHub App installation-token creation;
 - authorization and user ownership checks;
-- upload streaming and retention;
+- source-neutral ZIP ingestion/storage plus user-owned upload orchestration and retention;
 - ZIP inspection, normalization and hashing;
 - frozen repository snapshots;
 - comparison, policy and immutable plan creation;
@@ -38,6 +38,8 @@ The Java 21 backend owns:
 - branch, commit, push and draft-PR delivery;
 - idempotency, retry classification and result metadata;
 - check-status aggregation and import history.
+
+ZIP byte ingestion is deliberately separated from ownership: `ZipIngestionService` produces a neutral `StoredUploadArtifact` under an opaque storage scope, while `StreamingUploadService` attaches that artifact to the authenticated browser import. This keeps size/hash/storage safety reusable for future staging ingestion without making storage paths an authorization boundary.
 
 ### PostgreSQL
 
@@ -110,3 +112,41 @@ Policy blockers have two delivery classes:
 The workspace starts from the exact reviewed commit, applies only selected archive files and explicitly selected deletions, then compares the complete Git diff path set and file hashes with the immutable selection. Delivery rechecks the current remote work-branch/base SHA before committing and pushes without force. This creates the security chain:
 
 `ZIP SHA → immutable plan digest → immutable selection digest → approval → exact workspace diff → commit`.
+
+### Stored-upload promotion boundary (RC25)
+
+A source channel that has already used `ZipIngestionService` can convert its neutral `StoredUploadArtifact` into the ordinary user-owned import model through `ProjectApplicationService.createImportFromStoredUpload(...)`. Promotion attaches the existing physical artifact rather than copying or re-uploading bytes, is idempotent per owner/project promotion key, and converges immediately on the same downstream import pipeline as a browser upload. No alternate comparison/policy/delivery pipeline is introduced.
+
+
+## Import-source convergence
+
+All ingestion channels must converge to the ordinary user-owned import model before inventory/comparison. `ImportSource` records how the ZIP arrived (`WEB_UPLOAD`, `STORED_UPLOAD`, future `STAGING_IMPORT`) as non-secret audit metadata only. Source classification is intentionally outside policy, selection and Git delivery semantics.
+
+
+## Alternative ingestion convergence (step 7.14)
+
+Browser uploads and future staging/Shortcut uploads must converge before archive inspection. `ZipIngestionService` is the single controlled byte-ingestion boundary. A future staging flow stores bytes as a neutral `StoredUploadArtifact`, then—only after normal user/project authorization—calls `ProjectApplicationService.createImportFromStoredUpload(...)`. From that point onward the ordinary `Import` and existing inventory, snapshot, comparison, policy, immutable plan, selection, workspace and delivery services are the only pipeline. No staging-specific policy or Git path is allowed.
+
+`StoredUploadArtifact` is an internal trusted hand-off object, not an external API DTO. Client-supplied path/hash/size values must never be used to fabricate one. Import-source audit metadata is deliberately outside plan and selection digest semantics.
+
+## Automatic upload-to-review orchestration (step 7.16)
+
+A successful browser ZIP upload now immediately calls `POST /api/imports/{importId}/prepare-review`. This is an orchestration layer only: archive inventory, repository snapshot, comparison, policy and immutable plan creation continue to use the existing services and security boundaries.
+
+Preparation is restart-safe at the application-contract level. If an immutable plan already exists, it is returned unchanged. If only the repository snapshot exists, that exact locked SHA is reused and the remaining deterministic pipeline continues from it. A UI retry therefore never intentionally resolves a fresh branch head after the user already has a frozen snapshot. The standalone snapshot/plan endpoints remain available for diagnostics, while the normal interaction becomes `upload -> processing -> review`.
+
+
+
+## Restart-safe import resume
+
+Import review state is durable. `ProjectApplicationService` lazily hydrates owner-scoped import state from PostgreSQL when an import is reopened after a new login/session or backend restart. Physical ZIP files remain on the upload volume; immutable snapshot/plan/selection/approval data is restored from PostgreSQL. Ephemeral Git workspaces are recreated and reverified before retrying delivery.
+
+
+## Git-centric Work history (step 7.20)
+
+The active Work branch is the primary user-facing history. The backend reads branch commits through the GitHub App installation credential and exposes only compact commit metadata needed by the project page. Full import history remains owner-scoped application/audit data and is not treated as the canonical development timeline. If GitHub commit history is temporarily unavailable, the persisted Work head provides a degraded local fallback while retaining direct GitHub navigation.
+
+
+## Phase 7 resume/Work regression closure
+
+The phase-7 closure regression treats PostgreSQL resume state as authoritative after JVM loss. Temporary Git workspaces remain disposable and are rebuilt from persisted upload/snapshot/plan/selection/approval state. The primary project history is the Work branch commit history; technical import history remains owner-scoped audit data. If GitHub commit-history reads fail, persisted Work head metadata provides a degraded read-only fallback.

@@ -205,3 +205,8 @@ In-progress import execution state (uploaded-source associations, snapshots, pla
 ## Git askpass runtime helper (RC13)
 
 The backend image contains `/usr/local/bin/zip-github-git-askpass` as a fixed executable. Git operations no longer create executable askpass scripts inside temporary workspaces, which avoids `noexec` tmpfs mount failures while keeping installation tokens out of command-line arguments.
+
+
+## Resumable imports across backend restarts
+
+From RC34 onward, active import resume state is expected to survive ordinary backend container replacement. Operators should preserve both PostgreSQL and the upload volume. A restart may discard temporary Git workspaces; this is intentional because they are rebuilt and reverified from durable state. Do not delete active upload files manually while an import is non-terminal.

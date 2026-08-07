@@ -13,12 +13,18 @@ public final class ImportSession {
     private final UUID projectId;
     private final UUID ownerUserId;
     private final String baseBranch;
+    private final ImportAuditMetadata auditMetadata;
     private final Instant createdAt;
     private ImportSessionStatus status;
     private String baseCommitSha;
     private Instant updatedAt;
 
     public ImportSession(UUID id, UUID projectId, UUID ownerUserId, String baseBranch, Instant now) {
+        this(id, projectId, ownerUserId, baseBranch, ImportAuditMetadata.webUpload(), now);
+    }
+
+    public ImportSession(UUID id, UUID projectId, UUID ownerUserId, String baseBranch,
+                         ImportAuditMetadata auditMetadata, Instant now) {
         this.id = Objects.requireNonNull(id, "id");
         this.projectId = Objects.requireNonNull(projectId, "projectId");
         this.ownerUserId = Objects.requireNonNull(ownerUserId, "ownerUserId");
@@ -26,6 +32,7 @@ public final class ImportSession {
             throw new IllegalArgumentException("baseBranch must not be blank");
         }
         this.baseBranch = baseBranch;
+        this.auditMetadata = Objects.requireNonNull(auditMetadata, "auditMetadata");
         this.createdAt = Objects.requireNonNull(now, "now");
         this.updatedAt = now;
         this.status = ImportSessionStatus.CREATED;
@@ -56,6 +63,7 @@ public final class ImportSession {
     public UUID projectId() { return projectId; }
     public UUID ownerUserId() { return ownerUserId; }
     public String baseBranch() { return baseBranch; }
+    public ImportAuditMetadata auditMetadata() { return auditMetadata; }
     public String baseCommitSha() { return baseCommitSha; }
     public ImportSessionStatus status() { return status; }
     public Instant createdAt() { return createdAt; }

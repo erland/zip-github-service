@@ -30,6 +30,12 @@ public class ImportSessionEntity {
     @Column(name = "status", nullable = false)
     public String status;
 
+    @Column(name = "source_type", nullable = false)
+    public String sourceType;
+
+    @Column(name = "source_reference")
+    public String sourceReference;
+
     @Column(name = "created_at", nullable = false)
     public Instant createdAt;
 

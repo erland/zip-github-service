@@ -68,3 +68,8 @@ Step 1.1 defines the domain only. Database entities, constraints and Flyway migr
 ## Persistent work session (RC15)
 
 A project has at most one `ACTIVE` work session. The work session owns a stable Git branch (`zip-github/work-<workId>`) and records its base branch, initial base commit, current head commit, latest import, and optional final pull request metadata. Each ZIP import remains an independently reviewed immutable plan, but successful deliveries append one commit to the active work branch. Creating the final pull request changes the work session status to `PULL_REQUEST_CREATED`; the next import then creates a new work session.
+
+
+## Import source audit metadata
+
+Every normal import has an explicit non-secret `ImportSource`: `WEB_UPLOAD`, `STORED_UPLOAD` or the reserved future `STAGING_IMPORT`. An optional `sourceReference` may contain an internal correlation identifier such as `stored-upload:<artifact-uuid>`. Capability tokens, claim tokens, OAuth tokens and credentials must never be stored in source audit metadata. The source is diagnostic only and must not change comparison, policy, selection, plan digest or Git delivery semantics.

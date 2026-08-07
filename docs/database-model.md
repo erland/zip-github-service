@@ -55,3 +55,13 @@ Application queries must still scope every read and write by the authenticated u
 - `V1__clean_baseline.sql` establishes the clean migration baseline.
 - `V2__target_domain.sql` creates the target-domain schema, constraints and indexes.
 - `DatabaseMigrationTest` starts PostgreSQL 16 with Testcontainers, runs Flyway, and verifies that a cross-owner import-to-project link is rejected.
+
+
+## Import source metadata (V7)
+
+`import_session` contains `source_type` (`WEB_UPLOAD`, `STORED_UPLOAD`, `STAGING_IMPORT`) and nullable `source_reference`. Existing rows default to `WEB_UPLOAD`. `source_reference` is deliberately limited to non-secret correlation data and must never contain capability/claim tokens or credentials.
+
+
+## Resumable import state (V8)
+
+`import_resume_payload` stores the restart-critical serialized state for an `import_session`: upload metadata, locked repository snapshot, immutable plan, immutable selection, approval, Git identity and delivery metadata. Its `(import_session_id, owner_user_id)` foreign key is bound to the same owner on `import_session`. Temporary workspace paths are intentionally excluded and rebuilt after restart.

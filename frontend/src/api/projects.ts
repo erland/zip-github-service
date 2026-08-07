@@ -55,6 +55,32 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectR
   });
 }
 
+export type WorkSessionResponse = {
+  id: string;
+  projectId: string;
+  baseBranch: string;
+  branchName: string;
+  status: string;
+  headCommitSha: string | null;
+  pullRequestNumber: number | null;
+  pullRequestUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function getProjectWork(projectId: string): Promise<WorkSessionResponse | null> {
+  const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/work`, { credentials: 'include' });
+  if (response.status === 204) return null;
+  if (!response.ok) throw new Error(`API-fel ${response.status}`);
+  return response.json() as Promise<WorkSessionResponse>;
+}
+
+export async function createWorkPullRequest(projectId: string) {
+  return requestJson<import('./imports').PullRequestResponse>(`/api/projects/${encodeURIComponent(projectId)}/work/pull-request`, {
+    method: 'POST', headers: { 'X-Zip-GitHub-Request': '1' },
+  });
+}
+
 async function requestJson<T>(url: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(url, { credentials: 'include', ...init });
   if (!response.ok) {

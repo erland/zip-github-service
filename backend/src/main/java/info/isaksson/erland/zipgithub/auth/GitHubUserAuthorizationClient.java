@@ -51,12 +51,15 @@ public class GitHubUserAuthorizationClient {
                 throw new IllegalStateException("GitHub App user lookup returned HTTP " + userResponse.statusCode());
             }
             JsonNode user = mapper.readTree(userResponse.body());
-            return new GitHubUser(user.path("id").asLong(), user.path("login").asText(), user.path("avatar_url").asText(null), accessToken);
+            return new GitHubUser(user.path("id").asLong(), user.path("login").asText(),
+                    user.path("name").isNull() ? null : user.path("name").asText(null),
+                    user.path("email").isNull() ? null : user.path("email").asText(null),
+                    user.path("avatar_url").asText(null), accessToken);
         } catch (Exception e) {
             throw new IllegalStateException("GitHub App user authorization exchange failed", e);
         }
     }
 
     private static String enc(String value) { return URLEncoder.encode(value, StandardCharsets.UTF_8); }
-    public record GitHubUser(long id, String login, String avatarUrl, String accessToken) {}
+    public record GitHubUser(long id, String login, String name, String email, String avatarUrl, String accessToken) {}
 }

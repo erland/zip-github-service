@@ -3,6 +3,8 @@ export type AuthenticatedUser = {
   githubUserId: number;
   login: string;
   avatarUrl: string | null;
+  gitName: string;
+  gitEmail: string;
 };
 
 export async function getCurrentUser(): Promise<AuthenticatedUser | null> {

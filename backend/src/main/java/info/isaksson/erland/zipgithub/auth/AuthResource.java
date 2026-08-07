@@ -43,7 +43,11 @@ public class AuthResource {
         GitHubUserAuthorizationClient.GitHubUser githubUser = github.exchangeAndLoadUser(code);
         UUID userId = UUID.nameUUIDFromBytes(("github:" + githubUser.id()).getBytes(StandardCharsets.UTF_8));
         persistentProjects.upsertUser(userId, githubUser.id(), githubUser.login(), githubUser.avatarUrl());
-        String session = sessions.createSession(userId, githubUser.id(), githubUser.login(), githubUser.avatarUrl(), githubUser.accessToken());
+        String gitName = githubUser.name() == null || githubUser.name().isBlank() ? githubUser.login() : githubUser.name().trim();
+        String gitEmail = githubUser.email() == null || githubUser.email().isBlank()
+                ? githubUser.id() + "+" + githubUser.login() + "@users.noreply.github.com"
+                : githubUser.email().trim();
+        String session = sessions.createSession(userId, githubUser.id(), githubUser.login(), githubUser.avatarUrl(), gitName, gitEmail, githubUser.accessToken());
         URI target = URI.create(frontendUrl + stateRecord.returnTo());
         return Response.seeOther(target)
                 .cookie(cookie(CurrentUserProvider.SESSION_COOKIE, session, 43200), expiredCookie(STATE_COOKIE)).build();
@@ -52,7 +56,7 @@ public class AuthResource {
     @GET @Path("/me") @Produces(MediaType.APPLICATION_JSON)
     public AuthenticatedUserResponse me() {
         var session = currentUser.requireSession();
-        return new AuthenticatedUserResponse(session.userId(), session.githubUserId(), session.login(), session.avatarUrl());
+        return new AuthenticatedUserResponse(session.userId(), session.githubUserId(), session.login(), session.avatarUrl(), session.gitName(), session.gitEmail());
     }
 
     @POST @Path("/logout")

@@ -8,7 +8,9 @@ import info.isaksson.erland.zipgithub.plan.ImmutableImportPlan;
 import info.isaksson.erland.zipgithub.plan.ImportPlanApproval;
 import info.isaksson.erland.zipgithub.workspace.AppliedImportWorkspace;
 import info.isaksson.erland.zipgithub.delivery.GitDeliveryResult;
+import info.isaksson.erland.zipgithub.delivery.GitCommitIdentity;
 import info.isaksson.erland.zipgithub.persistence.ProjectPersistenceStore;
+import info.isaksson.erland.zipgithub.persistence.WorkPersistenceStore;
 import info.isaksson.erland.zipgithub.pullrequest.PullRequestResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -28,8 +30,11 @@ public class ProjectApplicationService {
     private final Map<UUID, AppliedImportWorkspace> workspacesByImport = new ConcurrentHashMap<>();
     private final Map<UUID, GitDeliveryResult> deliveriesByImport = new ConcurrentHashMap<>();
     private final Map<UUID, PullRequestResult> pullRequestsByImport = new ConcurrentHashMap<>();
+    private final Map<UUID, GitCommitIdentity> gitIdentitiesByImport = new ConcurrentHashMap<>();
+    private final Map<UUID, WorkSession> workByProject = new ConcurrentHashMap<>();
     @Inject GitHubProjectConfigurationService githubConfiguration;
     @Inject ProjectPersistenceStore persistentProjects;
+    @Inject WorkPersistenceStore persistentWork;
 
     /** Clears the temporary in-memory store between Quarkus tests.
      *  This method must be removed when persistent repositories replace the prototype store.
@@ -44,6 +49,8 @@ public class ProjectApplicationService {
         workspacesByImport.clear();
         deliveriesByImport.clear();
         pullRequestsByImport.clear();
+        gitIdentitiesByImport.clear();
+        workByProject.clear();
     }
 
     public List<ProjectResponse> listProjects(UUID ownerUserId) {
@@ -91,14 +98,73 @@ public class ProjectApplicationService {
 
     public ProjectResponse getProject(UUID ownerUserId, UUID projectId) { return requireOwnedProject(ownerUserId, projectId).response; }
 
-    public ImportResponse createImport(UUID ownerUserId, UUID projectId, CreateImportRequest request) {
+    public Optional<WorkSession> activeWork(UUID ownerUserId, UUID projectId) {
+        requireOwnedProject(ownerUserId, projectId);
+        if (persistentProjects.enabled()) return persistentWork.findActive(ownerUserId, projectId);
+        WorkSession work = workByProject.get(projectId);
+        return work != null && work.ownerUserId().equals(ownerUserId) && "ACTIVE".equals(work.status()) ? Optional.of(work) : Optional.empty();
+    }
+
+    public WorkSession requireActiveWork(UUID ownerUserId, UUID projectId) {
+        return activeWork(ownerUserId, projectId).orElseThrow(() ->
+                ApiException.conflict("ACTIVE_WORK_REQUIRED", "The project has no active work."));
+    }
+
+    public String workBranchForImport(UUID ownerUserId, UUID importId) {
+        OwnedImport owned = requireOwnedImport(ownerUserId, importId);
+        return requireActiveWork(ownerUserId, owned.response.projectId()).branchName();
+    }
+
+    public ProjectWorkSource activeWorkSource(UUID ownerUserId, UUID projectId) {
+        ProjectResponse project = requireOwnedProject(ownerUserId, projectId).response;
+        WorkSession work = requireActiveWork(ownerUserId, projectId);
+        if (!work.hasCommit() || work.lastImportId() == null || work.lastPlanDigestSha256() == null || work.baseCommitSha() == null)
+            throw ApiException.conflict("WORK_HAS_NO_COMMITS", "The active work has no committed ZIP imports yet.");
+        return new ProjectWorkSource(project.githubInstallationId(), project.repositoryFullName(), work);
+    }
+
+    public WorkSession recordWorkPullRequest(UUID ownerUserId, UUID projectId, PullRequestResult result) {
+        WorkSession work = requireActiveWork(ownerUserId, projectId);
+        if (!work.branchName().equals(result.branchName()) || !work.headCommitSha().equals(result.commitSha()))
+            throw ApiException.conflict("WORK_PULL_REQUEST_MISMATCH", "The pull request does not match the active work head.");
+        if (persistentProjects.enabled()) return persistentWork.recordPullRequest(ownerUserId, projectId, result.pullRequestNumber(), result.pullRequestUrl());
+        WorkSession completed = new WorkSession(work.id(), work.projectId(), work.ownerUserId(), work.baseBranch(), work.branchName(),
+                "PULL_REQUEST_CREATED", work.headCommitSha(), work.baseCommitSha(), work.lastImportId(), work.lastPlanDigestSha256(),
+                result.pullRequestNumber(), result.pullRequestUrl(), work.createdAt(), Instant.now());
+        workByProject.put(projectId, completed);
+        return completed;
+    }
+
+    public ImportResponse createImport(UUID ownerUserId, UUID projectId, CreateImportRequest request,
+                                       String committerName, String committerEmail) {
         ProjectResponse project = requireOwnedProject(ownerUserId, projectId).response;
         if (!project.active()) throw ApiException.conflict("PROJECT_INACTIVE", "The project is inactive.");
-        String branch = request == null || request.baseBranch() == null || request.baseBranch().isBlank()
-                ? project.defaultBranch() : normalizeBranch(request.baseBranch());
-        ImportResponse response = new ImportResponse(UUID.randomUUID(), projectId, branch, "CREATED", Instant.now());
-        imports.put(response.id(), new OwnedImport(ownerUserId, response));
-        return response;
+        WorkSession work = getOrCreateWork(ownerUserId, projectId, project.defaultBranch());
+        String branch = work.hasCommit() ? work.branchName() : work.baseBranch();
+        String requestedName = request == null ? null : request.authorName();
+        String requestedEmail = request == null ? null : request.authorEmail();
+        boolean customAuthor = (requestedName != null && !requestedName.isBlank()) || (requestedEmail != null && !requestedEmail.isBlank());
+        if (customAuthor && (requestedName == null || requestedName.isBlank() || requestedEmail == null || requestedEmail.isBlank()))
+            throw ApiException.badRequest("INVALID_GIT_AUTHOR", "Both author name and email are required for another author.");
+        try {
+            GitCommitIdentity identity = new GitCommitIdentity(
+                    customAuthor ? requestedName : committerName,
+                    customAuthor ? requestedEmail : committerEmail,
+                    committerName, committerEmail);
+            ImportResponse response = new ImportResponse(UUID.randomUUID(), projectId, branch, "CREATED", Instant.now());
+            imports.put(response.id(), new OwnedImport(ownerUserId, response));
+            gitIdentitiesByImport.put(response.id(), identity);
+            return response;
+        } catch (IllegalArgumentException e) {
+            throw ApiException.badRequest("INVALID_GIT_IDENTITY", e.getMessage());
+        }
+    }
+
+    public GitCommitIdentity gitCommitIdentity(UUID ownerUserId, UUID importId) {
+        requireOwnedImport(ownerUserId, importId);
+        GitCommitIdentity identity = gitIdentitiesByImport.get(importId);
+        if (identity == null) throw ApiException.conflict("GIT_IDENTITY_MISSING", "The import has no locked Git identity.");
+        return identity;
     }
 
     public ImportResponse getImport(UUID ownerUserId, UUID importId) {
@@ -128,7 +194,7 @@ public class ProjectApplicationService {
     }
 
     private static String resumeStage(String status, ImmutableImportPlan plan, PullRequestResult pullRequest) {
-        if (pullRequest != null || "PULL_REQUEST_CREATED".equals(status)) return "RESULT";
+        if (pullRequest != null || "PULL_REQUEST_CREATED".equals(status) || "PUSHED".equals(status)) return "RESULT";
         if (plan != null || Set.of("READY_FOR_REVIEW", "BLOCKED", "APPROVED", "FILES_APPLIED", "PUSHED").contains(status)) return "REVIEW";
         return "UPLOAD";
     }
@@ -314,6 +380,7 @@ public class ProjectApplicationService {
         ImportResponse current = owned.response;
         imports.put(importId, new OwnedImport(ownerUserId, new ImportResponse(current.id(), current.projectId(),
                 current.baseBranch(), "PUSHED", current.createdAt())));
+        recordWorkCommit(ownerUserId, current.projectId(), importId, delivery);
         return result;
     }
 
@@ -348,6 +415,27 @@ public class ProjectApplicationService {
     public Optional<PullRequestResult> findPullRequest(UUID ownerUserId, UUID importId) {
         requireOwnedImport(ownerUserId, importId);
         return Optional.ofNullable(pullRequestsByImport.get(importId));
+    }
+
+    private WorkSession getOrCreateWork(UUID ownerUserId, UUID projectId, String baseBranch) {
+        if (persistentProjects.enabled()) return persistentWork.getOrCreateActive(ownerUserId, projectId, baseBranch);
+        return workByProject.compute(projectId, (id, existing) -> {
+            if (existing != null && "ACTIVE".equals(existing.status())) return existing;
+            UUID workId = UUID.randomUUID(); Instant now = Instant.now();
+            return new WorkSession(workId, projectId, ownerUserId, baseBranch, "zip-github/work-" + workId, "ACTIVE",
+                    null, null, null, null, null, null, now, now);
+        });
+    }
+
+    private void recordWorkCommit(UUID ownerUserId, UUID projectId, UUID importId, GitDeliveryResult delivery) {
+        if (persistentProjects.enabled()) {
+            persistentWork.recordCommit(ownerUserId, projectId, importId, delivery.baseCommitSha(), delivery.commitSha(), delivery.planDigestSha256());
+            return;
+        }
+        WorkSession work = requireActiveWork(ownerUserId, projectId);
+        workByProject.put(projectId, new WorkSession(work.id(), work.projectId(), work.ownerUserId(), work.baseBranch(), work.branchName(),
+                "ACTIVE", delivery.commitSha(), work.baseCommitSha() == null ? delivery.baseCommitSha() : work.baseCommitSha(),
+                importId, delivery.planDigestSha256(), null, null, work.createdAt(), Instant.now()));
     }
 
     public List<StoredUpload> expiredUploads(Instant now) {
@@ -407,6 +495,7 @@ public class ProjectApplicationService {
     public record DeliverySources(long githubInstallationId, String repositoryFullName, StoredUpload upload,
                                   RepositorySnapshot snapshot, ImmutableImportPlan plan,
                                   ImportPlanApproval approval) {}
+    public record ProjectWorkSource(long githubInstallationId, String repositoryFullName, WorkSession work) {}
 
     private record OwnedProject(UUID ownerUserId, ProjectResponse response) {}
     private record OwnedImport(UUID ownerUserId, ImportResponse response) {}

@@ -2,6 +2,8 @@ package info.isaksson.erland.zipgithub.api;
 
 import info.isaksson.erland.zipgithub.api.dto.*;
 import info.isaksson.erland.zipgithub.application.ProjectApplicationService;
+import info.isaksson.erland.zipgithub.delivery.GitDeliveryResult;
+import info.isaksson.erland.zipgithub.pullrequest.PullRequestService;
 import info.isaksson.erland.zipgithub.security.CurrentUserProvider;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -16,6 +18,7 @@ import java.util.UUID;
 public class ProjectResource {
     @Inject CurrentUserProvider currentUser;
     @Inject ProjectApplicationService service;
+    @Inject PullRequestService pullRequests;
 
     @GET
     public List<ProjectResponse> list() { return service.listProjects(currentUser.requireUserId()); }
@@ -44,9 +47,37 @@ public class ProjectResource {
         return service.listProjectImports(currentUser.requireUserId(), projectId);
     }
 
+    @GET @Path("/{projectId}/work")
+    public Response getWork(@PathParam("projectId") UUID projectId) {
+        var work = service.activeWork(currentUser.requireUserId(), projectId);
+        if (work.isEmpty()) return Response.noContent().build();
+        var item = work.get();
+        return Response.ok(new WorkSessionResponse(item.id(), item.projectId(), item.baseBranch(), item.branchName(),
+                item.status(), item.headCommitSha(), item.pullRequestNumber(), item.pullRequestUrl(), item.createdAt(), item.updatedAt())).build();
+    }
+
+    @POST @Path("/{projectId}/work/pull-request")
+    public PullRequestResponse createWorkPullRequest(@PathParam("projectId") UUID projectId) {
+        UUID ownerUserId = currentUser.requireUserId();
+        var source = service.activeWorkSource(ownerUserId, projectId);
+        var work = source.work();
+        var delivery = new GitDeliveryResult(work.lastImportId(), source.repositoryFullName(), work.baseBranch(),
+                work.branchName(), work.baseCommitSha(), work.headCommitSha(), work.lastPlanDigestSha256(), work.updatedAt());
+        try {
+            var created = pullRequests.createOrReuseDraft(source.githubInstallationId(), delivery);
+            service.recordWorkPullRequest(ownerUserId, projectId, created);
+            return new PullRequestResponse(created.importId(), created.repositoryFullName(), created.baseBranch(),
+                    created.branchName(), created.commitSha(), created.planDigestSha256(), created.pullRequestNumber(),
+                    created.pullRequestUrl(), created.draft(), created.state(), "PULL_REQUEST_CREATED", created.createdAt());
+        } catch (IllegalStateException e) {
+            throw info.isaksson.erland.zipgithub.api.error.ApiException.badGateway("PULL_REQUEST_CREATION_FAILED", e.getMessage());
+        }
+    }
+
     @POST @Path("/{projectId}/imports")
     public Response createImport(@PathParam("projectId") UUID projectId, CreateImportRequest request, @Context UriInfo uriInfo) {
-        ImportResponse created = service.createImport(currentUser.requireUserId(), projectId, request);
+        var session = currentUser.requireSession();
+        ImportResponse created = service.createImport(session.userId(), projectId, request, session.gitName(), session.gitEmail());
         URI location = uriInfo.getBaseUriBuilder().path("api/imports").path(created.id().toString()).build();
         return Response.created(location).entity(created).build();
     }

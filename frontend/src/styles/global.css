@@ -224,3 +224,21 @@ code, pre, .repository-name, .review-file__path { overflow-wrap: anywhere; word-
   .account-menu { display: grid; grid-template-columns: auto 1fr auto; align-items: center; }
   .account-menu .button { width: auto; }
 }
+
+.identity-fieldset { border: 1px solid #d0d5dd; border-radius: .7rem; display: grid; gap: .75rem; margin: .5rem 0 1rem; padding: 1rem; }
+.identity-fieldset legend { font-weight: 750; padding: 0 .35rem; }
+.radio-option { align-items: flex-start; display: flex; gap: .65rem; }
+.radio-option input { margin-top: .25rem; }
+.radio-option span { display: grid; gap: .15rem; }
+.radio-option small { color: #667085; }
+.identity-fields { display: grid; gap: .45rem; margin-left: 1.65rem; }
+
+.work-card,
+.work-target-summary {
+  border: 1px solid var(--border-color, #d8dee4);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-block: 1rem;
+}
+.work-target-summary p,
+.work-card p { margin-bottom: 0.5rem; }

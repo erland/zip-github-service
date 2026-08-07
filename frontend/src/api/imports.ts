@@ -68,11 +68,11 @@ export type ImportPlanResponse = {
   createdAt: string;
 };
 
-export async function createImport(projectId: string, baseBranch: string): Promise<ImportResponse> {
+export async function createImport(projectId: string, author?: { name: string; email: string }): Promise<ImportResponse> {
   return requestJson(`/api/projects/${encodeURIComponent(projectId)}/imports`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ baseBranch }),
+    body: JSON.stringify({ authorName: author?.name ?? null, authorEmail: author?.email ?? null }),
   });
 }
 
@@ -197,6 +197,10 @@ export async function prepareImportWorkspace(importId: string): Promise<AppliedI
 
 export async function deliverImport(importId: string): Promise<GitDeliveryResponse> {
   return requestJson(`/api/imports/${encodeURIComponent(importId)}/delivery`, { method: 'POST' });
+}
+
+export async function getDelivery(importId: string): Promise<GitDeliveryResponse> {
+  return requestJson(`/api/imports/${encodeURIComponent(importId)}/delivery`);
 }
 
 export async function createPullRequest(importId: string): Promise<PullRequestResponse> {

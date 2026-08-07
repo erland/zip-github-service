@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { approveImportPlan, createPullRequest, deliverImport, getImportPlan, ImportPlanApprovalResponse, ImportPlanEntry, ImportPlanResponse, prepareImportWorkspace } from '../api/imports';
+import { approveImportPlan, deliverImport, getImportPlan, ImportPlanApprovalResponse, ImportPlanEntry, ImportPlanResponse, prepareImportWorkspace } from '../api/imports';
 
 type ReviewFilter = 'CHANGES' | 'BLOCKED' | 'WARNINGS' | 'UNCHANGED' | 'IGNORED' | 'ALL';
 
@@ -60,7 +60,6 @@ export default function ImportReviewPage() {
     try {
       await prepareImportWorkspace(importId);
       await deliverImport(importId);
-      await createPullRequest(importId);
       navigate(`/projects/${projectId}/imports/${importId}/result`);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Leveransen till GitHub kunde inte slutföras.');
@@ -78,7 +77,7 @@ export default function ImportReviewPage() {
       <ol className="step-list" aria-label="Importflöde">
         <li><span>1</span><strong>Välj ZIP</strong></li>
         <li className="step-list__current"><span>2</span><strong>Granska förändringar</strong></li>
-        <li><span>3</span><strong>Godkänn och skapa PR</strong></li>
+        <li><span>3</span><strong>Godkänn och skapa commit</strong></li>
       </ol>
 
       {loading && <p className="status-message" role="status">Hämtar den sparade importplanen…</p>}
@@ -160,7 +159,7 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
             <strong>Planen är godkänd</strong>
             <p>Godkännandet gäller exakt digest <code>{approval.planDigestSha256}</code>.</p>
             <button className="button" type="button" disabled={delivering} onClick={deliverApprovedPlan}>
-              {delivering ? 'Skapar branch och PR…' : 'Skapa branch och pull request'}
+              {delivering ? 'Skapar commit på arbetsbranchen…' : 'Skapa commit på arbetsbranchen'}
             </button>
           </div>
         ) : (

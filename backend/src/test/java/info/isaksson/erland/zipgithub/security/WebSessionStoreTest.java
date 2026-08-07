@@ -15,7 +15,7 @@ class WebSessionStoreTest {
     @Test void sessionCanBeCreatedReadAndInvalidated() {
         WebSessionStore store = new WebSessionStore();
         UUID userId = UUID.randomUUID();
-        String token = store.createSession(userId, 123L, "erland", null, "test-user-token");
+        String token = store.createSession(userId, 123L, "erland", null, "Erland", "123+erland@users.noreply.github.com", "test-user-token");
         assertEquals(userId, store.find(token).orElseThrow().userId());
         store.invalidate(token);
         assertTrue(store.find(token).isEmpty());

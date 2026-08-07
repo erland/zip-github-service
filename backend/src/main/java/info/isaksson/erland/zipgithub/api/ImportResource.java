@@ -201,7 +201,9 @@ public class ImportResource {
                 .orElseThrow(() -> ApiException.conflict("WORKSPACE_REQUIRED",
                         "Prepare and verify the Git workspace before delivery."));
         try {
-            var delivered = gitDelivery.deliver(sources.githubInstallationId(), sources.snapshot().branch(), workspace);
+            var identity = service.gitCommitIdentity(ownerUserId, importId);
+            var delivered = gitDelivery.deliver(sources.githubInstallationId(), sources.snapshot().branch(),
+                    service.workBranchForImport(ownerUserId, importId), workspace, identity);
             var stored = service.recordGitDelivery(ownerUserId, importId, delivered);
             importWorkspaces.delete(workspace);
             return new GitDeliveryResponse(stored.importId(), stored.repositoryFullName(), stored.baseBranch(),
@@ -211,6 +213,16 @@ public class ImportResource {
             if (e.retryable()) throw ApiException.badGateway("GIT_DELIVERY_RETRYABLE", e.getMessage());
             throw ApiException.conflict("GIT_DELIVERY_FAILED", e.getMessage());
         }
+    }
+
+    @GET
+    @Path("/{importId}/delivery")
+    public GitDeliveryResponse getDelivery(@PathParam("importId") UUID importId) {
+        var stored = service.findGitDelivery(currentUser.requireUserId(), importId)
+                .orElseThrow(() -> ApiException.notFound("GIT_DELIVERY_NOT_FOUND", "No Git delivery has been recorded for this import."));
+        return new GitDeliveryResponse(stored.importId(), stored.repositoryFullName(), stored.baseBranch(),
+                stored.branchName(), stored.baseCommitSha(), stored.commitSha(), stored.planDigestSha256(),
+                "PUSHED", stored.pushedAt());
     }
 
     @POST

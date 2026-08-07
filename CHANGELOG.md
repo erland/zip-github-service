@@ -1,3 +1,35 @@
+## 1.0.0-rc.16 — 2026-08-07
+
+Corrective MVP release candidate after exercising the RC15 project-detail frontend tests.
+
+### Fixed
+
+- Restored stage-specific import-history link labels: `Öppna resultat`, `Fortsätt granska`, and `Fortsätt import`.
+- Preserved the RC15 persistent work-branch workflow unchanged.
+- Confirmed that `DatabaseMigrationTest` is intentionally skipped when Testcontainers cannot find a Docker environment; no backend code change is required for that local condition.
+
+## 1.0.0-rc.15 — 2026-08-07
+
+- Replaced the one-import/one-branch workflow with one persistent active work branch per project.
+- Each approved ZIP import now creates one sequential commit on the active work branch.
+- The first import creates `zip-github/work-<workId>` from the project default branch; later imports compare against the latest work-branch HEAD.
+- Pull requests are now created explicitly from the project page when the work is complete.
+- Work branch/head metadata is persisted in PostgreSQL through Flyway migration V6 so work survives backend redeploys.
+- A single ZIP import uses the same workflow without requiring a mode choice.
+
+## 1.0.0-rc.14 — 2026-08-07
+
+Corrective release candidate for per-import Git author metadata and authenticated committer identity.
+
+### Changed
+
+- Default Git author and committer now come from the authenticated GitHub user instead of global server environment variables.
+- GitHub profile name/email are used when available; login and the GitHub user-specific noreply address are used as fallbacks.
+- New imports let the user explicitly select “Någon annan” and provide an alternate author name/email.
+- The committer is never client-selectable and remains the authenticated GitHub user who creates/approves the import.
+- Git delivery sets `GIT_AUTHOR_*` and `GIT_COMMITTER_*` separately so Git history/blame reflects the author while commit metadata retains the approving user as committer.
+- Removed the obsolete global `ZIP_GITHUB_GIT_AUTHOR_NAME` / `ZIP_GITHUB_GIT_AUTHOR_EMAIL` runtime configuration.
+
 ## 1.0.0-rc.13 — 2026-08-07
 
 Corrective release candidate for Git authentication execution and durable project configuration.

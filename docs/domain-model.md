@@ -62,3 +62,7 @@ Failures retain enough state for a controlled retry. Exact retry rules will be t
 ## Persistence boundary
 
 Step 1.1 defines the domain only. Database entities, constraints and Flyway migrations are intentionally deferred to step 1.2.
+
+## Persistent work session (RC15)
+
+A project has at most one `ACTIVE` work session. The work session owns a stable Git branch (`zip-github/work-<workId>`) and records its base branch, initial base commit, current head commit, latest import, and optional final pull request metadata. Each ZIP import remains an independently reviewed immutable plan, but successful deliveries append one commit to the active work branch. Creating the final pull request changes the work session status to `PULL_REQUEST_CREATED`; the next import then creates a new work session.

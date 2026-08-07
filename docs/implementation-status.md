@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0053`
+- Repository revision: `r0056`
 - Last completed step: `7.5`
 - Next step: `8.1`
 - Overall state: `MVP RELEASE CANDIDATE`
@@ -150,3 +150,9 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0050` | 2026-08-07 | MVP RC real authentication/project frontend correction | Replaced demo project shell with GitHub-authenticated API-backed project list/configuration and merged direct GitHub backup/restore fixes; `8.1` remains next | `8.1` |
 | `r0051` | 2026-08-07 | MVP RC GitHub App user authorization correction | Replaced separate OAuth App login credentials with the GitHub App user authorization flow required by `/user/installations`; `8.1` remains next | `8.1` |
 | `r0052` | 2026-08-07 | MVP RC container runtime/storage correction | Added Git to the non-root backend runtime image and one-shot storage volume ownership initialization before backend start; `8.1` remains next | `8.1` |
+
+| `r0053` | 2026-08-07 | MVP RC persistent project and Git runtime correction | Persisted project configuration and replaced temporary askpass scripts with packaged runtime helper; `8.1` remains next | `8.1` |
+| `r0054` | 2026-08-07 | MVP RC Git author/committer identity correction | Default author/committer from authenticated GitHub user; optional per-import alternate author; `8.1` remains next | `8.1` |
+
+| `r0055` | 2026-08-07 | MVP RC persistent work-branch workflow | One active work branch per project; multiple ZIP imports become sequential commits; PR created only when work is finished; `8.1` remains next | `8.1` |
+| `r0056` | 2026-08-07 | MVP RC frontend import-history correction | Restored stage-specific accessible link labels for result, review and in-progress imports; no work-branch behavior changes; `8.1` remains next | `8.1` |

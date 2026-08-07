@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 
-const authenticatedUser = { id: 'user-1', githubUserId: 123, login: 'erland', avatarUrl: null };
+const authenticatedUser = { id: 'user-1', githubUserId: 123, login: 'erland', avatarUrl: null, gitName: 'Erland', gitEmail: '123+erland@users.noreply.github.com' };
 const project = {
   id: 'project-1', name: 'Bokprojekt', githubInstallationId: 10, githubRepositoryId: 20,
   repositoryFullName: 'erland/example-book-project', privateRepository: true, defaultBranch: 'main',
@@ -56,6 +56,7 @@ describe('App routing and authentication', () => {
       if (url === '/api/projects') return json([project]);
       if (url === '/api/projects/project-1') return json(project);
       if (url === '/api/projects/project-1/imports') return json([]);
+      if (url === '/api/projects/project-1/work') return Promise.resolve(new Response(null, { status: 204 }));
       return Promise.reject(new Error(`Unexpected fetch: ${url}`));
     }));
     renderAt('/projects');
@@ -64,27 +65,26 @@ describe('App routing and authentication', () => {
     const projectHeading = await screen.findByRole('heading', { name: 'Bokprojekt' });
     expect(projectHeading).toHaveFocus();
 
-    await user.click(screen.getByRole('link', { name: 'Ny import' }));
+    await user.click(screen.getByRole('link', { name: 'Starta arbete' }));
     expect(screen.getByRole('heading', { name: 'Ladda upp projekt-ZIP' })).toBeInTheDocument();
   });
 
   it('routes to the stored import result page', async () => {
     const result = { importId: 'i1', repositoryFullName: 'erland/example', baseBranch: 'main',
-      branchName: 'zip-github/import-i1', commitSha: 'a'.repeat(40), planDigestSha256: 'b'.repeat(64),
-      pullRequestNumber: 7, pullRequestUrl: 'https://github.com/erland/example/pull/7', draft: true,
-      state: 'open', status: 'PULL_REQUEST_CREATED', createdAt: '2026-08-06T20:00:00Z' };
+      branchName: 'zip-github/work-w1', baseCommitSha: 'c'.repeat(40), commitSha: 'a'.repeat(40), planDigestSha256: 'b'.repeat(64),
+      status: 'PUSHED', pushedAt: '2026-08-06T20:00:00Z' };
     const checks = { importId: 'i1', commitSha: 'a'.repeat(40), state: 'success', terminal: true,
       total: 1, pending: 0, successful: 1, failed: 0, cancelled: 0,
       detailsUrl: 'https://github.com/erland/example/commit/a/checks', checkedAt: '2026-08-07T05:00:00Z' };
     vi.stubGlobal('fetch', vi.fn().mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url === '/api/auth/me') return json(authenticatedUser);
-      if (url.endsWith('/pull-request')) return json(result);
+      if (url.endsWith('/delivery')) return json(result);
       if (url.endsWith('/checks')) return json(checks);
       return Promise.reject(new Error(`Unexpected fetch: ${url}`));
     }));
     renderAt('/projects/p1/imports/i1/result');
-    expect(await screen.findByRole('heading', { name: 'Pull request skapad' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Commit skapad' })).toBeInTheDocument();
   });
 
   it('shows a not-found page for unknown authenticated routes', async () => {

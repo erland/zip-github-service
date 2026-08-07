@@ -45,8 +45,8 @@ class ProjectResourceTest {
 
     @Test
     void projectBindingAndOwnerIsolationAreEnforced() {
-        String cookieA = sessions.createSession(USER_A, 1L, "user-a", null, "token-a");
-        String cookieB = sessions.createSession(USER_B, 2L, "user-b", null, "token-b");
+        String cookieA = sessions.createSession(USER_A, 1L, "user-a", null, "User A", "1+user-a@users.noreply.github.com", "token-a");
+        String cookieB = sessions.createSession(USER_B, 2L, "user-b", null, "User B", "2+user-b@users.noreply.github.com", "token-b");
         String projectId = given().cookie(CurrentUserProvider.SESSION_COOKIE, cookieA)
                 .contentType(ContentType.JSON)
                 .body("{\"name\":\"Novel\",\"githubInstallationId\":10,\"githubRepositoryId\":20,\"defaultBranch\":\"main\"}")
@@ -61,7 +61,7 @@ class ProjectResourceTest {
 
     @Test
     void unknownRepositoryIsRejected() {
-        String cookie = sessions.createSession(USER_A, 1L, "user-a", null, "token-a");
+        String cookie = sessions.createSession(USER_A, 1L, "user-a", null, "User A", "1+user-a@users.noreply.github.com", "token-a");
         given().cookie(CurrentUserProvider.SESSION_COOKIE, cookie).contentType(ContentType.JSON)
                 .body("{\"name\":\"Novel\",\"githubInstallationId\":10,\"githubRepositoryId\":999,\"defaultBranch\":\"main\"}")
                 .post("/api/projects").then().statusCode(404)

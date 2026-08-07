@@ -4,7 +4,6 @@ import info.isaksson.erland.zipgithub.github.GitHubInstallationTokenProvider;
 import info.isaksson.erland.zipgithub.workspace.AppliedImportWorkspace;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.io.IOException;
 import java.net.URI;
@@ -23,31 +22,28 @@ import java.util.UUID;
 @ApplicationScoped
 public class GitDeliveryService {
     private final GitHubInstallationTokenProvider tokens;
-    private final String authorName;
-    private final String authorEmail;
     private final Clock clock;
 
     @Inject
-    public GitDeliveryService(GitHubInstallationTokenProvider tokens,
-            @ConfigProperty(name="zipgithub.delivery.git-author-name") String authorName,
-            @ConfigProperty(name="zipgithub.delivery.git-author-email") String authorEmail) {
-        this(tokens, authorName, authorEmail, Clock.systemUTC());
+    public GitDeliveryService(GitHubInstallationTokenProvider tokens) {
+        this(tokens, Clock.systemUTC());
     }
 
-    GitDeliveryService(GitHubInstallationTokenProvider tokens, String authorName, String authorEmail, Clock clock) {
-        this.tokens = tokens; this.authorName = authorName; this.authorEmail = authorEmail; this.clock = clock;
+    GitDeliveryService(GitHubInstallationTokenProvider tokens, Clock clock) {
+        this.tokens = tokens; this.clock = clock;
     }
 
-    public GitDeliveryResult deliver(long installationId, String baseBranch, AppliedImportWorkspace workspace) {
+    public GitDeliveryResult deliver(long installationId, String baseBranch, String targetBranch, AppliedImportWorkspace workspace, GitCommitIdentity identity) {
         String token = tokens.createInstallationToken(installationId);
         URI remote = URI.create("https://github.com/" + workspace.repositoryFullName() + ".git");
-        return deliver(baseBranch, workspace, remote, token);
+        return deliver(baseBranch, targetBranch, workspace, remote, token, identity);
     }
 
-    GitDeliveryResult deliver(String baseBranch, AppliedImportWorkspace workspace, URI remote, String token) {
-        validate(baseBranch, workspace, remote);
+    GitDeliveryResult deliver(String baseBranch, String targetBranch, AppliedImportWorkspace workspace, URI remote, String token, GitCommitIdentity identity) {
+        validate(baseBranch, targetBranch, workspace, remote);
+        if (identity == null) throw new IllegalArgumentException("Git identity is required.");
         Path directory = workspace.workspacePath().toAbsolutePath().normalize();
-        String branchName = branchName(workspace.importId());
+        String branchName = targetBranch;
         try {
             String head = runPlain(directory, "git", "rev-parse", "HEAD^{commit}").trim();
             if (!head.equalsIgnoreCase(workspace.baseCommitSha()))
@@ -58,11 +54,9 @@ public class GitDeliveryService {
                 throw new GitDeliveryException("The base branch moved after approval; create a new import plan.");
 
             runPlain(directory, "git", "checkout", "--quiet", "-b", branchName);
-            runPlain(directory, "git", "config", "user.name", authorName);
-            runPlain(directory, "git", "config", "user.email", authorEmail);
             runPlain(directory, "git", "add", "--all");
             verifyStagedPaths(directory, workspace.appliedPaths());
-            runPlain(directory, "git", "commit", "--quiet", "-m", "Apply approved ZIP import " + workspace.importId());
+            runCommit(directory, identity, "Apply approved ZIP import " + workspace.importId());
             String commitSha = runPlain(directory, "git", "rev-parse", "HEAD^{commit}").trim();
             String parent = runPlain(directory, "git", "rev-parse", "HEAD^1^{commit}").trim();
             if (!parent.equalsIgnoreCase(workspace.baseCommitSha()))
@@ -76,8 +70,6 @@ public class GitDeliveryService {
             throw new GitDeliveryException("Could not create and push the delivery commit.", e);
         }
     }
-
-    static String branchName(UUID importId) { return "zip-github/import-" + importId.toString(); }
 
     private static String remoteBranchSha(Path directory, URI remote, String token, String branch) {
         String output = run(directory, token, "git", "ls-remote", "--heads", remote.toString(), "refs/heads/" + branch).trim();
@@ -101,16 +93,36 @@ public class GitDeliveryService {
         paths.sort(String::compareTo); return paths;
     }
 
-    private static void validate(String baseBranch, AppliedImportWorkspace workspace, URI remote) {
-        if (workspace == null || baseBranch == null || baseBranch.isBlank() || remote == null)
+    private static void validate(String baseBranch, String targetBranch, AppliedImportWorkspace workspace, URI remote) {
+        if (workspace == null || baseBranch == null || baseBranch.isBlank() || targetBranch == null || targetBranch.isBlank() || remote == null)
             throw new IllegalArgumentException("Base branch, workspace and remote are required.");
         if (!Files.isDirectory(workspace.workspacePath().resolve(".git")))
             throw new GitDeliveryException("The prepared Git workspace no longer exists.");
-        if (authorUnsafe(baseBranch)) throw new IllegalArgumentException("Invalid base branch.");
+        if (authorUnsafe(baseBranch) || authorUnsafe(targetBranch)) throw new IllegalArgumentException("Invalid Git branch.");
     }
 
     private static boolean authorUnsafe(String branch) {
         return branch.contains("..") || branch.startsWith("/") || branch.endsWith("/") || branch.contains("\\");
+    }
+
+    private static String runCommit(Path directory, GitCommitIdentity identity, String message) {
+        try {
+            ProcessBuilder builder = new ProcessBuilder("git", "commit", "--quiet", "-m", message)
+                    .directory(directory.toFile()).redirectErrorStream(true);
+            builder.environment().put("GIT_AUTHOR_NAME", identity.authorName());
+            builder.environment().put("GIT_AUTHOR_EMAIL", identity.authorEmail());
+            builder.environment().put("GIT_COMMITTER_NAME", identity.committerName());
+            builder.environment().put("GIT_COMMITTER_EMAIL", identity.committerEmail());
+            Process process = builder.start();
+            String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            if (process.waitFor() != 0) throw new GitDeliveryException("Git commit failed: " + output.trim());
+            return output;
+        } catch (IOException e) {
+            throw new GitDeliveryException("Could not start Git commit.", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new GitDeliveryException("Git commit was interrupted.", e);
+        }
     }
 
     private static String runPlain(Path directory, String... command) {

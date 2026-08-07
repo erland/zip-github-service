@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { createImport, createImportPlan, createRepositorySnapshot, getImport, SourceUploadResponse, uploadZip } from '../api/imports';
+import { createImport, createImportPlan, createRepositorySnapshot, SourceUploadResponse, uploadZip } from '../api/imports';
 import { getProject, ProjectResponse } from '../api/projects';
+import { getCurrentUser, type AuthenticatedUser } from '../api/auth';
 
 type UploadState = 'idle' | 'creating' | 'uploading' | 'complete' | 'preparing' | 'error' | 'cancelled';
 
@@ -11,9 +12,11 @@ export default function NewImportPage() {
   const [searchParams] = useSearchParams();
   const existingImportId = searchParams.get('importId');
   const [project, setProject] = useState<ProjectResponse | null>(null);
-  const [existingImportBranch, setExistingImportBranch] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
+  const [authorMode, setAuthorMode] = useState<'self' | 'other'>('self');
+  const [authorName, setAuthorName] = useState('');
+  const [authorEmail, setAuthorEmail] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [branch, setBranch] = useState('main');
   const [state, setState] = useState<UploadState>('idle');
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState('');
@@ -25,13 +28,11 @@ export default function NewImportPage() {
   useEffect(() => {
     if (!projectId) return;
     let active = true;
-    Promise.all([getProject(projectId), existingImportId ? getImport(existingImportId) : Promise.resolve(null)])
-      .then(([loadedProject, loadedImport]) => {
+    Promise.all([getProject(projectId), getCurrentUser()])
+      .then(([loadedProject, loadedUser]) => {
         if (!active) return;
         setProject(loadedProject);
-        const selectedBranch = loadedImport?.baseBranch || loadedProject.defaultBranch;
-        setExistingImportBranch(loadedImport?.baseBranch || null);
-        setBranch(selectedBranch);
+        setCurrentUser(loadedUser);
       })
       .catch((reason) => setMessage(reason instanceof Error ? reason.message : 'Projektet kunde inte hämtas.'));
     return () => { active = false; };
@@ -61,7 +62,8 @@ export default function NewImportPage() {
     setProgress(0);
     try {
       setState('creating');
-      const importId = existingImportId || (await createImport(project.id, branch)).id;
+      const customAuthor = authorMode === 'other' ? { name: authorName.trim(), email: authorEmail.trim() } : undefined;
+      const importId = existingImportId || (await createImport(project.id, customAuthor)).id;
       setState('uploading');
       const uploaded = await uploadZip(importId, file, setProgress, abortController.signal);
       setResult(uploaded);
@@ -90,15 +92,35 @@ export default function NewImportPage() {
       <ol className="step-list" aria-label="Importflöde">
         <li className="step-list__current" aria-current="step"><span>1</span><strong>Välj ZIP</strong></li>
         <li><span>2</span><strong>Granska förändringar</strong></li>
-        <li><span>3</span><strong>Godkänn och skapa PR</strong></li>
+        <li><span>3</span><strong>Godkänn och skapa commit</strong></li>
       </ol>
 
       <form className="import-form" onSubmit={submit}>
-        <label htmlFor="target-branch">Jämförelsebranch</label>
-        <select id="target-branch" value={branch} onChange={(event) => setBranch(event.target.value)} disabled={!project || busy || Boolean(existingImportBranch)} aria-describedby="branch-help">
-          <option value={project?.defaultBranch ?? 'main'}>{project?.defaultBranch ?? 'main'}</option>
-        </select>
-        <p className="field-help" id="branch-help">Importen jämförs med den här branchen och låses senare till ett exakt commit-SHA.</p>
+        <div className="work-target-summary">
+          <strong>Arbetsbranch hanteras automatiskt</strong>
+          <p>Första importen startar ett arbete från projektets standardbranch. Nästa ZIP jämförs automatiskt mot senaste commit på samma arbetsbranch.</p>
+        </div>
+
+        <fieldset className="identity-fieldset" disabled={!project || busy || Boolean(existingImportId)}>
+          <legend>Författare till ändringarna</legend>
+          <label className="radio-option">
+            <input type="radio" name="author-mode" value="self" checked={authorMode === 'self'} onChange={() => setAuthorMode('self')} />
+            <span><strong>Jag själv</strong>{currentUser && <small>{currentUser.gitName} &lt;{currentUser.gitEmail}&gt;</small>}</span>
+          </label>
+          <label className="radio-option">
+            <input type="radio" name="author-mode" value="other" checked={authorMode === 'other'} onChange={() => setAuthorMode('other')} />
+            <span><strong>Någon annan</strong><small>Använd när ZIP-filen innehåller ändringar skapade av en annan person.</small></span>
+          </label>
+          {authorMode === 'other' && (
+            <div className="identity-fields">
+              <label htmlFor="author-name">Namn</label>
+              <input id="author-name" value={authorName} required onChange={(event) => setAuthorName(event.target.value)} autoComplete="name" />
+              <label htmlFor="author-email">E-post</label>
+              <input id="author-email" type="email" value={authorEmail} required onChange={(event) => setAuthorEmail(event.target.value)} autoComplete="email" />
+            </div>
+          )}
+          <p className="field-help">Committer är alltid den inloggade GitHub-användaren som godkänner importen. Author används i bland annat Git history och blame.</p>
+        </fieldset>
 
         <label htmlFor="zip-file">Projektarkiv</label>
         <input
@@ -135,7 +157,7 @@ export default function NewImportPage() {
             {state === 'preparing' ? 'Förbereder granskning…' : 'Skapa granskningsplan'}
           </button>
         ) : (
-          <button className="button" type="submit" disabled={!project || !file || busy}>Ladda upp ZIP</button>
+          <button className="button" type="submit" disabled={!project || !file || busy || (authorMode === 'other' && (!authorName.trim() || !authorEmail.trim()))}>Ladda upp ZIP</button>
         )}
       </form>
     </section>

@@ -32,7 +32,7 @@ services:
 
 
   backend:
-    image: ${ZIP_GITHUB_BACKEND_IMAGE:-ghcr.io/erland/zip-github-service-backend}:${ZIP_GITHUB_VERSION:-1.0.0-rc.11}
+    image: ${ZIP_GITHUB_BACKEND_IMAGE:-ghcr.io/erland/zip-github-service-backend}:${ZIP_GITHUB_VERSION:-1.0.0-rc.15}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -64,8 +64,6 @@ services:
       ZIP_GITHUB_ARCHIVE_MAX_COMPRESSION_RATIO: ${ZIP_GITHUB_ARCHIVE_MAX_COMPRESSION_RATIO:-100.0}
       ZIP_GITHUB_SNAPSHOT_WORKSPACE_ROOT: /tmp/zip-github/snapshots
       ZIP_GITHUB_DELIVERY_WORKSPACE_ROOT: /var/lib/zip-github/delivery
-      ZIP_GITHUB_GIT_AUTHOR_NAME: ${ZIP_GITHUB_GIT_AUTHOR_NAME:-zip-github}
-      ZIP_GITHUB_GIT_AUTHOR_EMAIL: ${ZIP_GITHUB_GIT_AUTHOR_EMAIL:-zip-github@users.noreply.github.com}
     volumes:
       - upload-data:/var/lib/zip-github/uploads
       - delivery-data:/var/lib/zip-github/delivery
@@ -81,7 +79,7 @@ services:
       start_period: 30s
 
   frontend:
-    image: ${ZIP_GITHUB_FRONTEND_IMAGE:-ghcr.io/erland/zip-github-service-frontend}:${ZIP_GITHUB_VERSION:-1.0.0-rc.11}
+    image: ${ZIP_GITHUB_FRONTEND_IMAGE:-ghcr.io/erland/zip-github-service-frontend}:${ZIP_GITHUB_VERSION:-1.0.0-rc.15}
     restart: unless-stopped
     depends_on:
       backend:

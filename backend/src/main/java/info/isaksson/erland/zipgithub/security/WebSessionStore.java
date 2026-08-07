@@ -31,10 +31,10 @@ public class WebSessionStore {
         return record == null || record.expiresAt().isBefore(Instant.now()) ? Optional.empty() : Optional.of(record);
     }
 
-    public String createSession(UUID userId, long githubUserId, String login, String avatarUrl, String githubUserAccessToken) {
+    public String createSession(UUID userId, long githubUserId, String login, String avatarUrl, String gitName, String gitEmail, String githubUserAccessToken) {
         cleanup();
         String token = token();
-        sessions.put(token, new SessionRecord(userId, githubUserId, login, avatarUrl, githubUserAccessToken, Instant.now().plus(SESSION_TTL)));
+        sessions.put(token, new SessionRecord(userId, githubUserId, login, avatarUrl, gitName, gitEmail, githubUserAccessToken, Instant.now().plus(SESSION_TTL)));
         return token;
     }
 
@@ -64,5 +64,5 @@ public class WebSessionStore {
     }
 
     public record StateRecord(String returnTo, Instant expiresAt) {}
-    public record SessionRecord(UUID userId, long githubUserId, String login, String avatarUrl, String githubUserAccessToken, Instant expiresAt) {}
+    public record SessionRecord(UUID userId, long githubUserId, String login, String avatarUrl, String gitName, String gitEmail, String githubUserAccessToken, Instant expiresAt) {}
 }

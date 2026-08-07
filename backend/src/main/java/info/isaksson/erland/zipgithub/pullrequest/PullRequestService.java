@@ -30,11 +30,12 @@ public class PullRequestService {
         if (existing.isPresent()) return toResult(delivery, existing.get());
 
         String shortDigest = delivery.planDigestSha256().substring(0, 12);
-        String title = "Import approved ZIP plan " + shortDigest;
-        String body = "Created by zip-github from an immutable approved import plan.\n\n"
+        String title = "Complete zip-github work " + shortDigest;
+        String body = "Created by zip-github from one or more approved ZIP imports on a persistent work branch.\n\n"
+                + "- Work branch: `" + delivery.branchName() + "`\n"
                 + "- Base commit: `" + delivery.baseCommitSha() + "`\n"
                 + "- Commit: `" + delivery.commitSha() + "`\n"
-                + "- Plan digest: `" + delivery.planDigestSha256() + "`\n";
+                + "- Latest approved plan digest: `" + delivery.planDigestSha256() + "`\n";
         try {
             return toResult(delivery, client.createDraftPullRequest(token, delivery.repositoryFullName(), title,
                     delivery.branchName(), delivery.baseBranch(), body));

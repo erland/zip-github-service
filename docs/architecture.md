@@ -90,3 +90,7 @@ The documented MVP deployment uses:
 - no Docker socket mount.
 
 See `operations.md` and `configuration-reference.md`.
+
+## Work-branch delivery model (RC15)
+
+The normal delivery unit is a project work session rather than an individual import branch. The first import starts a durable work session from the configured project default branch. A successful import pushes one commit to the work branch. Later imports snapshot the current work-branch HEAD, preserving the existing immutable-plan/base-SHA safety check while allowing a sequence of small commits. Pull-request creation is an explicit project-level finalization action. Work-session metadata is stored in PostgreSQL so the branch can be continued after backend redeployment.

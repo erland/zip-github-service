@@ -50,7 +50,7 @@ Enables the in-process request throttle for unsafe API operations. Keep `true` i
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `ZIP_GITHUB_VERSION` | `1.0.0-rc.11` | Exact backend/frontend image tag used by server Compose. |
+| `ZIP_GITHUB_VERSION` | `1.0.0-rc.15` | Exact backend/frontend image tag used by server Compose. |
 | `ZIP_GITHUB_BACKEND_IMAGE` | `ghcr.io/erland/zip-github-service-backend` | Backend image repository. |
 | `ZIP_GITHUB_FRONTEND_IMAGE` | `ghcr.io/erland/zip-github-service-frontend` | Frontend image repository. |
 

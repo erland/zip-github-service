@@ -4,8 +4,8 @@
 
 ## Current state
 
-- Product version: `1.0.0-rc.3`
-- Repository revision: `r0043`
+- Product version: `1.0.0-rc.4`
+- Repository revision: `r0044`
 - Completed implementation step: `7.5 — MVP-release och Definition of Done`
 - Next implementation step: `8.1 — Workflow runs och jobs` (post-MVP)
 - Overall state: **MVP RELEASE CANDIDATE**

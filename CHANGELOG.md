@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0-rc.5 - 2026-08-07
+
+### Fixed
+- Anchored runtime storage ignore rules (`/data/`, `/uploads/`, `/workspaces/`, `/tmp/`, `/temp/`) to the repository root so source directories such as `frontend/src/data/` are tracked by Git and available in CI.
+- Added a repository-source regression check that fails if required frontend source files are accidentally ignored.
+
+## 1.0.0-rc.4 - 2026-08-07
+
+- Fixed CI-only Flyway PostgreSQL migration test failure by adding the required `org.flywaydb:flyway-database-postgresql` module.
+- Updated relocated Quarkus test dependencies from `quarkus-junit5`/`quarkus-junit5-mockito` to `quarkus-junit`/`quarkus-junit-mockito`.
+
+
 ## 1.0.0-rc.3 — 2026-08-07
 
 Corrective MVP release candidate after the remaining backend and frontend test regressions were exercised locally.

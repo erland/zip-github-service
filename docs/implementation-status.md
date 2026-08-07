@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0043`
+- Repository revision: `r0045`
 - Last completed step: `7.5`
 - Next step: `8.1`
 - Overall state: `MVP RELEASE CANDIDATE`
@@ -142,3 +142,4 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0041` | 2026-08-06 | `7.5` MVP release candidate and Definition of Done completed | Release artifacts, structure, status, security regression, shell/XML/JSON and ZIP checks passed; external production acceptance remains required | `8.1` |
 | `r0042` | 2026-08-07 | MVP RC compile/test correction | Fixed backend merge regressions and updated frontend routing test mocks; repository checks passed, full Maven/Vitest rerun delegated to local/CI environment | `8.1` |
 | `r0043` | 2026-08-07 | MVP RC test correction | Corrected policy blocker expectation, Git ls-tree fixture delimiter, and asynchronous route-heading focus; repository release/security/status checks passed | `8.1` |
+| `r0045` | 2026-08-07 | MVP RC CI Flyway correction | Added Flyway PostgreSQL database module required by Flyway 11+ and updated relocated Quarkus test artifacts; `8.1` remains next | `8.1` |

@@ -1,8 +1,8 @@
-# MVP release candidate 1.0.0-rc.3
+# MVP release candidate 1.0.0-rc.4
 
 ## Release decision
 
-Revision `r0043` is the third corrected MVP release candidate. Revisions `r0041` and `r0042` exposed compile/test regressions during full local verification; the remaining policy, Git-tree fixture and asynchronous route-focus regressions are corrected in `r0043`. The implementation scope through phase 7 is complete in the repository. The candidate is suitable for deployment to a controlled test environment and live acceptance testing.
+Revision `r0044` is the fourth corrected MVP release candidate. Revisions `r0041`–`r0043` exposed compile/test regressions during full local and CI verification; `r0044` adds the PostgreSQL-specific Flyway module required by the Docker-backed migration test and updates relocated Quarkus test artifacts. The implementation scope through phase 7 is complete in the repository. The candidate is suitable for deployment to a controlled test environment and live acceptance testing.
 
 It is not yet declared production-ready because several acceptance tests require external infrastructure, real GitHub credentials, Docker/PostgreSQL and physical browser/device testing.
 

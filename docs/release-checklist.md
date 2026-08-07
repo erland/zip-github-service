@@ -1,6 +1,6 @@
 # MVP release checklist
 
-This checklist separates repository-complete controls from environment-dependent acceptance tests. The project may be tagged as `1.0.0-rc.3` when the repository controls pass. It must not be promoted to a production-ready `1.0.0` until all external checks are completed and recorded.
+This checklist separates repository-complete controls from environment-dependent acceptance tests. The project may be tagged as `1.0.0-rc.4` when the repository controls pass. It must not be promoted to a production-ready `1.0.0` until all external checks are completed and recorded.
 
 ## Repository controls
 

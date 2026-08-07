@@ -1,3 +1,13 @@
+## 1.0.0-rc.17 — 2026-08-07
+
+Corrective frontend release candidate for the import author selector layout.
+
+### Fixed
+
+- Prevented the generic full-width import input styling from applying to radio buttons.
+- Kept the author option text immediately beside each radio control on desktop and responsive layouts.
+- Preserved conditional author name/e-mail fields so they are only shown when `Någon annan` is selected.
+
 ## 1.0.0-rc.16 — 2026-08-07
 
 Corrective MVP release candidate after exercising the RC15 project-detail frontend tests.

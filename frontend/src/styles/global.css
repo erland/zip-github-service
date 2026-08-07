@@ -227,10 +227,17 @@ code, pre, .repository-name, .review-file__path { overflow-wrap: anywhere; word-
 
 .identity-fieldset { border: 1px solid #d0d5dd; border-radius: .7rem; display: grid; gap: .75rem; margin: .5rem 0 1rem; padding: 1rem; }
 .identity-fieldset legend { font-weight: 750; padding: 0 .35rem; }
-.radio-option { align-items: flex-start; display: flex; gap: .65rem; }
-.radio-option input { margin-top: .25rem; }
-.radio-option span { display: grid; gap: .15rem; }
-.radio-option small { color: #667085; }
+.radio-option { align-items: flex-start; display: flex; gap: .65rem; width: 100%; }
+.import-form .radio-option input[type="radio"] {
+  flex: 0 0 auto;
+  height: 1.25rem;
+  margin: .15rem 0 0;
+  min-height: 0;
+  padding: 0;
+  width: 1.25rem;
+}
+.radio-option span { display: grid; gap: .15rem; min-width: 0; }
+.radio-option small { color: #667085; font-weight: 400; }
 .identity-fields { display: grid; gap: .45rem; margin-left: 1.65rem; }
 
 .work-card,

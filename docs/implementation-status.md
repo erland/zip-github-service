@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0056`
+- Repository revision: `r0057`
 - Last completed step: `7.5`
 - Next step: `8.1`
 - Overall state: `MVP RELEASE CANDIDATE`
@@ -156,3 +156,5 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 | `r0055` | 2026-08-07 | MVP RC persistent work-branch workflow | One active work branch per project; multiple ZIP imports become sequential commits; PR created only when work is finished; `8.1` remains next | `8.1` |
 | `r0056` | 2026-08-07 | MVP RC frontend import-history correction | Restored stage-specific accessible link labels for result, review and in-progress imports; no work-branch behavior changes; `8.1` remains next | `8.1` |
+
+| `r0057` | 2026-08-07 | MVP RC import author selector layout correction | Reset radio controls from generic full-width form-input styling; alternate author fields remain conditional; `8.1` remains next | `8.1` |

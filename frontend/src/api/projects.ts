@@ -25,6 +25,17 @@ export type ImportHistoryItem = {
   resumeStage: 'UPLOAD' | 'REVIEW' | 'RESULT';
 };
 
+export type CreateProjectInput = {
+  name: string;
+  githubInstallationId: number;
+  githubRepositoryId: number;
+  defaultBranch: string;
+};
+
+export async function getProjects(): Promise<ProjectResponse[]> {
+  return requestJson('/api/projects');
+}
+
 export async function getProject(projectId: string): Promise<ProjectResponse> {
   return requestJson(`/api/projects/${encodeURIComponent(projectId)}`);
 }
@@ -33,8 +44,19 @@ export async function getProjectImports(projectId: string): Promise<ImportHistor
   return requestJson(`/api/projects/${encodeURIComponent(projectId)}/imports`);
 }
 
-async function requestJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, { credentials: 'include' });
+export async function createProject(input: CreateProjectInput): Promise<ProjectResponse> {
+  return requestJson('/api/projects', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Zip-GitHub-Request': '1',
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+async function requestJson<T>(url: string, init: RequestInit = {}): Promise<T> {
+  const response = await fetch(url, { credentials: 'include', ...init });
   if (!response.ok) {
     try {
       const problem = await response.json() as { detail?: string; title?: string };

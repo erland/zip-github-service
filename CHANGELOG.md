@@ -1,3 +1,17 @@
+## 1.0.0-rc.10 — 2026-08-07
+
+Corrective release candidate replacing the remaining frontend demo shell with the real GitHub-authenticated project flow.
+
+### Fixed
+
+- Replaced the demo project list with `GET /api/projects`.
+- Added GitHub OAuth session gating and a real "Logga in med GitHub" entry point.
+- Added authenticated account display and logout.
+- Added project creation from GitHub App installations and installation-scoped repositories.
+- Added repository/default-branch selection and `POST /api/projects` integration.
+- Removed `frontend/src/data/demoProjects.ts` and updated source-tracking regression checks.
+- Preserved the production backup/restore `.env` loading changes previously committed directly to GitHub.
+
 ## 1.0.0-rc.9 — 2026-08-07
 
 Corrective release candidate for the GHCR backend image build.

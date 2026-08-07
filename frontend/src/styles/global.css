@@ -209,3 +209,18 @@ code, pre, .repository-name, .review-file__path { overflow-wrap: anywhere; word-
   .button, .filter-button, .status-badge, .file-status, .file-kind { border: 1px solid ButtonText; }
   .step-list__current { outline: 3px solid Highlight; }
 }
+
+/* Real authentication and project configuration flow. */
+.header-actions { align-items: center; display: flex; gap: 1rem; }
+.account-menu { align-items: center; display: flex; gap: .6rem; }
+.account-avatar { border-radius: 999px; display: block; }
+.account-login { color: #475467; font-size: .9rem; font-weight: 700; }
+.button--compact { min-height: 2.5rem; padding: .45rem .75rem; }
+.auth-card { margin: clamp(1rem, 6vw, 5rem) auto 0; max-width: 44rem; }
+.auth-card .button { margin-top: .75rem; }
+
+@media (max-width: 760px) {
+  .header-actions, .account-menu { align-items: stretch; flex-direction: column; width: 100%; }
+  .account-menu { display: grid; grid-template-columns: auto 1fr auto; align-items: center; }
+  .account-menu .button { width: auto; }
+}

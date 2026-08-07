@@ -5,7 +5,11 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 required=(
-  "frontend/src/data/demoProjects.ts"
+  "frontend/src/api/auth.ts"
+  "frontend/src/api/github.ts"
+  "frontend/src/api/projects.ts"
+  "frontend/src/pages/ProjectListPage.tsx"
+  "frontend/src/pages/CreateProjectPage.tsx"
 )
 
 for path in "${required[@]}"; do
@@ -15,7 +19,6 @@ for path in "${required[@]}"; do
   fi
 done
 
-# If running inside a Git checkout, make sure source files are not ignored.
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   for path in "${required[@]}"; do
     if git check-ignore -q "$path"; then

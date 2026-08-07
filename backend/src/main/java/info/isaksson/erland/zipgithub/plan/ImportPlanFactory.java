@@ -41,7 +41,7 @@ public class ImportPlanFactory {
     private static ImmutableImportPlanEntry toPlanEntry(ImportPolicyEntry entry, ArchiveInventoryEntry archiveFile) {
         return new ImmutableImportPlanEntry(entry.path(), entry.status().name(),
                 entry.comparisonStatus() == null ? null : entry.comparisonStatus().name(),
-                entry.severity().name(), entry.policyCode(), entry.message(),
+                entry.severity().name(), entry.blockerType().name(), entry.policyCode(), entry.message(),
                 entry.archiveSizeBytes(), entry.archiveSha256(), entry.repositorySizeBytes(),
                 entry.repositorySha256(), archiveFile != null && archiveFile.textCandidate());
     }
@@ -60,6 +60,7 @@ public class ImportPlanFactory {
                 append(digest, "status", entry.status());
                 append(digest, "comparisonStatus", entry.comparisonStatus());
                 append(digest, "severity", entry.severity());
+                append(digest, "blockerType", entry.blockerType());
                 append(digest, "policyCode", entry.policyCode());
                 append(digest, "message", entry.message());
                 append(digest, "archiveSizeBytes", entry.archiveSizeBytes());

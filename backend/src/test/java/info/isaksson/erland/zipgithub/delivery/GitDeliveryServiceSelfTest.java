@@ -25,7 +25,7 @@ public final class GitDeliveryServiceSelfTest {
         run(root, "git", "clone", remote.toUri().toString(), workspace.toString());
         run(workspace, "git", "checkout", "main"); Files.writeString(workspace.resolve("README.md"), "after\n");
         UUID importId = UUID.randomUUID();
-        AppliedImportWorkspace applied = new AppliedImportWorkspace(importId, "owner/repo", base, "a".repeat(64), workspace,
+        AppliedImportWorkspace applied = new AppliedImportWorkspace(importId, "owner/repo", base, "a".repeat(64), "c".repeat(64), workspace,
                 List.of("README.md"), Instant.now());
         GitDeliveryService service = new GitDeliveryService(id -> "",
                 Clock.fixed(Instant.parse("2026-08-06T20:00:00Z"), ZoneOffset.UTC));
@@ -44,10 +44,10 @@ public final class GitDeliveryServiceSelfTest {
 
         Path workspace2 = root.resolve("workspace2");
         run(root, "git", "clone", remote.toUri().toString(), workspace2.toString());
-        run(workspace2, "git", "checkout", workBranch);
+        run(workspace2, "git", "checkout", "--detach", pushed);
         Files.writeString(workspace2.resolve("README.md"), "after second\n");
         UUID importId2 = UUID.randomUUID();
-        AppliedImportWorkspace applied2 = new AppliedImportWorkspace(importId2, "owner/repo", pushed, "b".repeat(64), workspace2,
+        AppliedImportWorkspace applied2 = new AppliedImportWorkspace(importId2, "owner/repo", pushed, "b".repeat(64), "d".repeat(64), workspace2,
                 List.of("README.md"), Instant.now());
         GitDeliveryResult second = service.deliver(workBranch, workBranch, applied2, remote.toUri(), "", identity);
         if (!second.branchName().equals(workBranch)) throw new AssertionError();
@@ -55,6 +55,32 @@ public final class GitDeliveryServiceSelfTest {
         if (!pushed2.equals(second.commitSha())) throw new AssertionError();
         String parent2 = run(root, "git", "--git-dir=" + remote, "rev-parse", pushed2 + "^1").trim();
         if (!parent2.equals(pushed)) throw new AssertionError("second import was not based on first work commit");
+
+        // Stale-base regression: an approved workspace must not be delivered if the work branch moved after review.
+        Path staleWorkspace = root.resolve("stale-workspace");
+        run(root, "git", "clone", remote.toUri().toString(), staleWorkspace.toString());
+        run(staleWorkspace, "git", "checkout", "--detach", pushed2);
+        Files.writeString(staleWorkspace.resolve("README.md"), "approved but now stale\n");
+        AppliedImportWorkspace staleApplied = new AppliedImportWorkspace(UUID.randomUUID(), "owner/repo", pushed2,
+                "e".repeat(64), "f".repeat(64), staleWorkspace, List.of("README.md"), Instant.now());
+
+        Path mover = root.resolve("mover");
+        run(root, "git", "clone", remote.toUri().toString(), mover.toString());
+        run(mover, "git", "checkout", workBranch);
+        run(mover, "git", "config", "user.name", "Concurrent");
+        run(mover, "git", "config", "user.email", "concurrent@example.com");
+        Files.writeString(mover.resolve("concurrent.txt"), "branch moved\n");
+        run(mover, "git", "add", ".");
+        run(mover, "git", "commit", "-m", "move branch");
+        run(mover, "git", "push", "origin", workBranch);
+
+        try {
+            service.deliver(workBranch, workBranch, staleApplied, remote.toUri(), "", identity);
+            throw new AssertionError("stale base branch was accepted");
+        } catch (GitDeliveryException expected) {
+            if (!expected.getMessage().contains("moved after approval")) throw expected;
+        }
+
         System.out.println("GitDeliveryServiceSelfTest passed");
     }
     private static String run(Path dir, String... command) throws Exception {

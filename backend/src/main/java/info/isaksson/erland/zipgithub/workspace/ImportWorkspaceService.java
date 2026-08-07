@@ -4,6 +4,7 @@ import info.isaksson.erland.zipgithub.archive.ArchiveNormalization;
 import info.isaksson.erland.zipgithub.github.GitHubInstallationTokenProvider;
 import info.isaksson.erland.zipgithub.plan.ImmutableImportPlan;
 import info.isaksson.erland.zipgithub.plan.ImmutableImportPlanEntry;
+import info.isaksson.erland.zipgithub.selection.ApprovedSelection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -56,15 +57,15 @@ public class ImportWorkspaceService {
 
     public AppliedImportWorkspace prepare(UUID importId, long installationId, String repositoryFullName,
                                           Path sourceZip, String strippedWrapperDirectory,
-                                          ImmutableImportPlan plan) {
+                                          ImmutableImportPlan plan, ApprovedSelection selection) {
         String token = tokens.createInstallationToken(installationId);
         URI remote = URI.create("https://github.com/" + repositoryFullName + ".git");
-        return prepare(importId, repositoryFullName, remote, token, sourceZip, strippedWrapperDirectory, plan);
+        return prepare(importId, repositoryFullName, remote, token, sourceZip, strippedWrapperDirectory, plan, selection);
     }
 
     AppliedImportWorkspace prepare(UUID importId, String repositoryFullName, URI remote, String token,
-                                   Path sourceZip, String strippedWrapperDirectory, ImmutableImportPlan plan) {
-        validate(importId, repositoryFullName, remote, sourceZip, plan);
+                                   Path sourceZip, String strippedWrapperDirectory, ImmutableImportPlan plan, ApprovedSelection selection) {
+        validate(importId, repositoryFullName, remote, sourceZip, plan, selection);
         Path workspace = workspaceRoot.resolve(importId.toString()).normalize();
         if (!workspace.startsWith(workspaceRoot)) throw new ImportWorkspaceException("Invalid delivery workspace path.");
         boolean success = false;
@@ -81,14 +82,15 @@ public class ImportWorkspaceService {
             run(workspace, token, "git", "checkout", "--quiet", "--detach", fetched);
             run(workspace, token, "git", "remote", "remove", "origin");
 
-            Map<String, ImmutableImportPlanEntry> expected = approvedChanges(plan);
+            Map<String, ImmutableImportPlanEntry> expected = selectedChanges(plan, selection);
             applyArchive(sourceZip, strippedWrapperDirectory, workspace, expected);
+            applyDeletions(workspace, expected);
             verifyWorkspace(workspace, expected);
 
             List<String> applied = expected.keySet().stream().sorted().toList();
             success = true;
             return new AppliedImportWorkspace(importId, repositoryFullName, fetched,
-                    plan.planDigestSha256(), workspace, applied, Instant.now(clock));
+                    plan.planDigestSha256(), selection.selectionDigestSha256(), workspace, applied, Instant.now(clock));
         } catch (IOException e) {
             throw new ImportWorkspaceException("Could not prepare the import workspace.", e);
         } finally {
@@ -106,17 +108,41 @@ public class ImportWorkspaceService {
         catch (IOException e) { throw new ImportWorkspaceException("Could not delete the import workspace.", e); }
     }
 
-    private static Map<String, ImmutableImportPlanEntry> approvedChanges(ImmutableImportPlan plan) {
+    private static Map<String, ImmutableImportPlanEntry> selectedChanges(ImmutableImportPlan plan, ApprovedSelection selection) {
+        if (!selection.planDigestSha256().equals(plan.planDigestSha256())
+                || !selection.baseCommitSha().equals(plan.baseCommitSha())) {
+            throw new ImportWorkspaceException("Selection identity does not match the approved import plan.");
+        }
+        Map<String, ImmutableImportPlanEntry> all = new HashMap<>();
+        for (ImmutableImportPlanEntry entry : plan.entries()) all.put(entry.path(), entry);
+        Set<String> approvedOverridePaths = selection.overrides().stream()
+                .map(info.isaksson.erland.zipgithub.selection.ApprovedSelectionOverride::path)
+                .collect(java.util.stream.Collectors.toSet());
         Map<String, ImmutableImportPlanEntry> expected = new HashMap<>();
-        for (ImmutableImportPlanEntry entry : plan.entries()) {
-            if ("ADDED".equals(entry.status()) || "MODIFIED".equals(entry.status())) {
-                if (entry.archiveSha256() == null || entry.archiveSizeBytes() == null) {
-                    throw new ImportWorkspaceException("Approved change lacks archive identity: " + entry.path());
-                }
-                expected.put(entry.path(), entry);
+        for (String path : selection.selectedPaths()) {
+            ImmutableImportPlanEntry entry = all.get(path);
+            if (entry == null) throw new ImportWorkspaceException("Selected path is missing from the import plan: " + path);
+            if ("HARD_BLOCKED".equals(entry.blockerType())) throw new ImportWorkspaceException("Hard-blocked path reached workspace preparation: " + path);
+            if ("OVERRIDABLE_BLOCKED".equals(entry.blockerType()) && !approvedOverridePaths.contains(path))
+                throw new ImportWorkspaceException("Selected blocker lacks explicit override audit: " + path);
+            boolean deletion = "WOULD_DELETE".equals(entry.comparisonStatus());
+            if (!deletion && (entry.archiveSha256() == null || entry.archiveSizeBytes() == null)) {
+                throw new ImportWorkspaceException("Selected change lacks archive identity: " + path);
             }
+            expected.put(path, entry);
         }
         return Map.copyOf(expected);
+    }
+
+    private static void applyDeletions(Path workspace, Map<String, ImmutableImportPlanEntry> expected) throws IOException {
+        for (ImmutableImportPlanEntry entry : expected.values()) {
+            if (!"WOULD_DELETE".equals(entry.comparisonStatus())) continue;
+            Path target = workspace.resolve(entry.path()).normalize();
+            if (!target.startsWith(workspace) || target.equals(workspace)) {
+                throw new ImportWorkspaceException("Deletion path escaped the workspace: " + entry.path());
+            }
+            Files.deleteIfExists(target);
+        }
     }
 
     private static void applyArchive(Path sourceZip, String wrapper, Path workspace,
@@ -134,7 +160,7 @@ public class ImportWorkspaceService {
                     continue;
                 }
                 ImmutableImportPlanEntry planned = expected.get(normalized);
-                if (planned == null) {
+                if (planned == null || "WOULD_DELETE".equals(planned.comparisonStatus())) {
                     drain(zip);
                     continue;
                 }
@@ -157,8 +183,11 @@ public class ImportWorkspaceService {
                 }
             }
         }
-        if (!applied.equals(expected.keySet())) {
-            Set<String> missing = new HashSet<>(expected.keySet());
+        Set<String> expectedArchivePaths = expected.values().stream()
+                .filter(item -> !"WOULD_DELETE".equals(item.comparisonStatus()))
+                .map(ImmutableImportPlanEntry::path).collect(java.util.stream.Collectors.toSet());
+        if (!applied.equals(expectedArchivePaths)) {
+            Set<String> missing = new HashSet<>(expectedArchivePaths);
             missing.removeAll(applied);
             throw new ImportWorkspaceException("Approved files were missing from the source ZIP: " + String.join(", ", missing));
         }
@@ -169,10 +198,14 @@ public class ImportWorkspaceService {
         parseNulPaths(runPlain(workspace, "git", "diff", "--name-only", "--no-renames", "-z")).forEach(changed::add);
         parseNulPaths(runPlain(workspace, "git", "ls-files", "--others", "--exclude-standard", "-z")).forEach(changed::add);
         if (!changed.equals(expected.keySet())) {
-            throw new ImportWorkspaceException("Local Git diff does not match the approved import plan.");
+            throw new ImportWorkspaceException("Local Git diff does not match the approved selection.");
         }
         for (ImmutableImportPlanEntry entry : expected.values()) {
             Path file = workspace.resolve(entry.path()).normalize();
+            if ("WOULD_DELETE".equals(entry.comparisonStatus())) {
+                if (Files.exists(file)) throw new ImportWorkspaceException("Selected deletion still exists: " + entry.path());
+                continue;
+            }
             try {
                 HashedFile actual = hashFile(file);
                 if (actual.size() != entry.archiveSizeBytes() || !actual.sha256().equals(entry.archiveSha256())) {
@@ -231,11 +264,9 @@ public class ImportWorkspaceService {
     }
 
     private static void validate(UUID importId, String repositoryFullName, URI remote, Path sourceZip,
-                                 ImmutableImportPlan plan) {
-        if (importId == null || plan == null || !importId.equals(plan.importId()))
-            throw new IllegalArgumentException("Import and plan identity must match.");
-        if (!plan.approvable() || !"READY".equals(plan.status()))
-            throw new ImportWorkspaceException("Only a ready, approvable plan can be applied.");
+                                 ImmutableImportPlan plan, ApprovedSelection selection) {
+        if (importId == null || plan == null || selection == null || !importId.equals(plan.importId()) || !importId.equals(selection.importId()))
+            throw new IllegalArgumentException("Import, plan and selection identity must match.");
         if (repositoryFullName == null || !repositoryFullName.matches("[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"))
             throw new IllegalArgumentException("repositoryFullName is invalid");
         if (remote == null || sourceZip == null || !Files.isRegularFile(sourceZip))

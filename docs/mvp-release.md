@@ -1,8 +1,8 @@
-# MVP release candidate 1.0.0-rc.8
+# MVP release candidate 1.0.0-rc.22
 
 ## Release decision
 
-Revision `r0048` / version `1.0.0-rc.8` is the current corrected MVP release candidate. It includes the CI and integration-test corrections from RC2–RC7 and adds reproducible GHCR publication plus image-based server deployment. The implementation scope through phase 7 is complete in the repository. The candidate is suitable for deployment to a controlled test environment and live acceptance testing.
+Revision `r0063` / version `1.0.0-rc.22` is the current MVP release candidate after completion of the flexible-review security extension through step 7.10. It includes the CI and integration-test corrections from RC2–RC7 and adds reproducible GHCR publication plus image-based server deployment. The implementation scope through phase 7 is complete in the repository. The candidate is suitable for deployment to a controlled test environment and live acceptance testing.
 
 It is not yet declared production-ready because several acceptance tests require external infrastructure, real GitHub credentials, Docker/PostgreSQL and physical browser/device testing.
 
@@ -14,9 +14,9 @@ A signed-in user can:
 2. upload a ZIP from desktop or mobile;
 3. receive safe archive validation and normalization;
 4. compare the ZIP with an exact GitHub commit;
-5. review added, modified, unchanged, ignored and blocked files;
-6. approve the exact immutable plan digest;
-7. create an isolated workspace and deliver one branch and one commit;
+5. review a hierarchical file tree and select exactly which changes to commit;
+6. explicitly override eligible `.github/**` changes or deletions while `.git/**` remains impossible to select;
+7. approve immutable plan and selection digests and create an isolated workspace containing exactly that selection;
 8. create or reuse a draft pull request;
 9. open permanent repository, branch, commit, PR, Checks and Actions links;
 10. view basic check status and reopen previous imports.

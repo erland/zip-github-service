@@ -12,7 +12,9 @@ public final class ImportPolicyServiceSelfTest {
                 new ImportComparisonEntry(".env", ImportFileStatus.MODIFIED, 4L, "b", 3L, "c"),
                 new ImportComparisonEntry("old.txt", ImportFileStatus.WOULD_DELETE, null, null, 3L, "d")));
         var result = new ImportPolicyService(50).evaluate(new ArchiveInventory(null, List.of(".DS_Store"), List.of()), comparison);
-        if (result.approvable() || result.blockers() != 2 || result.warnings() != 1 || result.count(ImportFileStatus.IGNORED) != 1) {
+        if (!result.approvable() || result.blockers() != 2 || result.hardBlockers() != 0
+                || result.overridableBlockers() != 2 || result.warnings() != 1
+                || result.count(ImportFileStatus.IGNORED) != 1) {
             throw new AssertionError("Unexpected policy result: " + result);
         }
     }

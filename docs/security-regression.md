@@ -48,3 +48,17 @@ The current execution environment has no GitHub App credentials, Docker daemon o
 3. PostgreSQL backup and restore drill;
 4. container health/readiness and retention cleanup drill;
 5. real mobile/browser accessibility checks.
+
+
+## Flexible review invariants (step 7.10)
+
+The automated security regression additionally asserts that:
+
+- hard-blocked paths are rejected by selection creation;
+- overridable paths require an explicit audit acknowledgement;
+- approvals are bound to `selectionDigestSha256`;
+- workspace preparation contains defense-in-depth hard-block and override checks;
+- the workspace verifies the complete Git diff against the selected path set;
+- delivery retains the stale-base/work-branch guard.
+
+JUnit/self-tests add behavioral coverage for mixed ordinary/blocked/deletion trees, exact path application, excluded-file preservation and stale branch movement.

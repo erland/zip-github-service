@@ -7,5 +7,6 @@ public record ImportPlanApprovalResponse(
         UUID importId,
         UUID planId,
         String planDigestSha256,
+        String selectionDigestSha256,
         String status,
         Instant approvedAt) { }

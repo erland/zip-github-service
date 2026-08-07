@@ -18,11 +18,13 @@ public record ImportPlanResponse(
         long unchanged,
         long ignored,
         long blocked,
+        long hardBlocked,
+        long overridableBlocked,
         long warnings,
         List<Entry> entries,
         Instant createdAt) {
     public record Entry(
-            String path, String status, String comparisonStatus, String severity,
+            String path, String status, String comparisonStatus, String severity, String blockerType,
             String policyCode, String message, Long archiveSizeBytes, String archiveSha256,
             Long repositorySizeBytes, String repositorySha256, boolean textCandidate) { }
 }

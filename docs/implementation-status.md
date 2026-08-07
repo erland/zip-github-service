@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0057`
-- Last completed step: `7.5`
+- Repository revision: `r0064`
+- Last completed step: `7.10`
 - Next step: `8.1`
-- Overall state: `MVP RELEASE CANDIDATE`
+- Overall state: `MVP RELEASE CANDIDATE — FLEXIBLE REVIEW COMPLETE`
 
 ## Step ledger
 
@@ -62,6 +62,11 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `7.3` | Fas 7 — mobil, säkerhet och driftsättning | Skapa driftmodell och operationsdokumentation | **DONE** | 2026-08-06 | `docs/operations.md`, `docs/github-app-setup.md`, `docs/step-7.3-report.md` |
 | `7.4` | Fas 7 — mobil, säkerhet och driftsättning | Genomför hotmodell och slutlig säkerhetsregression | **DONE** | 2026-08-06 | `docs/threat-model.md`, `docs/security-regression.md`, `docs/step-7.4-report.md` |
 | `7.5` | Fas 7 — mobil, säkerhet och driftsättning | MVP-release och Definition of Done | **DONE** | 2026-08-06 | `docs/mvp-release.md`, `docs/release-checklist.md`, `docs/step-7.5-report.md` |
+| `7.6` | Fas 7 — flexibel granskning | Inför blockerarnivåer och icke-fatala policyblockeringar | **DONE** | 2026-08-07 | `docs/import-policy.md`, `docs/step-7.6-report.md` |
+| `7.7` | Fas 7 — flexibel granskning | Skapa immutable selection-modell och API | **DONE** | 2026-08-07 | `docs/step-7.7-report.md`, `docs/api-contract.md` |
+| `7.8` | Fas 7 — flexibel granskning | Bygg hierarkiskt fil- och katalogurval i granskningsvyn | **DONE** | 2026-08-07 | `docs/step-7.8-report.md` |
+| `7.9` | Fas 7 — flexibel granskning | Implementera explicita overrides och exakt selected delivery | **DONE** | 2026-08-07 | `docs/step-7.9-report.md` |
+| `7.10` | Fas 7 — flexibel granskning | Genomför selection-, override- och säkerhetsregression | **DONE** | 2026-08-07 | `docs/step-7.10-report.md`, `docs/threat-model.md`, `docs/release-checklist.md` |
 | `8.1` | Fas 8 — efter MVP: integrerade Actions-resultat | Workflow runs och jobs | **NEXT** | — | — |
 | `8.2` | Fas 8 — efter MVP: integrerade Actions-resultat | Artifacts och kondenserade fel | **PENDING** | — | — |
 | `8.3` | Fas 8 — efter MVP: integrerade Actions-resultat | Kontrollerad workflow dispatch och omkörning | **PENDING** | — | — |
@@ -158,3 +163,11 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0056` | 2026-08-07 | MVP RC frontend import-history correction | Restored stage-specific accessible link labels for result, review and in-progress imports; no work-branch behavior changes; `8.1` remains next | `8.1` |
 
 | `r0057` | 2026-08-07 | MVP RC import author selector layout correction | Reset radio controls from generic full-width form-input styling; alternate author fields remain conditional; `8.1` remains next | `8.1` |
+| `r0058` | 2026-08-07 | Planning/specification update for flexible review | Added steps `7.6`–`7.10`, hierarchical selection and blocker override target behavior; application version remains RC17 | `7.6` |
+
+| `r0059` | 2026-08-07 | `7.6` blocker taxonomy and non-fatal policy blockers | Added hard/overridable blocker types, mixed-plan default exclusion, API/UI metadata and policy regression coverage; full Maven/Vitest delegated to CI due isolated dependency access | `7.7` |
+| `r0060` | 2026-08-07 | `7.7` immutable selection model and API | Added owner/plan/base-bound immutable selection, deterministic selection digest, override audit model and owner-scoped create/read API with validation tests | `7.8` |
+| `r0061` | 2026-08-07 | `7.8` hierarchical review selection tree | Added collapsible tri-state directory/file tree, aggregate change counts, responsive/accessibility behavior and safe partial-selection guard | `7.9` |
+| `r0062` | 2026-08-07 | `7.9` explicit overrides and exact selected delivery | Bound approval to immutable selection digest, enabled per-path overrides/deletions, and made workspace/commit path-exact to selected changes | `7.10` |
+| `r0063` | 2026-08-07 | `7.10` selection, override and security regression | Mixed-tree frontend regressions, exact-selection real-Git workspace regression, hard-block/override audit tests, stale-work-branch delivery test, threat model/security/release checks | `8.1` |
+| `r0064` | 2026-08-07 | RC23 test correction | RestAssured list matcher correction and hierarchical review-tree path assertion correction; no production behavior change | `8.1` |

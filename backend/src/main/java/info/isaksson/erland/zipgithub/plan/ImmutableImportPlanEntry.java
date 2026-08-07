@@ -8,6 +8,7 @@ public record ImmutableImportPlanEntry(
         String status,
         String comparisonStatus,
         String severity,
+        String blockerType,
         String policyCode,
         String message,
         Long archiveSizeBytes,
@@ -20,6 +21,7 @@ public record ImmutableImportPlanEntry(
         Objects.requireNonNull(path, "path");
         Objects.requireNonNull(status, "status");
         Objects.requireNonNull(severity, "severity");
+        Objects.requireNonNull(blockerType, "blockerType");
         if (path.isBlank() || path.startsWith("/") || path.contains("\\")) {
             throw new IllegalArgumentException("path must be normalized and relative");
         }

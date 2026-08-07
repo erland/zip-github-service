@@ -22,5 +22,12 @@ grep -q '/usr/local/bin/zip-github-git-askpass' backend/src/main/java/info/isaks
 grep -q 'COPY docker/git-askpass.sh /usr/local/bin/zip-github-git-askpass' backend/Dockerfile || fail 'Git askpass helper missing from backend image'
 ! grep -R -n --exclude='*.md' --exclude-dir=target 'createTempFile.*git-askpass' backend/src/main/java || fail 'temporary askpass script creation found'
 ! grep -R -n --exclude='*.md' --exclude-dir=target 'push.*--force\|--force.*push' backend/src/main/java || fail 'force push found'
+grep -q 'HARD_BLOCKED_PATH_SELECTED' backend/src/main/java/info/isaksson/erland/zipgithub/selection/ImportSelectionFactory.java || fail 'hard-blocked selection rejection missing'
+grep -q 'OVERRIDE_REQUIRED' backend/src/main/java/info/isaksson/erland/zipgithub/selection/ImportSelectionFactory.java || fail 'explicit override validation missing'
+grep -q 'selectionDigestSha256' backend/src/main/java/info/isaksson/erland/zipgithub/plan/ImportPlanApproval.java || fail 'approval is not bound to selection digest'
+grep -q 'Hard-blocked path reached workspace preparation' backend/src/main/java/info/isaksson/erland/zipgithub/workspace/ImportWorkspaceService.java || fail 'workspace hard-block guard missing'
+grep -q 'Selected blocker lacks explicit override audit' backend/src/main/java/info/isaksson/erland/zipgithub/workspace/ImportWorkspaceService.java || fail 'workspace override audit guard missing'
+grep -q 'changed.equals(expected.keySet())' backend/src/main/java/info/isaksson/erland/zipgithub/workspace/ImportWorkspaceService.java || fail 'exact workspace diff verification missing'
+grep -q 'The base branch moved after approval' backend/src/main/java/info/isaksson/erland/zipgithub/delivery/GitDeliveryService.java || fail 'stale base delivery guard missing'
 
 echo 'Security regression checks passed.'

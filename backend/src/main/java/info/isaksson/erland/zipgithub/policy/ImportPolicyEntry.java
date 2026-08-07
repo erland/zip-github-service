@@ -7,6 +7,7 @@ public record ImportPolicyEntry(
         ImportFileStatus status,
         ImportFileStatus comparisonStatus,
         ImportPolicySeverity severity,
+        ImportPolicyBlockerType blockerType,
         String policyCode,
         String message,
         Long archiveSizeBytes,

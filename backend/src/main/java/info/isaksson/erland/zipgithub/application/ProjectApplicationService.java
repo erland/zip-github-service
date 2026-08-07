@@ -6,6 +6,7 @@ import info.isaksson.erland.zipgithub.upload.StoredUpload;
 import info.isaksson.erland.zipgithub.snapshot.RepositorySnapshot;
 import info.isaksson.erland.zipgithub.plan.ImmutableImportPlan;
 import info.isaksson.erland.zipgithub.plan.ImportPlanApproval;
+import info.isaksson.erland.zipgithub.selection.ApprovedSelection;
 import info.isaksson.erland.zipgithub.workspace.AppliedImportWorkspace;
 import info.isaksson.erland.zipgithub.delivery.GitDeliveryResult;
 import info.isaksson.erland.zipgithub.delivery.GitCommitIdentity;
@@ -27,6 +28,7 @@ public class ProjectApplicationService {
     private final Map<UUID, RepositorySnapshot> snapshotsByImport = new ConcurrentHashMap<>();
     private final Map<UUID, ImmutableImportPlan> plansByImport = new ConcurrentHashMap<>();
     private final Map<UUID, ImportPlanApproval> approvalsByImport = new ConcurrentHashMap<>();
+    private final Map<UUID, ApprovedSelection> selectionsByImport = new ConcurrentHashMap<>();
     private final Map<UUID, AppliedImportWorkspace> workspacesByImport = new ConcurrentHashMap<>();
     private final Map<UUID, GitDeliveryResult> deliveriesByImport = new ConcurrentHashMap<>();
     private final Map<UUID, PullRequestResult> pullRequestsByImport = new ConcurrentHashMap<>();
@@ -46,6 +48,7 @@ public class ProjectApplicationService {
         snapshotsByImport.clear();
         plansByImport.clear();
         approvalsByImport.clear();
+        selectionsByImport.clear();
         workspacesByImport.clear();
         deliveriesByImport.clear();
         pullRequestsByImport.clear();
@@ -276,7 +279,7 @@ public class ProjectApplicationService {
         return plan;
     }
 
-    public ImportPlanApproval approveImportPlan(UUID ownerUserId, UUID importId, String submittedDigest) {
+    public ImportPlanApproval approveImportPlan(UUID ownerUserId, UUID importId, String submittedDigest, String submittedSelectionDigest) {
         requireOwnedImport(ownerUserId, importId);
         ImmutableImportPlan plan = getImportPlan(ownerUserId, importId);
         if (submittedDigest == null || !submittedDigest.matches("[0-9a-f]{64}")) {
@@ -286,15 +289,23 @@ public class ProjectApplicationService {
             throw ApiException.conflict("IMPORT_PLAN_DIGEST_MISMATCH",
                     "The submitted plan digest does not match the immutable plan currently stored for this import.");
         }
-        if (!plan.approvable()) {
-            throw ApiException.conflict("IMPORT_PLAN_BLOCKED", "A blocked import plan cannot be approved.");
+        ApprovedSelection selection = getImportSelection(ownerUserId, importId);
+        if (submittedSelectionDigest == null || !submittedSelectionDigest.matches("[0-9a-f]{64}")) {
+            throw ApiException.badRequest("INVALID_SELECTION_DIGEST",
+                    "selectionDigestSha256 must be a lower-case SHA-256.");
+        }
+        if (!selection.selectionDigestSha256().equals(submittedSelectionDigest)) {
+            throw ApiException.conflict("IMPORT_SELECTION_DIGEST_MISMATCH",
+                    "The submitted selection digest does not match the immutable selection.");
         }
 
         ImportPlanApproval candidate = new ImportPlanApproval(importId, plan.id(), ownerUserId,
-                plan.planDigestSha256(), Instant.now());
+                plan.planDigestSha256(), selection.selectionDigestSha256(), Instant.now());
         ImportPlanApproval existing = approvalsByImport.putIfAbsent(importId, candidate);
         ImportPlanApproval approval = existing == null ? candidate : existing;
-        if (!approval.planDigestSha256().equals(submittedDigest) || !approval.approvedByUserId().equals(ownerUserId)) {
+        if (!approval.planDigestSha256().equals(submittedDigest)
+                || !approval.selectionDigestSha256().equals(submittedSelectionDigest)
+                || !approval.approvedByUserId().equals(ownerUserId)) {
             throw ApiException.conflict("IMPORT_PLAN_ALREADY_APPROVED",
                     "This import was already approved with a different plan identity.");
         }
@@ -311,6 +322,40 @@ public class ProjectApplicationService {
         return Optional.ofNullable(approvalsByImport.get(importId));
     }
 
+    public ApprovedSelection recordImportSelection(UUID ownerUserId, UUID importId, ApprovedSelection selection) {
+        requireOwnedImport(ownerUserId, importId);
+        ImmutableImportPlan plan = getImportPlan(ownerUserId, importId);
+        if (!selection.importId().equals(importId)
+                || !selection.ownerUserId().equals(ownerUserId)
+                || !selection.planId().equals(plan.id())
+                || !selection.planDigestSha256().equals(plan.planDigestSha256())
+                || !selection.baseCommitSha().equals(plan.baseCommitSha())) {
+            throw ApiException.conflict("IMPORT_SELECTION_IDENTITY_MISMATCH",
+                    "The selection does not match the current immutable import plan.");
+        }
+        ApprovedSelection existing = selectionsByImport.putIfAbsent(importId, selection);
+        ApprovedSelection result = existing == null ? selection : existing;
+        if (!result.selectionDigestSha256().equals(selection.selectionDigestSha256())
+                || !result.ownerUserId().equals(ownerUserId)) {
+            throw ApiException.conflict("IMPORT_SELECTION_IMMUTABLE",
+                    "An immutable selection already exists for this import.");
+        }
+        return result;
+    }
+
+    public ApprovedSelection getImportSelection(UUID ownerUserId, UUID importId) {
+        requireOwnedImport(ownerUserId, importId);
+        ApprovedSelection selection = selectionsByImport.get(importId);
+        if (selection == null) throw ApiException.notFound("IMPORT_SELECTION_NOT_FOUND",
+                "No immutable selection has been stored for this import.");
+        return selection;
+    }
+
+    public Optional<ApprovedSelection> findImportSelection(UUID ownerUserId, UUID importId) {
+        requireOwnedImport(ownerUserId, importId);
+        return Optional.ofNullable(selectionsByImport.get(importId));
+    }
+
 
     public DeliverySources deliverySources(UUID ownerUserId, UUID importId) {
         OwnedImport ownedImport = requireOwnedImport(ownerUserId, importId);
@@ -319,33 +364,39 @@ public class ProjectApplicationService {
         RepositorySnapshot snapshot = snapshotsByImport.get(importId);
         ImmutableImportPlan plan = plansByImport.get(importId);
         ImportPlanApproval approval = approvalsByImport.get(importId);
-        if (upload == null || snapshot == null || plan == null || approval == null) {
+        ApprovedSelection selection = selectionsByImport.get(importId);
+        if (upload == null || snapshot == null || plan == null || selection == null || approval == null) {
             throw ApiException.conflict("IMPORT_NOT_APPROVED",
-                    "The source upload, repository snapshot, immutable plan and exact approval are required.");
+                    "The source upload, repository snapshot, immutable plan, selection and exact approval are required.");
         }
         if (!approval.planDigestSha256().equals(plan.planDigestSha256())
+                || !approval.selectionDigestSha256().equals(selection.selectionDigestSha256())
+                || !selection.planDigestSha256().equals(plan.planDigestSha256())
                 || !snapshot.baseCommitSha().equals(plan.baseCommitSha())
                 || !upload.sha256().equals(plan.sourceUploadSha256())) {
             throw ApiException.conflict("IMPORT_IDENTITY_MISMATCH",
                     "The approved plan no longer matches the stored import sources.");
         }
         return new DeliverySources(project.response.githubInstallationId(), project.response.repositoryFullName(),
-                upload, snapshot, plan, approval);
+                upload, snapshot, plan, selection, approval);
     }
 
     public AppliedImportWorkspace recordAppliedWorkspace(UUID ownerUserId, UUID importId,
                                                           AppliedImportWorkspace workspace) {
         requireOwnedImport(ownerUserId, importId);
         ImmutableImportPlan plan = getImportPlan(ownerUserId, importId);
+        ApprovedSelection selection = getImportSelection(ownerUserId, importId);
         if (!workspace.importId().equals(importId)
                 || !workspace.planDigestSha256().equals(plan.planDigestSha256())
+                || !workspace.selectionDigestSha256().equals(selection.selectionDigestSha256())
                 || !workspace.baseCommitSha().equals(plan.baseCommitSha())) {
             throw ApiException.conflict("WORKSPACE_IDENTITY_MISMATCH",
                     "The prepared workspace does not match the approved import plan.");
         }
         AppliedImportWorkspace existing = workspacesByImport.putIfAbsent(importId, workspace);
         AppliedImportWorkspace result = existing == null ? workspace : existing;
-        if (!result.planDigestSha256().equals(workspace.planDigestSha256())) {
+        if (!result.planDigestSha256().equals(workspace.planDigestSha256())
+                || !result.selectionDigestSha256().equals(workspace.selectionDigestSha256())) {
             throw ApiException.conflict("WORKSPACE_ALREADY_EXISTS",
                     "A workspace already exists for a different plan identity.");
         }
@@ -493,7 +544,7 @@ public class ProjectApplicationService {
     public record SnapshotTarget(long githubInstallationId, String repositoryFullName, String branch) {}
     public record ComparisonSources(StoredUpload upload, RepositorySnapshot snapshot) {}
     public record DeliverySources(long githubInstallationId, String repositoryFullName, StoredUpload upload,
-                                  RepositorySnapshot snapshot, ImmutableImportPlan plan,
+                                  RepositorySnapshot snapshot, ImmutableImportPlan plan, ApprovedSelection selection,
                                   ImportPlanApproval approval) {}
     public record ProjectWorkSource(long githubInstallationId, String repositoryFullName, WorkSession work) {}
 

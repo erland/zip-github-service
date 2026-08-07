@@ -94,3 +94,19 @@ See `operations.md` and `configuration-reference.md`.
 ## Work-branch delivery model (RC15)
 
 The normal delivery unit is a project work session rather than an individual import branch. The first import starts a durable work session from the configured project default branch. A successful import pushes one commit to the work branch. Later imports snapshot the current work-branch HEAD, preserving the existing immutable-plan/base-SHA safety check while allowing a sequence of small commits. Pull-request creation is an explicit project-level finalization action. Work-session metadata is stored in PostgreSQL so the branch can be continued after backend redeployment.
+
+
+## Flexible review security boundary
+
+The immutable `ImportPlan` describes the complete normalized ZIP-versus-branch comparison. It is never rewritten to represent UI choices. The user's commit intent is stored separately as an immutable `ApprovedSelection`.
+
+`ApprovedSelection` binds the owner, import, plan digest, exact base commit SHA, selected paths, excluded paths and explicit per-path override audit records into `selectionDigestSha256`. Plan approval binds both the plan digest and selection digest.
+
+Policy blockers have two delivery classes:
+
+- `HARD_BLOCKED`: never selectable. `.git/**` belongs here and archive bytes for these paths can never be applied to the Git workspace.
+- `OVERRIDABLE_BLOCKED`: excluded by default and selectable only after explicit risk acknowledgement. `.github/**` changes and `WOULD_DELETE` currently belong here.
+
+The workspace starts from the exact reviewed commit, applies only selected archive files and explicitly selected deletions, then compares the complete Git diff path set and file hashes with the immutable selection. Delivery rechecks the current remote work-branch/base SHA before committing and pushes without force. This creates the security chain:
+
+`ZIP SHA → immutable plan digest → immutable selection digest → approval → exact workspace diff → commit`.

@@ -24,6 +24,14 @@ public record ImportPolicyResult(
     }
 
     public long blockers() {
-        return entries.stream().filter(entry -> entry.severity() == ImportPolicySeverity.BLOCKING).count();
+        return entries.stream().filter(entry -> entry.blockerType() != ImportPolicyBlockerType.NONE).count();
+    }
+
+    public long hardBlockers() {
+        return entries.stream().filter(entry -> entry.blockerType() == ImportPolicyBlockerType.HARD_BLOCKED).count();
+    }
+
+    public long overridableBlockers() {
+        return entries.stream().filter(entry -> entry.blockerType() == ImportPolicyBlockerType.OVERRIDABLE_BLOCKED).count();
     }
 }

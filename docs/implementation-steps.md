@@ -261,7 +261,7 @@ Ett steg får delas ytterligare om oväntad teknisk komplexitet uppstår. Flera 
 
 **Kvalitetsgrind för fas 6:** användaren hittar PR och byggresultat med ett tryck, utan obegränsad API-användning.
 
-# Fas 7 - mobil, säkerhet och driftsättning
+# Fas 7 - mobil, säkerhet, driftsättning och flexibel granskning
 
 ## Steg 7.1 - Genomför komplett mobil- och tillgänglighetsgenomgång
 
@@ -293,7 +293,53 @@ Ett steg får delas ytterligare om oväntad teknisk komplexitet uppstår. Flera 
 - Uppdatera README, arkitektur, drift, säkerhet och användarflöde.
 - Skapa releasekandidat och revisionslåst projekt-ZIP.
 
-**Kvalitetsgrind för fas 7:** MVP kan användas från telefon, saknar Docker socket, har roterbara hemligheter och uppfyller säkerhets- och driftkraven.
+## Steg 7.6 - Inför blockerarnivåer och icke-fatala policyblockeringar
+
+- Skilj arkivfel som avvisar hela ZIP-filen från policyklassificerade förändringar i importplanen.
+- Inför minst `HARD_BLOCKED` och `OVERRIDABLE_BLOCKED` med namngivna orsaker.
+- Klassificera `.git/**` som `HARD_BLOCKED`: synlig i planen, exkluderad som standard och aldrig valbar.
+- Klassificera `.github/**` och `WOULD_DELETE` som överstyrbara blockerare som standard.
+- Säkerställ att en plan med blockerade poster kan gå vidare när alla hårt blockerade poster är exkluderade och inga överstyrbara poster är valda utan explicit override.
+- Lägg policytester för blandade ZIP-filer där blockerade och vanliga förändringar förekommer samtidigt.
+
+## Steg 7.7 - Skapa immutable selection-modell och API
+
+- Behåll `ImportPlan` immutable som fullständig ZIP-vs-base-jämförelse.
+- Inför en separat selection-modell med valda paths, exkluderade paths, overrides, plan-digest, base SHA, användare och tidsstämpel.
+- Skapa deterministisk selection-digest/version och validera att selection endast refererar till aktuell importplan.
+- Förbjud tom selection och val av `HARD_BLOCKED` poster.
+- Lagra selection/override-audit server-side med ägarskapskontroll.
+- Lägg API- och domäntester för manipulation, stale plan och cross-user access.
+
+## Steg 7.8 - Bygg hierarkiskt fil- och katalogurval i granskningsvyn
+
+- Visa förändringar som ett hopfällbart träd av kataloger och filer.
+- Visa filstatus `ADDED`, `MODIFIED`, `WOULD_DELETE`, `IGNORED` och blockerarstatus med tydliga symboler/etiketter.
+- Markera vanliga valbara förändringar som standard.
+- Låt avmarkering av en katalog exkludera alla valbara poster i dess subtree.
+- Låt markering/avmarkering av barn uppdatera katalogens tri-state (`checked`, `unchecked`, `indeterminate`).
+- Visa aggregerade antal per katalog när underträdet innehåller blandade förändringsklasser.
+- Anpassa trädet för mobil, långa paths, tangentbord och skärmläsare.
+
+## Steg 7.9 - Implementera explicita overrides och exakt selected delivery
+
+- Låt `OVERRIDABLE_BLOCKED` inkluderas först efter ett explicit per-post eller per-subtree-godkännande med tydlig risktext.
+- Säkerställ att katalogmarkering aldrig implicit överstyr blockerare.
+- Lås selection och overrides vid godkännande så ändringar kräver nytt godkännande/digest.
+- Applicera endast valda förändringar i den temporära Git-arbetsytan, inklusive uttryckligt godkända borttagningar.
+- Verifiera staged diff, path-mängd och innehåll exakt mot den godkända selectionen före commit.
+- Säkerställ att exkluderade och hårt blockerade paths aldrig ändras av committen.
+
+## Steg 7.10 - Genomför selection-, override- och säkerhetsregression
+
+- E2E-testa blandade träd med nya, ändrade, borttagna, `.github/**` och `.git/**` poster.
+- Verifiera katalogurval, partiellt urval, override, borttagning och tom selection på desktop och mobil.
+- Testa att `.git/**` aldrig kan levereras men inte blockerar övriga valda filer.
+- Testa att `.github/**` och borttagningar kräver explicit override och auditeras.
+- Verifiera att committen är byte-/path-ekvivalent med exakt godkänd selection och att stale base fortfarande stoppas.
+- Uppdatera hotmodell, säkerhetsregression, API-/arkitekturdokumentation och releasechecklista.
+
+**Kvalitetsgrind för fas 7:** tjänsten uppfyller tidigare mobil-, säkerhets- och driftkrav och kan dessutom skapa en commit från exakt ett användarvalt filträd där hårt blockerade paths aldrig levereras och överstyrbara blockerare endast levereras efter explicit, auditerat godkännande.
 
 # Fas 8 - efter MVP: integrerade Actions-resultat
 

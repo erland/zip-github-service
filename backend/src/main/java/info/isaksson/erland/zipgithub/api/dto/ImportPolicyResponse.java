@@ -13,6 +13,8 @@ public record ImportPolicyResponse(
         long unchanged,
         long ignored,
         long blocked,
+        long hardBlocked,
+        long overridableBlocked,
         long warnings,
         List<Entry> entries) {
     public record Entry(
@@ -20,6 +22,7 @@ public record ImportPolicyResponse(
             String status,
             String comparisonStatus,
             String severity,
+            String blockerType,
             String policyCode,
             String message,
             Long archiveSizeBytes,

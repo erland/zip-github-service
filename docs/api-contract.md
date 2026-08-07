@@ -97,9 +97,9 @@ Requires a stored upload and repository snapshot. Returns stable SHA-256 based c
 
 `POST /api/imports/{importId}/policy`
 
-Recreates the normalized archive inventory and hash comparison against the import's locked repository snapshot, then applies policy version `mvp-1`.
+Recreates the normalized archive inventory and hash comparison against the import's locked repository snapshot, then applies policy version `mvp-2`.
 
-The response contains deterministic path-sorted entries and an `approvable` flag. MVP blockers include `.git/**`, `.github/**`, repository deletions, files over the configured single-file limit, and high-risk private-key/credential filenames. Transport noise is returned as `IGNORED`; `.env` and environment-specific `.env.*` files are warnings, while `.env.example` remains allowed.
+The response contains deterministic path-sorted entries and an `approvable` flag. Policy blockers are typed. `.git/**`, oversized files and high-risk private-key/credential filenames are `HARD_BLOCKED`; `.github/**` and repository deletions are `OVERRIDABLE_BLOCKED` and require explicit per-path override before selection. Transport noise is returned as `IGNORED`; `.env` and environment-specific `.env.*` files are warnings, while `.env.example` remains allowed.
 
 This endpoint evaluates policy only. Step 4.4 persists the immutable import plan.
 
@@ -125,21 +125,24 @@ Repeated calls are idempotent when the canonical plan digest is unchanged. If a 
 
 `POST /api/imports/{importId}/plan/approval`
 
+Request body includes both `planDigestSha256` and `selectionDigestSha256`. The selection must already exist, belong to the current user/import and match the immutable plan/base identity. Approval locks both digests; a different selection cannot be substituted after approval.
+
 Request:
 
 ```json
 {
-  "planDigestSha256": "<64 lower-case hex characters>"
+  "planDigestSha256": "<64 lower-case hex characters>",
+  "selectionDigestSha256": "<64 lower-case hex characters>"
 }
 ```
 
-The server requires ownership, an approvable immutable plan and exact equality with the stored plan digest. Repeating the same approval is idempotent. Digest mismatch and blocked plans return conflict problem responses.
+The server requires ownership and exact equality with both the stored plan digest and immutable selection digest. A plan containing blockers may still be approved when the immutable selection contains at least one valid selected change and every selected overridable blocker has its explicit audit record. Repeating the same approval is idempotent.
 
 ## Prepare approved Git workspace
 
 `POST /api/imports/{importId}/workspace`
 
-Requires an exact approved immutable plan. The server fetches the locked base commit, applies only approved `ADDED` and `MODIFIED` files, verifies hashes and the complete local Git diff, and returns metadata without exposing the server-side workspace path or credentials.
+Requires an exact approved immutable plan and immutable selection. The server fetches the locked base commit, applies only `selectedPaths`, performs explicitly approved `WOULD_DELETE` operations, verifies archive hashes for selected files and verifies that the complete local Git diff exactly equals the immutable selection. The response includes the selection digest but never exposes the server-side workspace path or credentials.
 
 Response fields include `importId`, `repositoryFullName`, `baseCommitSha`, `planDigestSha256`, `appliedFileCount`, sorted `appliedPaths`, `status=FILES_APPLIED`, and `preparedAt`.
 
@@ -147,7 +150,7 @@ Response fields include `importId`, `repositoryFullName`, `baseCommitSha`, `plan
 
 `POST /api/imports/{importId}/delivery`
 
-Requires an exact approved plan and a verified applied workspace. Revalidates that the remote base branch still points at the approved commit, creates deterministic branch `zip-github/import-<importId>`, creates one commit and pushes without force. Returns branch and commit metadata with status `PUSHED`.
+Requires an exact approved plan and a verified applied workspace. Revalidates that the remote base branch still points at the approved commit, uses the import's active `zip-github/work-<workId>` branch, creates one commit and pushes without force. Returns branch and commit metadata with status `PUSHED`.
 
 ### Create draft pull request
 
@@ -167,3 +170,55 @@ Requires an exact approved plan and a verified applied workspace. Revalidates th
 ## Project import history
 
 `GET /api/projects/{projectId}/imports` returns the authenticated owner's imports for the project, newest first. Each item contains current import status, available source/plan/PR metadata, and `resumeStage` (`UPLOAD`, `REVIEW`, or `RESULT`) for reopening the correct UI stage.
+
+## Immutable import selection (step 7.7)
+
+`ImportPlan` remains the immutable description of the complete ZIP-versus-base comparison. A separate immutable selection records exactly which plan paths the user chose for a later commit.
+
+### `POST /api/imports/{importId}/selection`
+
+Request:
+
+```json
+{
+  "planDigestSha256": "<current immutable plan digest>",
+  "baseCommitSha": "<current locked 40-character Git SHA>",
+  "selectedPaths": ["src/App.java"],
+  "overrides": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "acknowledgement": "I understand that this changes repository automation."
+    }
+  ]
+}
+```
+
+The backend validates all selection identity and policy rules server-side:
+
+- the submitted plan digest and base SHA must exactly match the current immutable plan,
+- at least one changed path must be selected,
+- every path must occur in the plan and may appear only once,
+- `HARD_BLOCKED` paths can never be selected,
+- ordinary selectable paths must be `ADDED` or `MODIFIED`,
+- selecting an `OVERRIDABLE_BLOCKED` path requires an explicit per-path acknowledgement,
+- overrides for excluded, unknown or non-overridable paths are rejected.
+
+The server computes `excludedPaths` from the complete plan and creates a deterministic `selectionDigestSha256` using selection version `selection-1`. The digest binds the owner, import, plan identity, base SHA, selected paths, excluded paths and override audit entries. Repeating the identical selection is idempotent; attempting to replace it with a different selection returns `409 IMPORT_SELECTION_IMMUTABLE`.
+
+Response: `201 Created` for the first immutable selection and `200 OK` for an identical replay.
+
+### `GET /api/imports/{importId}/selection`
+
+Returns the stored owner-scoped immutable selection. Cross-user access is intentionally indistinguishable from a missing import (`404`).
+
+As of step 7.9 the immutable selection is the exact delivery contract. Plan approval must include both `planDigestSha256` and `selectionDigestSha256`; workspace preparation and commit verification are bound to the same selection identity.
+
+
+### Selection delivery invariants
+
+- `.git/**` can appear in a plan for transparency but is never valid in `selectedPaths`.
+- `.github/**` and `WOULD_DELETE` require explicit per-path acknowledgement and the acknowledgement is part of the immutable selection digest.
+- Empty selections are rejected.
+- Workspace preparation applies only `selectedPaths`; selected deletions are removed explicitly.
+- The complete Git diff must equal the selected path set before delivery.
+- Delivery rejects a stale reviewed base/work-branch SHA.

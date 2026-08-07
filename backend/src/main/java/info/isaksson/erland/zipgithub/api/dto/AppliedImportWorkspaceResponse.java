@@ -9,6 +9,7 @@ public record AppliedImportWorkspaceResponse(
         String repositoryFullName,
         String baseCommitSha,
         String planDigestSha256,
+        String selectionDigestSha256,
         int appliedFileCount,
         List<String> appliedPaths,
         String status,

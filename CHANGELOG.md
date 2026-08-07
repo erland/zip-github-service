@@ -1,3 +1,101 @@
+# 1.0.0-rc.23 — 2026-08-07
+
+- Correct backend `ImportSelectionResourceTest` list assertions to use an unambiguous Hamcrest matcher accepted by RestAssured.
+- Correct review-page tests for the hierarchical tree: file nodes render the basename as visible text and retain the complete repository path in `title`/accessible controls.
+- No production behavior changes from RC22.
+
+# 1.0.0-rc.22 — 2026-08-07
+
+Completed step 7.10: selection, override and security regression.
+
+### Added
+
+- Expanded backend selection regressions for hard-block bypass attempts, audited `.github/**` overrides, explicit deletion approval and stale plan/base identity.
+- Expanded the real-Git workspace self-test to a mixed selection containing selected ordinary changes, an explicitly overridden workflow change, an explicitly approved deletion, excluded ordinary changes and a hard-blocked `.git/**` archive entry.
+- Added exact Git diff assertions proving excluded paths remain untouched and `.git/**` content never reaches repository metadata.
+- Added a stale work-branch delivery regression proving delivery stops when the reviewed base moves before push.
+- Added frontend mixed-tree regressions for directory partial selection, hard blockers, workflow/deletion overrides, empty selections and exact selection API payloads.
+
+### Security/documentation
+
+- Updated the threat model for immutable selections, audited overrides and hard-vs-overridable blocker boundaries.
+- Extended the security regression script with selection/delivery invariants.
+- Updated architecture, API contract and release checklist for the flexible-review security model.
+- Phase 7 flexible review is complete; step 8.1 is now the single `NEXT` step.
+
+# 1.0.0-rc.21 — 2026-08-07
+
+Implemented step 7.9 of flexible review.
+
+### Added
+
+- Connected the hierarchical review tree to immutable selection creation and exact approval.
+- Added explicit per-path risk acknowledgement for `OVERRIDABLE_BLOCKED` entries such as `.github/**` changes and `WOULD_DELETE`.
+- Bound plan approval to both the immutable plan digest and immutable selection digest.
+- Applied only selected paths to the temporary Git workspace, including explicitly approved deletions.
+- Added defense-in-depth verification that hard blockers never reach the workspace and overridable blockers always carry matching override audit records.
+- Bound prepared workspaces to the selection digest and verified the complete Git diff against exactly the selected path set before commit.
+
+### Changed
+
+- Partial selections are now fully supported; the temporary RC20 partial-selection guard has been removed.
+- Review controls lock as soon as an immutable selection has been created, preventing UI changes after selection identity is fixed.
+- A blocker-only plan can be approved when it contains a non-empty valid selection of explicitly overridden entries.
+
+# 1.0.0-rc.20 — 2026-08-07
+
+Implemented step 7.8 of flexible review.
+
+### Added
+
+- Replaced the flat review file list with a collapsible hierarchical directory/file tree.
+- Added tri-state directory selection where directory toggles affect every selectable descendant and child changes propagate `checked`/`indeterminate` state upward.
+- Added per-directory aggregate counts for new, modified, deleted, blocked and warning entries.
+- Added explicit file status/badge rendering for added, modified, would-delete, ignored and blocker classes.
+- Added responsive/mobile tree layout, long-path wrapping, keyboard-focusable disclosure controls and checkbox labels for assistive technology.
+- Added frontend tests for default selection, directory subtree deselection, indeterminate parents, collapse behavior, deletion/blocker labels and partial-selection safety.
+
+### Safety boundary
+
+- Ordinary `ADDED`/`MODIFIED` entries are selected by default. Hard and overridable blockers remain unselected/disabled in this step.
+- Until step 7.9 connects immutable selections to exact workspace/delivery, changing the default selection disables the legacy whole-plan approval path. This prevents a user-visible deselection from being ignored by the current delivery implementation.
+
+# 1.0.0-rc.19 — 2026-08-07
+
+Implemented step 7.7 of flexible review.
+
+### Added
+
+- Added immutable `ApprovedSelection` and `ApprovedSelectionOverride` domain records bound to one import plan, base commit and owner.
+- Added deterministic `selection-1` digest generation over selected paths, excluded paths and explicit override audit records.
+- Added `POST /api/imports/{importId}/selection` and `GET /api/imports/{importId}/selection`.
+- Added validation for stale plan/base identity, unknown or duplicate paths, empty selections, hard blockers, invalid overrides and cross-user access.
+- Added domain/API tests for deterministic selection identity, immutable replay, stale plans and owner isolation.
+
+### Scope
+
+- Selection is stored server-side and immutable, but does not yet drive workspace/delivery. Hierarchical selection UI is step 7.8 and exact selected delivery is step 7.9.
+
+# 1.0.0-rc.18 — 2026-08-07
+
+Implemented step 7.6 of flexible review.
+
+### Changed
+
+- Added explicit `HARD_BLOCKED` and `OVERRIDABLE_BLOCKED` policy taxonomy (`mvp-2`).
+- `.git/**`, oversized files and high-risk key/credential filenames are hard blocked and cannot be selected.
+- `.github/**` and repository deletions are overridable blockers, excluded by default pending the selection/override steps.
+- Mixed ZIPs with ordinary safe changes can continue even when blocked paths are present; blocker-only plans remain non-approvable to avoid empty commits.
+- Policy/plan API and review UI now expose hard/overridable blocker counts and per-entry blocker type.
+- Blocker type is included in the immutable plan digest.
+
+# r0058 — flexible review planning/specification update
+
+- Added implementation steps 7.6–7.10 before phase 8 for blocker taxonomy, immutable selection, hierarchical tree selection, explicit overrides and exact selected delivery.
+- Added functional specification v1.1 with `HARD_BLOCKED`/`OVERRIDABLE_BLOCKED`, `.git/**` hard exclusion, `.github/**`/deletion overrides and tri-state directory selection.
+- Updated authoritative documentation pointers and implementation status so 7.6 is the single `NEXT` step.
+- Application/container version remains `1.0.0-rc.17`; this revision changes planning documentation only.
+
 ## 1.0.0-rc.17 — 2026-08-07
 
 Corrective frontend release candidate for the import author selector layout.

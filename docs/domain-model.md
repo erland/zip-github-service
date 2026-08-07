@@ -39,9 +39,11 @@ Main path:
 
 Rejected, failed and expired uploads can be deleted.
 
-### ImportPlan and ImportPlanEntry
+### ImportPlan, ImportPlanEntry and ApprovedSelection
 
-`ImportPlan` is an immutable comparison snapshot containing base SHA, policy version and immutable entries. `ImportPlanEntry` classifies one normalized path and its policy result. A plan with blocked entries cannot be approved.
+`ImportPlan` is an immutable comparison snapshot containing base SHA, policy version and immutable entries. `ImportPlanEntry` classifies one normalized path and its policy result. Flexible review does not mutate this plan: the complete ZIP-versus-base result remains available for audit.
+
+`ApprovedSelection` is a second immutable object bound to the owner, import ID, plan ID, plan digest and locked base SHA. It contains canonical selected paths, server-computed excluded paths, explicit override audit records and a deterministic `selectionDigestSha256`. `HARD_BLOCKED` paths can never be selected. From step 7.9 this selection is the exact workspace/delivery contract. Approval binds the plan and selection digests together, and prepared workspaces carry the selection digest in addition to the plan digest.
 
 Plan path:
 

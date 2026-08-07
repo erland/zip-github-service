@@ -4,15 +4,19 @@ This checklist separates repository-complete controls from environment-dependent
 
 ## Repository controls
 
-- [x] All implementation steps 0.1–7.5 are completed and documented.
+- [x] All implementation steps 0.1–7.10 are completed and documented.
 - [x] Exactly one post-MVP step is marked `NEXT`.
 - [x] Backend build and tests are defined in GitHub Actions.
 - [x] Frontend tests and production build are defined in GitHub Actions.
 - [x] Structure and security regression scripts are part of CI.
 - [x] ZIP traversal, symlink, special-file and resource-limit controls exist.
 - [x] Repository comparison is locked to an exact base commit SHA.
-- [x] Review and approval are bound to an immutable plan digest.
+- [x] Review and approval are bound to immutable plan and selection digests.
 - [x] Delivery creates one non-force-pushed branch and atomic commit.
+- [x] `.git/**` is hard blocked and cannot be selected even with an override.
+- [x] `.github/**` and deletions require explicit per-path override audit before selection.
+- [x] Prepared workspace diff is path-exact to the immutable selected path set and leaves excluded paths untouched.
+- [x] Automated regressions cover mixed trees, partial selection, empty selection, overrides, hard blockers and stale work-branch movement.
 - [x] Draft pull request creation is idempotent and recoverable.
 - [x] CSRF, restricted CORS, security headers and rate limiting are present.
 - [x] Docker Compose does not mount the Docker socket.
@@ -40,7 +44,7 @@ This checklist separates repository-complete controls from environment-dependent
 
 ## Known release-candidate limitations
 
-1. Several application stores remain in memory and are lost on backend restart.
+1. Some import/selection/delivery application state remains in memory and may be lost on backend restart.
 2. Horizontal backend scaling is not supported.
 3. Content-based secret scanning is not included; high-risk paths and filenames are blocked instead.
 4. Integrated workflow/job/artifact details are phase 8 work.

@@ -12,17 +12,24 @@ class ImportPlanApprovalTest {
         UUID planId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         Instant approvedAt = Instant.parse("2026-08-06T20:00:00Z");
-        ImportPlanApproval approval = new ImportPlanApproval(importId, planId, userId, "a".repeat(64), approvedAt);
+        ImportPlanApproval approval = new ImportPlanApproval(importId, planId, userId, "a".repeat(64), "b".repeat(64), approvedAt);
         assertEquals(importId, approval.importId());
         assertEquals(planId, approval.planId());
         assertEquals(userId, approval.approvedByUserId());
         assertEquals("a".repeat(64), approval.planDigestSha256());
+        assertEquals("b".repeat(64), approval.selectionDigestSha256());
         assertEquals(approvedAt, approval.approvedAt());
     }
 
     @Test
     void rejectsInvalidDigest() {
         assertThrows(IllegalArgumentException.class, () -> new ImportPlanApproval(
-                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "bad", Instant.now()));
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "bad", "b".repeat(64), Instant.now()));
     }
+    @Test
+    void rejectsInvalidSelectionDigest() {
+        assertThrows(IllegalArgumentException.class, () -> new ImportPlanApproval(
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "a".repeat(64), "bad", Instant.now()));
+    }
+
 }

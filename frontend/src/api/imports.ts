@@ -31,6 +31,7 @@ export type ImportPlanEntry = {
   status: 'ADDED' | 'MODIFIED' | 'UNCHANGED' | 'IGNORED' | 'BLOCKED';
   comparisonStatus: string | null;
   severity: 'NONE' | 'WARNING' | 'BLOCKING';
+  blockerType: 'NONE' | 'HARD_BLOCKED' | 'OVERRIDABLE_BLOCKED';
   policyCode: string | null;
   message: string | null;
   archiveSizeBytes: number | null;
@@ -45,8 +46,23 @@ export type ImportPlanApprovalResponse = {
   importId: string;
   planId: string;
   planDigestSha256: string;
+  selectionDigestSha256: string;
   status: 'APPROVED';
   approvedAt: string;
+};
+
+export type ImportSelectionResponse = {
+  id: string;
+  importId: string;
+  planId: string;
+  planDigestSha256: string;
+  baseCommitSha: string;
+  selectionVersion: string;
+  selectionDigestSha256: string;
+  selectedPaths: string[];
+  excludedPaths: string[];
+  overrides: Array<{ path: string; blockerType: string; policyCode: string; acknowledgement: string }>;
+  createdAt: string;
 };
 
 export type ImportPlanResponse = {
@@ -63,6 +79,8 @@ export type ImportPlanResponse = {
   unchanged: number;
   ignored: number;
   blocked: number;
+  hardBlocked: number;
+  overridableBlocked: number;
   warnings: number;
   entries: ImportPlanEntry[];
   createdAt: string;
@@ -88,11 +106,28 @@ export async function getImportPlan(importId: string): Promise<ImportPlanRespons
   return requestJson(`/api/imports/${encodeURIComponent(importId)}/plan`);
 }
 
-export async function approveImportPlan(importId: string, planDigestSha256: string): Promise<ImportPlanApprovalResponse> {
+export async function createImportSelection(importId: string, planDigestSha256: string, baseCommitSha: string,
+  selectedPaths: string[], overridePaths: string[]): Promise<ImportSelectionResponse> {
+  return requestJson(`/api/imports/${encodeURIComponent(importId)}/selection`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      planDigestSha256,
+      baseCommitSha,
+      selectedPaths,
+      overrides: overridePaths.map((path) => ({
+        path,
+        acknowledgement: 'User explicitly approved this policy override in the review UI.',
+      })),
+    }),
+  });
+}
+
+export async function approveImportPlan(importId: string, planDigestSha256: string, selectionDigestSha256: string): Promise<ImportPlanApprovalResponse> {
   return requestJson(`/api/imports/${encodeURIComponent(importId)}/plan/approval`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ planDigestSha256 }),
+    body: JSON.stringify({ planDigestSha256, selectionDigestSha256 }),
   });
 }
 
@@ -158,6 +193,7 @@ export type AppliedImportWorkspaceResponse = {
   repositoryFullName: string;
   baseCommitSha: string;
   planDigestSha256: string;
+  selectionDigestSha256: string;
   appliedFileCount: number;
   appliedPaths: string[];
   status: 'FILES_APPLIED';

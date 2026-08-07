@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0-rc.8 - 2026-08-07
+
+- Added CI Docker image builds gated on structure/backend/frontend success.
+- Publish backend and frontend images to GHCR from successful `main` and tag builds.
+- Added exact-version, source-SHA and RC/stable convenience tags without assigning `latest` to release candidates.
+- Switched server Compose to published images and added a separate local-build Compose override.
+- Made Docker builds reproducible with Maven Wrapper and `npm ci`.
+- Added container deployment, upgrade and rollback documentation.
+
 ## 1.0.0-rc.7 - 2026-08-07
 
 - Fixed PostgreSQL migration integration test parameter binding for `Instant` values by using JDBC `TIMESTAMP_WITH_TIMEZONE`.

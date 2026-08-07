@@ -45,3 +45,13 @@ Changing limits requires matching disk/tmpfs capacity and a security review.
 ### ZIP_GITHUB_RATE_LIMIT_ENABLED
 
 Enables the in-process request throttle for unsafe API operations. Keep `true` in production. The MVP limits ordinary state-changing requests to 120 per session/minute and ZIP uploads to 12 per session/minute. A reverse proxy should add IP- and network-level throttling.
+
+## Container deployment
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `ZIP_GITHUB_VERSION` | `1.0.0-rc.8` | Exact backend/frontend image tag used by server Compose. |
+| `ZIP_GITHUB_BACKEND_IMAGE` | `ghcr.io/erland/zip-github-service-backend` | Backend image repository. |
+| `ZIP_GITHUB_FRONTEND_IMAGE` | `ghcr.io/erland/zip-github-service-frontend` | Frontend image repository. |
+
+Prefer an immutable exact version in server deployments. The mutable `rc` or `latest` tags are conveniences and should not be used as the rollback anchor.

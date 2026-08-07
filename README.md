@@ -4,8 +4,8 @@
 
 ## Current state
 
-- Product version: `1.0.0-rc.4`
-- Repository revision: `r0044`
+- Product version: `1.0.0-rc.8`
+- Repository revision: `r0048`
 - Completed implementation step: `7.5 — MVP-release och Definition of Done`
 - Next implementation step: `8.1 — Workflow runs och jobs` (post-MVP)
 - Overall state: **MVP RELEASE CANDIDATE**
@@ -40,12 +40,13 @@ Attach the latest ZIP and write:
 - `legacy/zip-buildserver/` — archived migration reference, not active runtime code
 ## Continuous integration
 
-The project includes `.github/workflows/ci.yml`. It runs structure/security checks, backend Maven verification on Java 21, and frontend tests/build on Node.js 22. Use `backend/mvnw verify` for the same pinned backend build locally. See `docs/ci-baseline.md`.
+The project includes `.github/workflows/ci.yml`. It runs structure/security checks, backend Maven verification on Java 21, frontend tests/build on Node.js 22, then builds both runtime container images. Successful `main` builds publish versioned images to GitHub Container Registry (GHCR); pull requests build the images without publishing them. Use `backend/mvnw verify` for the same pinned backend build locally. See `docs/ci-baseline.md` and `docs/container-images.md`.
 
 
 ## Operations
 
-- Local/container topology: [`docker-compose.yml`](docker-compose.yml)
+- Server/container topology using published GHCR images: [`docker-compose.yml`](docker-compose.yml)
+- Local image build override: [`docker-compose.build.yml`](docker-compose.build.yml)
 - Operations, backup, retention and incidents: [`docs/operations.md`](docs/operations.md)
 - GitHub OAuth/App configuration: [`docs/github-app-setup.md`](docs/github-app-setup.md)
 - Configuration reference: [`docs/configuration-reference.md`](docs/configuration-reference.md)

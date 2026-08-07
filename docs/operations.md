@@ -22,15 +22,45 @@ The application does **not** mount or use the Docker socket. Project builds rema
 
 Uploaded ZIPs and Git workspaces are not system-of-record data. GitHub and PostgreSQL metadata are the authoritative sources.
 
+## Runtime images
+
+Normal server deployment uses prebuilt images from GitHub Container Registry:
+
+- `ghcr.io/erland/zip-github-service-backend`
+- `ghcr.io/erland/zip-github-service-frontend`
+- `postgres:16-alpine`
+
+The exact application version is selected with `ZIP_GITHUB_VERSION`. Release-candidate deployments should use an immutable version tag such as `1.0.0-rc.8`, not the mutable `rc` tag. If the GHCR packages are private, log the server into `ghcr.io` with a token that has `read:packages`; alternatively make the packages public in GitHub package settings.
+
 ## Startup and shutdown
 
 1. Copy `.env.example` to `.env` and replace every placeholder.
-2. Configure GitHub OAuth and GitHub App settings as described in `docs/github-app-setup.md`.
-3. Start with `docker compose up -d --build`.
-4. Verify `docker compose ps` reports all services healthy.
-5. Verify frontend `/`, backend `/q/health/live`, and `/q/health/ready`.
+2. Set `ZIP_GITHUB_VERSION` to the exact version to deploy.
+3. Configure GitHub OAuth and GitHub App settings as described in `docs/github-app-setup.md`.
+4. If GHCR packages are private, run `docker login ghcr.io` using a token with `read:packages`.
+5. Pull the selected images with `docker compose pull`.
+6. Start with `docker compose up -d`.
+7. Verify `docker compose ps` reports all services healthy.
+8. Verify frontend `/`, backend `/q/health/live`, and `/q/health/ready`.
 
 Use `docker compose down` for a normal stop. Do not add `--volumes` unless permanent database deletion is intended and a verified backup exists.
+
+For local development or an installation that intentionally builds images from source, use:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
+
+## Upgrade and rollback
+
+To upgrade, set `ZIP_GITHUB_VERSION` to the new immutable version and run:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+To roll back, restore the previous `ZIP_GITHUB_VERSION` and run the same two commands. Database migrations are forward-only, so a rollback across a schema migration must follow the database recovery guidance rather than assuming an older application image can use a newer schema.
 
 ## Health checks
 

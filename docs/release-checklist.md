@@ -1,6 +1,6 @@
 # MVP release checklist
 
-This checklist separates repository-complete controls from environment-dependent acceptance tests. The project may be tagged as `1.0.0-rc.4` when the repository controls pass. It must not be promoted to a production-ready `1.0.0` until all external checks are completed and recorded.
+This checklist separates repository-complete controls from environment-dependent acceptance tests. The project may be tagged as `1.0.0-rc.8` when the repository controls pass. It must not be promoted to a production-ready `1.0.0` until all external checks are completed and recorded.
 
 ## Repository controls
 
@@ -16,6 +16,9 @@ This checklist separates repository-complete controls from environment-dependent
 - [x] Draft pull request creation is idempotent and recoverable.
 - [x] CSRF, restricted CORS, security headers and rate limiting are present.
 - [x] Docker Compose does not mount the Docker socket.
+- [x] CI builds backend and frontend container images after tests succeed.
+- [ ] GHCR backend and frontend images publish successfully from the release commit.
+- [ ] Server can pull the exact `ZIP_GITHUB_VERSION` image tags.
 - [x] Operations, backup, restore, incident and GitHub App setup are documented.
 - [x] Version, changelog, architecture and release notes are present.
 

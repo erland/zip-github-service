@@ -15,3 +15,5 @@ Runs the release security baseline: no active Docker socket, no probable committ
 `./scripts/verify-release.sh` verifies the version marker, required MVP release artifacts, final implementation ledger and the structure/security regression baselines. It does not replace backend/frontend builds or external GitHub, Docker, PostgreSQL and device acceptance tests.
 
 - `verify-source-tracking.sh` verifies required source files exist and are not accidentally ignored by Git.
+
+Container image publication is handled by `.github/workflows/ci.yml`; normal servers pull GHCR images and do not run build scripts.

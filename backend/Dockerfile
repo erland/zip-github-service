@@ -1,8 +1,11 @@
-FROM maven:3.9.9-eclipse-temurin-21 AS build
+FROM maven:3.9.11-eclipse-temurin-21 AS build
 WORKDIR /workspace
-COPY pom.xml .
+COPY .mvn .mvn
+COPY mvnw pom.xml ./
+RUN chmod +x mvnw
 COPY src ./src
-RUN mvn -B package -DskipTests
+RUN ./mvnw --batch-mode --no-transfer-progress package -DskipTests
+
 FROM eclipse-temurin:21-jre
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \

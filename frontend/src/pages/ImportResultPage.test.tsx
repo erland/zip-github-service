@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -146,7 +146,10 @@ it('dispatches and reruns only server-allowed workflows for the displayed Work h
 
   render(<MemoryRouter initialEntries={['/projects/p1/imports/import-1/result']}><Routes><Route path="projects/:projectId/imports/:importId/result" element={<ImportResultPage />} /></Routes></MemoryRouter>);
   expect(await screen.findByRole('heading', { name: 'Kontrollerade Actions' })).toBeInTheDocument();
-  expect(screen.getByText(/zip-github\/work-w1/)).toBeInTheDocument();
+  const controlsHeading = screen.getByRole('heading', { name: 'Kontrollerade Actions' });
+  const controls = controlsHeading.closest('section');
+  expect(controls).not.toBeNull();
+  expect(within(controls as HTMLElement).getByText(/zip-github\/work-w1/)).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Kör workflow' }));
   expect(await screen.findByText(/CI startades/)).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Kör om misslyckade jobb' }));

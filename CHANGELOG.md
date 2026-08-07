@@ -1,3 +1,10 @@
+## 1.0.0-rc.43 - 2026-08-07
+
+- Corrected CI shell entrypoints to invoke repository scripts and the Maven wrapper through `bash`, so ZIP-to-GitHub imports do not depend on Git executable-bit preservation.
+- Corrected the step-8.3 GitHub App Actions permission lookup to use the GitHub API base URL explicitly.
+- Corrected the controlled-Actions frontend regression to scope its Work-branch assertion to the controls section when the same branch is also shown in delivery metadata.
+- No intended runtime scope change; phase 8 remains complete and step 9.1 remains next.
+
 ## 1.0.0-rc.42 - 2026-08-07
 
 - Completed step 8.3 with default-deny, operation-specific workflow dispatch/rerun allowlists.

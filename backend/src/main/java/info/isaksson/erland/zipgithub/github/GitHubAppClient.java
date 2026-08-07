@@ -300,7 +300,7 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
 
     @Override
     public boolean hasActionsWritePermission(long installationId) {
-        JsonNode json = getJson(apiBase + "/app/installations/" + installationId, createAppJwt());
+        JsonNode json = getJson("https://api.github.com/app/installations/" + installationId, createAppJwt());
         return "write".equalsIgnoreCase(json.path("permissions").path("actions").asText(""));
     }
 

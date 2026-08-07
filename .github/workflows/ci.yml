@@ -19,19 +19,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verify active project structure
-        run: ./scripts/verify-structure.sh
+        run: bash ./scripts/verify-structure.sh
       - name: Verify tracked source files
-        run: ./scripts/verify-source-tracking.sh
+        run: bash ./scripts/verify-source-tracking.sh
       - name: Run security regression baseline
-        run: ./scripts/security-regression.sh
+        run: bash ./scripts/security-regression.sh
       - name: Validate shell scripts
         run: |
           find scripts backend -type f \( -name '*.sh' -o -name 'mvnw' \) -print0 \
             | xargs -0 -r -n1 bash -n
       - name: Verify implementation ledger
-        run: ./scripts/verify-implementation-status.sh
+        run: bash ./scripts/verify-implementation-status.sh
       - name: Verify MVP release artifacts
-        run: ./scripts/verify-release.sh
+        run: bash ./scripts/verify-release.sh
       - name: Verify ignored generated files
         run: |
           test -f .gitignore
@@ -51,10 +51,10 @@ jobs:
           cache-dependency-path: backend/pom.xml
       - name: Verify Maven wrapper
         working-directory: backend
-        run: ./mvnw --batch-mode --version
+        run: bash ./mvnw --batch-mode --version
       - name: Test and package backend
         working-directory: backend
-        run: ./mvnw --batch-mode --no-transfer-progress verify
+        run: bash ./mvnw --batch-mode --no-transfer-progress verify
       - name: Upload backend test reports
         if: always()
         uses: actions/upload-artifact@v4

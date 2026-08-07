@@ -1,11 +1,13 @@
 package info.isaksson.erland.zipgithub.actions;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 
 @ApplicationScoped
@@ -13,9 +15,14 @@ public class ActionsControlPolicy {
     private final Set<String> dispatch;
     private final Set<String> rerun;
 
+    @Inject
     public ActionsControlPolicy(
-            @ConfigProperty(name = "zipgithub.actions.allowed-dispatch-workflows", defaultValue = "") String dispatchWorkflows,
-            @ConfigProperty(name = "zipgithub.actions.allowed-rerun-workflows", defaultValue = "") String rerunWorkflows) {
+            @ConfigProperty(name = "zipgithub.actions.allowed-dispatch-workflows") Optional<String> dispatchWorkflows,
+            @ConfigProperty(name = "zipgithub.actions.allowed-rerun-workflows") Optional<String> rerunWorkflows) {
+        this(dispatchWorkflows.orElse(""), rerunWorkflows.orElse(""));
+    }
+
+    ActionsControlPolicy(String dispatchWorkflows, String rerunWorkflows) {
         this.dispatch = parse(dispatchWorkflows);
         this.rerun = parse(rerunWorkflows);
     }

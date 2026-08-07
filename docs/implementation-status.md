@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0088`
+- Repository revision: `r0089`
 - Last completed step: `8.3`
 - Next step: `9.1`
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 8 COMPLETE`
@@ -223,3 +223,5 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0086` | 2026-08-07 | Step 8.2 | Added bounded artifact metadata and sanitized condensed failed-job errors with GitHub source links; no artifact/log persistence | `8.3` |
 
 | `r0087` | 2026-08-07 | Step 8.3 | Added default-deny controlled workflow dispatch/failed-job rerun with exact Work guards, audit and idempotency; phase 8 complete | `9.1` |
+| `r0088` | 2026-08-07 | RC43 CI correction | Made CI shell entrypoints executable-bit-independent, fixed GitHub Actions permission lookup compilation and scoped the controlled-Actions frontend regression | `9.1` |
+| `r0089` | 2026-08-07 | RC44 CI correction | Made empty Actions allowlists Quarkus-safe while preserving deny-all defaults and removed nested executable-bit assumptions from release verification | `9.1` |

@@ -1,8 +1,8 @@
 # Continuation handoff — phase 8 and later
 
 Date: 7 August 2026  
-Repository revision: r0088  
-Application version: 1.0.0-rc.43  
+Repository revision: r0089  
+Application version: 1.0.0-rc.44  
 Last completed implementation step: 8.3  
 Next step: 9.1 — Define and persist the StagingImport lifecycle
 
@@ -177,7 +177,7 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 
 ## Release/packaging discipline
 
-- Application version is `1.0.0-rc.43`; r0088 is a corrective CI/build revision after step 8.3; phase 8 remains complete.
+- Application version is `1.0.0-rc.44`; r0089 is a corrective CI/test revision after step 8.3; phase 8 remains complete.
 - The next implementation revision should increment repository revision and normally the RC application version when runtime code changes.
 - Keep exactly one `NEXT` step in `docs/implementation-status.md`.
 - Every delivered ZIP must include one top-level `zip-github/` folder.

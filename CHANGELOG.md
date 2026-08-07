@@ -1,3 +1,9 @@
+## 1.0.0-rc.44 - 2026-08-07
+
+- Corrected Quarkus startup when controlled-Actions workflow allowlists are intentionally empty: configuration is now injected as `Optional<String>` and still defaults to deny-all.
+- Corrected `scripts/verify-release.sh` to invoke its nested repository checks through `bash`, removing the remaining executable-bit dependency in the structure/security CI job.
+- No intended feature-scope change; phase 8 remains complete and step 9.1 remains next.
+
 ## 1.0.0-rc.43 - 2026-08-07
 
 - Corrected CI shell entrypoints to invoke repository scripts and the Maven wrapper through `bash`, so ZIP-to-GitHub imports do not depend on Git executable-bit preservation.

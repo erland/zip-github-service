@@ -50,7 +50,7 @@ This checklist separates repository-complete controls from environment-dependent
 1. Some import/selection/delivery application state remains in memory and may be lost on backend restart.
 2. Horizontal backend scaling is not supported.
 3. Content-based secret scanning is not included; high-risk paths and filenames are blocked instead.
-4. Integrated workflow/job/artifact details are phase 8 work.
+4. Controlled Actions dispatch/rerun remains phase 8 work; current artifact/error reads are read-only and bounded.
 5. The service shows GitHub links but does not execute repository builds itself.
 
 ## Promotion rule
@@ -75,3 +75,32 @@ Production version `1.0.0` may be created only when every external acceptance it
 - [x] Project actions are state-based: active import -> continue/cancel; idle Work -> one next-ZIP action.
 - [x] Commit result exposes direct next-ZIP and finish-Work/PR actions.
 - [x] PR creation has lost-response recovery that reuses an existing GitHub PR.
+
+## Phase 8 Actions read verification
+
+- GitHub App repository permissions include **Checks: Read-only** and **Actions: Read-only**; no Actions write permission is required for step 8.1.
+- Existing installations have approved the added Actions read permission where GitHub requires re-approval.
+- A test delivery shows workflow/job/check state for the exact commit and all full-detail links open on GitHub.
+- `not_started` and temporary `unavailable` Actions states do not hide or block the normal Work result.
+- Browser polling stops for terminal results and remains within the bounded backoff/observation policy documented in `docs/workflow-runs-and-jobs.md`.
+
+
+## Phase 8 artifact/error verification (8.2)
+
+- [x] Artifact metadata is bounded and no artifact archive bytes or authenticated archive URLs are stored/returned by zip-github.
+- [x] Failed-job log input is capped before parsing and only a small bounded excerpt can reach the browser.
+- [x] ANSI/control sequences and common credential/token patterns are sanitized before excerpt output.
+- [x] Maven/Gradle, npm/Vite, Pandoc and xcodebuild are the initial recognized tool families; unknown formats are not guessed.
+- [x] Every condensed error identifies workflow, job, failed step and a GitHub source URL.
+- [x] Artifact/log detail failure does not hide the ordinary Work result or Actions status.
+- [ ] Live private-repository verification confirms artifact listing and job-log redirects with a GitHub App installation token.
+
+
+## Phase 8 Actions control acceptance
+
+- [ ] GitHub App installation has Actions read/write only where controlled step-8.3 writes are intended.
+- [ ] Empty dispatch/rerun allowlists expose no Actions write controls.
+- [ ] An allowlisted `workflow_dispatch` succeeds only for the current active Work ref/commit.
+- [ ] An allowlisted failed run can rerun failed jobs; non-failed/unlisted/other-SHA/other-branch runs are rejected.
+- [ ] Duplicate requests using one idempotency key create at most one GitHub-side write and persist one owner-bound audit record.
+- [ ] An old result tab becomes read-only after another import advances Work or the Work is finalized.

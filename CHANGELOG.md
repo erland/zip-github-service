@@ -1,3 +1,27 @@
+## 1.0.0-rc.42 - 2026-08-07
+
+- Completed step 8.3 with default-deny, operation-specific workflow dispatch/rerun allowlists.
+- Added exact current-Work ref/commit guards, workflow/run identity validation, persistent audit and idempotency claims before GitHub Actions writes.
+- Added mobile-friendly explicit dispatch and failed-job rerun controls without exposing arbitrary workflow inputs or GitHub credentials.
+- GitHub App Actions permission is now read/write when controlled writes are enabled; phase 8 is complete.
+- Step 9.1 — Define and persist the StagingImport lifecycle — is next; no phase-9 implementation is included in this revision.
+
+## 1.0.0-rc.41 - 2026-08-07
+
+- Completed step 8.2 with owner-scoped bounded GitHub Actions artifact metadata and condensed failed-job errors for the exact delivered commit.
+- Added safe GitHub run/job links without artifact proxying or permanent artifact/log storage.
+- Added 24 KiB failed-job log caps, maximum three excerpts, eight-line/180-character output bounds, terminal-sequence cleanup and common credential redaction.
+- Added conservative Maven/Gradle, npm/Vite, Pandoc and xcodebuild recognition; unknown log formats are not guessed.
+- Step 8.3 — Controlled workflow dispatch and rerun — is next; phase 9 and the future AI backlog remain untouched.
+
+## 1.0.0-rc.40 - 2026-08-07
+
+- Completed step 8.1 with owner-scoped, read-only GitHub Actions workflow-run, job and check status for the exact delivered Work commit.
+- Added bounded GitHub reads (10 workflow runs, 50 jobs per run, 50 checks), normalized status mapping, short server caching and exponential frontend polling that stops for terminal results.
+- Added a mobile-friendly Actions overview to the commit result while retaining permanent GitHub links and graceful `not_started`/`unavailable` states.
+- Documented the required GitHub App Actions read permission and the exact verification limits of this packaging environment.
+- Step 8.2 — Artifacts and condensed errors — is next; phase 9 and the future AI backlog remain untouched.
+
 ## Planning revision r0084 - 2026-08-07
 
 - Moved former step 8.4 (AI/read-only API, Custom GPT/MCP and branch ZIP export) out of the active execution plan into a future backlog.

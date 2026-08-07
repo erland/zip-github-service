@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.39"
+expected_version="1.0.0-rc.42"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
@@ -21,9 +21,9 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0084`' docs/implementation-status.md
-grep -q 'Last completed step: `7.24`' docs/implementation-status.md
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASES 8–9 PLANNED`' docs/implementation-status.md
+grep -q 'Repository revision: `r0087`' docs/implementation-status.md
+grep -q 'Last completed step: `8.3`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 8 COMPLETE`' docs/implementation-status.md
 grep -q '| `7.9` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.10` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.11` .*\*\*DONE\*\*' docs/implementation-status.md
@@ -39,9 +39,9 @@ grep -q '| `7.21` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.22` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.23` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.24` .*\*\*DONE\*\*' docs/implementation-status.md
-grep -q '| `8.1` .*\*\*NEXT\*\*' docs/implementation-status.md
+grep -q '| `8.1` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `8.4` .*\*\*SKIPPED\*\*' docs/implementation-status.md
-grep -q '| `9.1` .*\*\*PENDING\*\*' docs/implementation-status.md
+grep -q '| `9.1` .*\*\*NEXT\*\*' docs/implementation-status.md
 grep -q 'Fas 9 - Shortcut och kortlivad StagingImport' docs/implementation-steps.md
 grep -q 'Framtida backlog - AI- och integrationsyta' docs/implementation-steps.md
 test -s docs/phase8-plus-continuation-handoff.md
@@ -151,3 +151,32 @@ grep -q 'cancelsBeforeApprovalAndRemainsCancelledAfterInMemoryRestart' backend/s
 grep -q 'cancels the active import and exposes exactly one next-ZIP action afterwards' frontend/src/pages/ProjectDetailPage.test.tsx
 grep -q 'retries direct finish-work after a transient failure without creating a second UI action' frontend/src/pages/ImportResultPage.test.tsx
 grep -q 'response lost after GitHub created the PR' backend/src/test/java/info/isaksson/erland/zipgithub/pullrequest/PullRequestServiceSelfTest.java
+
+grep -q 'Step 8.1 report' docs/step-8.1-report.md
+grep -q '@Path("/{importId}/actions")' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
+grep -q 'readCommitActions' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'Actions.*Read and write' docs/github-app-setup.md
+grep -q 'GitHub Actions' frontend/src/pages/ImportResultPage.tsx
+grep -Fq '| `8.2` | Fas 8 — efter MVP: integrerade Actions-resultat | Artifacts och kondenserade fel | **DONE**' docs/implementation-status.md
+grep -Fq '| `8.3` | Fas 8 — efter MVP: integrerade Actions-resultat | Kontrollerad workflow dispatch och omkörning | **DONE**' docs/implementation-status.md
+
+
+grep -q 'Step 8.2 report' docs/step-8.2-report.md
+grep -q '@Path("/{importId}/actions/details")' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
+grep -q 'readCommitActionDetails' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q '24 \* 1024' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'REDACTED_TOKEN' backend/src/main/java/info/isaksson/erland/zipgithub/github/ActionLogCondensor.java
+grep -q 'Kondenserade fel' frontend/src/pages/ImportResultPage.tsx
+grep -q 'Artifacts' frontend/src/pages/ImportResultPage.tsx
+
+
+grep -q 'Step 8.3 report' docs/step-8.3-report.md
+grep -q '@Path("/{importId}/actions/dispatch")' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
+grep -q '@Path("/{importId}/actions/rerun-failed")' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
+grep -q 'ACTIONS_WRITE_PERMISSION_REQUIRED' backend/src/main/java/info/isaksson/erland/zipgithub/actions/ImportActionsControlService.java
+grep -q 'WORKFLOW_NOT_ALLOWED' backend/src/main/java/info/isaksson/erland/zipgithub/actions/ImportActionsControlService.java
+grep -q 'STALE_WORK' backend/src/main/java/info/isaksson/erland/zipgithub/actions/ImportActionsControlService.java
+grep -q 'uq_actions_control_idempotency' backend/src/main/resources/db/migration/V9__actions_control_audit.sql
+grep -q 'dispatchImportWorkflow' frontend/src/pages/ImportResultPage.tsx
+grep -q 'rerunImportWorkflowFailedJobs' frontend/src/pages/ImportResultPage.tsx
+grep -Fq '| `9.1` | Fas 9 — Shortcut/StagingImport | Definiera och persistiera StagingImport-livscykeln | **NEXT**' docs/implementation-status.md

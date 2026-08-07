@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0084`
-- Last completed step: `7.24`
-- Next step: `8.1`
-- Overall state: `MVP RELEASE CANDIDATE — PHASES 8–9 PLANNED`
+- Repository revision: `r0087`
+- Last completed step: `8.3`
+- Next step: `9.1`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 8 COMPLETE`
 
 ## Step ledger
 
@@ -81,11 +81,11 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `7.22` | Fas 7 — importlivscykel | Avbryt och stäng pågående import | **DONE** | 2026-08-07 | `docs/step-7.22-report.md`, `docs/api-contract.md` |
 | `7.23` | Fas 7 — Work UX | State-baserade Work-actions och borttagna redundanta vägar | **DONE** | 2026-08-07 | `docs/step-7.23-report.md` |
 | `7.24` | Fas 7 — regression | Regression för cancel och state-baserade Work-actions | **DONE** | 2026-08-07 | `docs/step-7.24-report.md` |
-| `8.1` | Fas 8 — efter MVP: integrerade Actions-resultat | Workflow runs och jobs | **NEXT** | — | — |
-| `8.2` | Fas 8 — efter MVP: integrerade Actions-resultat | Artifacts och kondenserade fel | **PENDING** | — | — |
-| `8.3` | Fas 8 — efter MVP: integrerade Actions-resultat | Kontrollerad workflow dispatch och omkörning | **PENDING** | — | — |
+| `8.1` | Fas 8 — efter MVP: integrerade Actions-resultat | Workflow runs och jobs | **DONE** | 2026-08-07 | `docs/workflow-runs-and-jobs.md`, `docs/step-8.1-report.md` |
+| `8.2` | Fas 8 — efter MVP: integrerade Actions-resultat | Artifacts och kondenserade fel | **DONE** | 2026-08-07 | `docs/actions-artifacts-and-condensed-errors.md`, `docs/step-8.2-report.md` |
+| `8.3` | Fas 8 — efter MVP: integrerade Actions-resultat | Kontrollerad workflow dispatch och omkörning | **DONE** | 2026-08-07 | `docs/controlled-workflow-actions.md`, `docs/step-8.3-report.md` |
 | `8.4` | Fas 8 — tidigare plan | AI- och integrationsyta — flyttad till framtida backlog | **SKIPPED** | 2026-08-07 | `docs/r0084-phase8-9-handoff-planning.md` |
-| `9.1` | Fas 9 — Shortcut/StagingImport | Definiera och persistiera StagingImport-livscykeln | **PENDING** | — | — |
+| `9.1` | Fas 9 — Shortcut/StagingImport | Definiera och persistiera StagingImport-livscykeln | **NEXT** | — | — |
 | `9.2` | Fas 9 — Shortcut/StagingImport | Capability-skyddad staging-upload | **PENDING** | — | — |
 | `9.3` | Fas 9 — Shortcut/StagingImport | Autentiserad claim från webbläsaren | **PENDING** | — | — |
 | `9.4` | Fas 9 — Shortcut/StagingImport | Projektval och promotion till vanlig Import | **PENDING** | — | — |
@@ -217,3 +217,9 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0083` | 2026-08-07 | Step 7.24 | Added final cancellation/Work-state regressions, restart-safe cancel coverage and pull-request retry/no-duplicate recovery checks; phase 7 complete | `8.1` |
 
 | `r0084` | 2026-08-07 | Phase 8–9 planning/handoff refinement | Moved former 8.4 AI/integration work to future backlog; detailed StagingImport/Shortcut phase 9 and new-chat handoff package; application version unchanged | `8.1` |
+
+| `r0085` | 2026-08-07 | Step 8.1 | Added owner-scoped bounded workflow-run/job/check overview with GitHub links, cache/backoff and graceful degradation; Actions remains read-only | `8.2` |
+
+| `r0086` | 2026-08-07 | Step 8.2 | Added bounded artifact metadata and sanitized condensed failed-job errors with GitHub source links; no artifact/log persistence | `8.3` |
+
+| `r0087` | 2026-08-07 | Step 8.3 | Added default-deny controlled workflow dispatch/failed-job rerun with exact Work guards, audit and idempotency; phase 8 complete | `9.1` |

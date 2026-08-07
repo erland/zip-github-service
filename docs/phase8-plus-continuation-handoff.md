@@ -1,16 +1,16 @@
 # Continuation handoff — phase 8 and later
 
 Date: 7 August 2026  
-Repository revision: r0084  
-Application version: 1.0.0-rc.39  
-Last completed implementation step: 7.24  
-Next step: 8.1 — Workflow runs and jobs
+Repository revision: r0087  
+Application version: 1.0.0-rc.42  
+Last completed implementation step: 8.3  
+Next step: 9.1 — Define and persist the StagingImport lifecycle
 
 ## Why this file exists
 
 This is the compact handoff for starting a new ChatGPT conversation from the complete project ZIP. It supplements, but does not replace, the authoritative status and implementation-step files.
 
-A new chat should be able to start with this ZIP and continue from 8.1 without needing the prior conversation transcript.
+A new chat should be able to start with this ZIP and continue from 9.1 without needing the prior conversation transcript.
 
 ## Read these first
 
@@ -79,9 +79,9 @@ Resume persistence includes enough source upload/snapshot/plan/selection/approva
 
 ## Phase 8 — current active roadmap
 
-### 8.1 — Workflow runs and jobs — NEXT
+### 8.1 — Workflow runs and jobs — DONE
 
-Implement a GitHub Actions view tied to the current Work commit/PR. Reuse the existing GitHub App installation-token approach and the existing basic check-status integration, but add workflow runs/jobs as a richer read model. Keep GitHub as the canonical full UI. Poll with limits/backoff and degrade gracefully.
+Implemented as an owner-scoped, read-only Actions view for the exact delivered commit, with bounded workflow runs/jobs/checks, normalized states, direct GitHub links, server-side cache and bounded frontend backoff. GitHub remains the canonical full UI. See `docs/workflow-runs-and-jobs.md` and `docs/step-8.1-report.md`.
 
 Likely code areas:
 
@@ -95,13 +95,13 @@ Likely code areas:
 
 Do not implement 8.2/8.3 in the same step except for a tiny prerequisite abstraction.
 
-### 8.2 — Artifacts and condensed errors
+### 8.2 — Artifacts and condensed errors — DONE
 
-Read artifact metadata and only the bounded log material required for safe condensed build-error summaries. GitHub remains source for full logs/artifacts. Avoid permanent artifact storage and aggressively bound/sanitize log excerpts.
+Implemented as an owner-scoped detail endpoint with bounded artifact metadata, GitHub-run links and conservative sanitized failed-job summaries. Artifact bytes and raw logs are not persisted or returned to the browser. See `docs/actions-artifacts-and-condensed-errors.md` and `docs/step-8.2-report.md`.
 
-### 8.3 — Controlled workflow dispatch/rerun
+### 8.3 — Controlled workflow dispatch/rerun — DONE
 
-Add explicit allowlisting, authorization, audit and idempotency for any Actions write operation. Never expose a generic arbitrary workflow execution surface.
+Implemented default-deny dispatch/rerun allowlists, exact current-Work guards, persistent audit/idempotency and explicit mobile controls. See `docs/controlled-workflow-actions.md` and `docs/step-8.3-report.md`.
 
 ### Former 8.4
 
@@ -138,7 +138,7 @@ Fortsätt utvecklingen av zip-github från den bifogade kompletta projekt-ZIP:en
 
 Börja med att läsa AGENTS.md, docs/implementation-status.md, docs/implementation-steps.md och docs/phase8-plus-continuation-handoff.md. Functional specification och development plan är styrande för produkt/arkitektur. Statusfilen är styrande för vilket steg som ska köras.
 
-Genomför endast det steg som är markerat NEXT, vilket i denna revision ska vara 8.1 – Workflow runs och jobs. Implementera inte senare fas-8-steg eller fas 9 i förtid annat än en liten nödvändig förberedande abstraktion.
+Genomför endast det steg som är markerat NEXT, vilket i denna revision ska vara 9.1 – Definiera och persistiera StagingImport-livscykeln. Fas 8 är färdig; implementera inte senare fas-9-steg i förtid annat än en liten nödvändig förberedande abstraktion.
 
 Efter ändringen:
 - kör relevanta backend/frontendtester och builds när miljön tillåter,
@@ -177,8 +177,8 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 
 ## Release/packaging discipline
 
-- Application version is still `1.0.0-rc.39`; r0084 is documentation/planning only.
-- Next implementation revision should increment repository revision and normally the RC application version if runtime code changes.
+- Application version is `1.0.0-rc.42`; r0087 completes runtime step 8.3 and phase 8.
+- The next implementation revision should increment repository revision and normally the RC application version when runtime code changes.
 - Keep exactly one `NEXT` step in `docs/implementation-status.md`.
 - Every delivered ZIP must include one top-level `zip-github/` folder.
 - Every step report/final response must explicitly list files added, modified, moved and deleted, per `AGENTS.md`.

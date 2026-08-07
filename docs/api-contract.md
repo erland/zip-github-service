@@ -195,6 +195,18 @@ Requires an exact approved plan and a verified applied workspace. Revalidates th
 
 `GET /api/imports/{importId}/checks` returns the normalized delivered-commit state (`pending`, `success`, `failure`, `cancelled` or `unavailable`), terminal flag, counters, checked timestamp and permanent GitHub checks URL.
 
+## Workflow runs, jobs and checks (step 8.1)
+
+`GET /api/imports/{importId}/actions` is an owner-scoped, read-only status view for the exact delivered commit SHA. It returns an aggregate state (`not_started`, `pending`, `success`, `failure`, `cancelled` or `unavailable`), a terminal flag, observation timestamp, permanent GitHub checks URL, bounded workflow runs with bounded jobs, and bounded check runs. Each returned run/job/check includes a stable normalized state and its GitHub URL when available. The endpoint never returns GitHub credentials and does not expose workflow dispatch/rerun operations.
+
+## Actions artifacts and condensed errors (step 8.2)
+
+`GET /api/imports/{importId}/actions/details` returns bounded read-only artifact metadata and condensed failed-job errors for the exact delivered commit. The endpoint is owner-scoped through the existing import/delivery lookup and uses a short-lived GitHub App installation token server-side.
+
+The response is deliberately limited: at most 20 artifact metadata entries across at most 10 matching workflow runs and at most three failed-job summaries. Artifact bytes and authenticated archive URLs are never returned or persisted; each artifact instead links to its owning GitHub workflow run. Each candidate failed-job log read is capped at 24 KiB before parsing. Summaries recognize Maven/Gradle, npm/Vite, Pandoc and xcodebuild only when robust patterns match, sanitize terminal/control sequences and common credential patterns, and identify workflow, job, failed step, detected tool and the GitHub job URL. Unknown log formats are not guessed.
+
+A detail-read failure does not invalidate the ordinary import result or the step-8.1 Actions status. GitHub remains the source for complete logs and artifact downloads.
+
 ## Project import history
 
 `GET /api/projects/{projectId}/imports` returns the authenticated owner's imports for the project, newest first. Each item contains current import status, available source/plan/PR metadata, and `resumeStage` (`UPLOAD`, `REVIEW`, or `RESULT`) for reopening the correct UI stage.
@@ -266,3 +278,13 @@ Project import-history entries expose `sourceType` and nullable `sourceReference
 `POST /api/projects/{projectId}/imports` now enforces one active import per Work/project. If a non-terminal import already exists for the authenticated owner, the request returns `409 ACTIVE_IMPORT_EXISTS`. Terminal states (`PUSHED`, `PULL_REQUEST_CREATED`, `CANCELLED`) do not block the next import. This invariant is server-side and cannot be bypassed by calling the create-import API directly.
 
 The existing owner-scoped `POST /api/projects/{projectId}/work/pull-request` remains the single explicit Work-completion operation and may be invoked directly from the post-commit result view. Its existing idempotency and Work-head validation continue to apply.
+
+## Controlled Actions writes (step 8.3)
+
+`GET /api/imports/{importId}/actions/control` returns the authenticated owner's current control context for the exact delivered Work commit. It includes `branchRef`, `commitSha`, whether this import is still the active Work head, an optional disabled reason, and only server-configured workflow options resolved through the same GitHub App installation.
+
+`POST /api/imports/{importId}/actions/dispatch` requires JSON fields `workflowIdentifier`, `expectedRef`, `expectedCommitSha`, `idempotencyKey` and `confirmed=true`. The backend rejects stale Work/view state, non-allowlisted workflows and reused idempotency keys bound to a different target. No arbitrary `workflow_dispatch` inputs are accepted in step 8.3.
+
+`POST /api/imports/{importId}/actions/rerun-failed` requires `workflowRunId`, `expectedRef`, `expectedCommitSha`, `idempotencyKey` and `confirmed=true`. The backend fetches the GitHub run and requires an exact current Work SHA/ref match, an explicitly rerun-allowlisted workflow and `conclusion=failure` before calling GitHub's failed-jobs rerun endpoint.
+
+Successful/replayed control responses contain only non-secret audit/result metadata (`operationId`, operation/status, replay flag, workflow/run ids, branch/ref, target commit SHA, GitHub URL and timestamps). Installation/user tokens are never returned.

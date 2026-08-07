@@ -31,4 +31,12 @@ grep -q 'Selected blocker lacks explicit override audit' backend/src/main/java/i
 grep -q 'changed.equals(expected.keySet())' backend/src/main/java/info/isaksson/erland/zipgithub/workspace/ImportWorkspaceService.java || fail 'exact workspace diff verification missing'
 grep -q 'The base branch moved after approval' backend/src/main/java/info/isaksson/erland/zipgithub/delivery/GitDeliveryService.java || fail 'stale base delivery guard missing'
 
+grep -q 'allowed-dispatch-workflows' backend/src/main/resources/application.properties || fail 'Actions dispatch allowlist configuration missing'
+grep -q 'allowed-rerun-workflows' backend/src/main/resources/application.properties || fail 'Actions rerun allowlist configuration missing'
+grep -q 'WORKFLOW_NOT_ALLOWED' backend/src/main/java/info/isaksson/erland/zipgithub/actions/ImportActionsControlService.java || fail 'Actions workflow allowlist enforcement missing'
+grep -q 'STALE_WORK' backend/src/main/java/info/isaksson/erland/zipgithub/actions/ImportActionsControlService.java || fail 'Actions stale Work guard missing'
+grep -q 'uq_actions_control_idempotency' backend/src/main/resources/db/migration/V9__actions_control_audit.sql || fail 'Actions control idempotency uniqueness missing'
+grep -q 'owner_user_id' backend/src/main/resources/db/migration/V9__actions_control_audit.sql || fail 'Actions audit owner binding missing'
+grep -q 'ACTIONS_WRITE_PERMISSION_REQUIRED' backend/src/main/java/info/isaksson/erland/zipgithub/actions/ImportActionsControlService.java || fail 'Actions write permission guard missing'
+
 echo 'Security regression checks passed.'

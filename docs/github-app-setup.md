@@ -47,9 +47,10 @@ Recommended MVP permissions:
 - Contents: Read and write
 - Pull requests: Read and write
 - Checks: Read-only
+- Actions: Read and write
 - Metadata: Read-only (implicit/required)
 
-No Actions write permission is needed. The current polling implementation does not require webhooks.
+Steps 8.1–8.2 use Actions read access. Step 8.3 additionally performs only explicitly allowlisted `workflow_dispatch` and failed-job rerun operations, which require Actions write. Before each such write the backend reads the owner-scoped installation metadata with the App JWT and requires `permissions.actions` to be `write`; GitHub then independently enforces the same permission on the Actions endpoint. Existing installations may require owner approval when the App permission is upgraded. No generic arbitrary Actions write surface is exposed, and webhooks are not required by the current implementation.
 
 ## Installation
 
@@ -92,3 +93,5 @@ The old `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET` and `GITHUB_OAUTH
 5. Create a project in a dedicated test repository.
 6. Complete a test ZIP delivery and draft pull request.
 7. Confirm check status can be read.
+8. Confirm workflow runs/jobs for the delivered commit can be read through the result page and that the full run opens on GitHub.
+9. With dedicated test workflows in the operation-specific allowlists, confirm one manual dispatch and one failed-job rerun succeed for the current Work head, while an unlisted workflow is rejected.

@@ -46,6 +46,7 @@ The service accepts an untrusted ZIP archive from an authenticated user, compare
 | ZIP traversal/symlink/special file | Host file overwrite or escape | Canonical relative paths, duplicate/case collision checks, symlink/special-file rejection, destination-root checks, CREATE_NEW/part-file writes | Platform-specific filesystem semantics require release testing |
 | ZIP bomb/resource exhaustion | Memory/disk/CPU denial of service | Compressed/uncompressed/file-count/single-file/path/ratio limits, streaming reads, retention cleanup | Many concurrent valid maximum-size uploads can still exhaust one node |
 | Workflow or Git metadata injection | Arbitrary CI execution or repository corruption | `.git/**` is hard blocked and can never be selected; `.github/**` is excluded by default and requires explicit per-path override; immutable selection and exact diff verification | A user who explicitly approves a workflow change can intentionally cause that workflow to run after GitHub receives the commit |
+| Arbitrary/stale Actions control | Trigger unexpected workflow execution or rerun old code | Separate default-deny dispatch/rerun allowlists, owner/repository/installation checks, exact current Work ref+SHA validation, run workflow/SHA/ref verification, explicit UI action, persisted audit and pre-side-effect idempotency claim | GitHub remains an external side-effect boundary; an ambiguous network failure is not automatically retried |
 | Plan/selection substitution after approval | Deliver content user did not approve | Canonical plan digest binds ZIP hash/base/policy; immutable selection digest binds selected/excluded paths and override acknowledgements; approval binds both digests; workspace diff must exactly equal selected paths | Cryptographic integrity depends on SHA-256 implementation and protected server state |
 | Base/work-branch race | Commit based on stale review | Reviewed branch HEAD is locked to exact SHA and rechecked before delivery; normal non-force push rejects concurrent movement | New upstream changes require a new import/plan rather than automatic merge |
 | Credential leakage through Git/errors/logs | Repository compromise | Short-lived installation tokens, GIT_ASKPASS, no token in URL, redaction, generic API errors, no token response fields | Process inspection on a compromised host remains out of scope |
@@ -67,6 +68,7 @@ The service accepts an untrusted ZIP archive from an authenticated user, compare
 - No active runtime mounts the Docker socket.
 - A user-owned resource is always resolved together with the current user identity.
 - GitHub credentials are never returned to the browser or embedded in Git remote URLs.
+- Actions writes are deny-all by default, operation-specific, current-Work scoped, audited and idempotency-claimed before GitHub is called.
 
 ## Residual risks accepted for MVP
 

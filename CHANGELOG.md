@@ -1,3 +1,13 @@
+## 1.0.0-rc.9 — 2026-08-07
+
+Corrective release candidate for the GHCR backend image build.
+
+### Fixed
+
+- Build the backend image with the Maven 3.9.11 binary already provided by `maven:3.9.11-eclipse-temurin-21` instead of bootstrapping Maven Wrapper inside the container.
+- Removed the Docker-build dependency on `unzip`, which caused the GitHub Actions Buildx job to fail before Maven could start.
+- Kept the Maven Wrapper as the authoritative host/CI test entry point; only the Docker build stage uses the matching preinstalled Maven binary.
+
 # Changelog
 
 ## 1.0.0-rc.8 - 2026-08-07

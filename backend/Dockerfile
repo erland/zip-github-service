@@ -1,10 +1,8 @@
 FROM maven:3.9.11-eclipse-temurin-21 AS build
 WORKDIR /workspace
-COPY .mvn .mvn
-COPY mvnw pom.xml ./
-RUN chmod +x mvnw
+COPY pom.xml ./
 COPY src ./src
-RUN ./mvnw --batch-mode --no-transfer-progress package -DskipTests
+RUN mvn --batch-mode --no-transfer-progress package -DskipTests
 
 FROM eclipse-temurin:21-jre
 RUN apt-get update \

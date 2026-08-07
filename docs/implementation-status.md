@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0048`
+- Repository revision: `r0049`
 - Last completed step: `7.5`
 - Next step: `8.1`
 - Overall state: `MVP RELEASE CANDIDATE`
@@ -146,3 +146,4 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0046` | 2026-08-07 | MVP RC frontend build correction | Removed unused Vitest `describe` import that failed TypeScript `noUnusedLocals`; `8.1` remains next | `8.1` |
 | `r0047` | 2026-08-07 | MVP RC PostgreSQL CI test correction | Bound `Instant` test parameters explicitly as JDBC `TIMESTAMP_WITH_TIMEZONE`; `8.1` remains next | `8.1` |
 | `r0048` | 2026-08-07 | MVP RC container publication and deployment improvement | Added GHCR image build/publish, image-based server Compose, local build override and deployment/rollback docs; `8.1` remains next | `8.1` |
+| `r0049` | 2026-08-07 | Backend container build correction | Use Maven already installed in the Maven build image; removes failing Maven-wrapper bootstrap dependency on unzip; `8.1` remains next | `8.1` |

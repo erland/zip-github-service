@@ -135,11 +135,11 @@ describe('simplified import flow E2E regression', () => {
     expect(screen.queryByRole('button', { name: 'Skapa granskningsplan' })).not.toBeInTheDocument();
 
     await user.click(await screen.findByRole('checkbox', { name: 'Exkludera README.md' }));
-    await user.click(screen.getByRole('button', { name: 'Oförändrade' }));
+    await user.click(screen.getByRole('button', { name: /Oförändrade \(1\)/ }));
     expect(screen.getByTitle('.github/workflows/unchanged.yml')).toBeInTheDocument();
     expect(screen.queryByText('Jag förstår risken och vill ta med denna blockerade förändring')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Blockerade' }));
+    await user.click(screen.getByRole('button', { name: /Blockerade \(1\)/ }));
     expect(screen.getByTitle('.github/workflows/changed.yml')).toBeInTheDocument();
     await user.click(screen.getByRole('checkbox', { name: 'Jag förstår risken och vill ta med denna blockerade förändring' }));
     await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));

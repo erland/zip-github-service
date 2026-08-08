@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0116`
+- Repository revision: `r0117`
 - Last completed step: `9.12`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — GITIGNORE/REVIEW UX CORRECTION APPLIED`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — FRONTEND REVIEW CI CORRECTION APPLIED`
 
 ## Step ledger
 
@@ -103,6 +103,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
 | `r0116` | 2026-08-08 | `9.12` gitignore/review UX correction | Repository `.gitignore` now classifies untracked ZIP paths as non-selectable warnings, removes Shortcut filename special-casing and simplifies duplicated review summary/filter affordances | `none` |
+| `r0117` | 2026-08-08 | Frontend review CI correction after `9.12` | Removed disabled checkbox affordance from ignored rows and aligned E2E filter assertions with counted labels; no backend behavior changed | `none` |
 | `r0115` | 2026-08-08 | Frontend ActionsPanel CI correction after `9.11` | Prevented runtime crash for partial/legacy workflow payloads without `headSha`; no backend behavior or phase state changed | `none` |
 | `r0114` | 2026-08-08 | `9.11` Actions visibility/diagnostics correction | Shared Work/result Actions UI, explicit permission diagnostics, resilient run/jobs/check handling and bounded contextual job logs | `none` |
 | `r0109` | 2026-08-08 | `9.10` final phase-9 E2E/release gate | Cross-step phase-9 release script, signed Shortcut manifest/hash/readability checks, operations/security/API/release documentation audit; active implementation plan complete | `none` |

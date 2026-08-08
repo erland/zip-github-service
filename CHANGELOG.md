@@ -1,3 +1,10 @@
+## 1.0.0-rc.69 - 2026-08-08
+
+- Corrected the rc.68 frontend CI regressions after the review-filter UX change.
+- Gitignored `IGNORED` entries are now rendered as informational rows without a disabled selection checkbox, matching their non-selectable/no-acknowledgement contract.
+- Updated the simplified import-flow regression to match counted filter labels such as `Oförändrade (1)` and `Blockerade (1)`.
+- No backend policy or `.gitignore` matching behavior changed; step 9.12 remains complete.
+
 ## 1.0.0-rc.68 - 2026-08-08
 
 - Added corrective step 9.12 so import planning evaluates the target repository's tracked `.gitignore` files before policy classification.

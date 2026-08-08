@@ -1,4 +1,4 @@
-> **Current handoff r0115 / 1.0.0-rc.67:** Phase 9 remains complete. This revision is a frontend CI correction on top of step 9.11: the shared ActionsPanel now tolerates partial/legacy workflow payloads without `headSha` and falls back to the current commit SHA instead of crashing.
+> **Current handoff r0117 / 1.0.0-rc.69:** Phase 9 remains complete. This revision corrects frontend CI after step 9.12: gitignored informational rows no longer render disabled selection checkboxes, and E2E filter assertions follow the counted filter labels. No backend policy behavior changed.
 
 > **Planning refinement r0105 / 1.0.0-rc.57:** Phase 9.7 now explicitly requires the authenticated Shortcut download to expose `Skicka till zip-github.shortcut` via `Content-Disposition` and requires deployment verification that the backend runtime user can read the signed bind-mounted artifact (avoiding the observed `0600` failure). The same checks are included in the final 9.10 E2E gate. No 9.8 implementation has started.
 
@@ -10,8 +10,8 @@
 
 
 Date: 8 August 2026  
-Repository revision: r0115  
-Application version: 1.0.0-rc.67  
+Repository revision: r0117  
+Application version: 1.0.0-rc.69  
 Last completed implementation step: 9.7  
 Current position: 9.8 NEXT — Work lifecycle, project lifecycle and robust branch provisioning
 

@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0100`
+- Repository revision: `r0101`
 - Last completed step: `9.6`
 - Next step: blocked at `9.7`
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 9 BLOCKED ON SIGNED SHORTCUT ARTIFACT`
@@ -241,3 +241,4 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0098` | 2026-08-08 | Step 9.6 | Added deterministic staging retention, quota/abuse controls, DB-coordinated promotion cleanup and credential-rotation guidance | `9.7` |
 | `r0099` | 2026-08-08 | `9.7` implementation complete except external Apple signing/install gate; status BLOCKED | Repository/static/self-test verification; signed artifact unavailable in this environment | blocked at `9.7` |
 | `r0100` | 2026-08-08 | CI correction for blocked 9.7 revision | Fixed backend matcher ambiguity and frontend cross-test DOM leakage; phase state unchanged | blocked at `9.7` |
+| `r0101` | 2026-08-08 | Backend CI correction for blocked 9.7 revision | Fixed approval commit-message fixture, binary ZIP request encoding, outdated-credential expectation and terminal lifecycle exception consistency; phase state unchanged | blocked at `9.7` |

@@ -23,9 +23,9 @@ class StagingImportResourceTest {
     @Test
     void rejectsMissingCapabilityWithoutTouchingStorage() {
         when(credential.accepts(null)).thenReturn(false);
-        given().contentType("application/zip").header("X-Filename", "project.zip").body("bytes")
+        given().contentType("application/zip").header("X-Filename", "project.zip").body(zipBody())
                 .when().post("/api/staging-imports")
-                .then().statusCode(401).body("code", equalTo("STAGING_UPLOAD_UNAUTHORIZED"));
+                .then().statusCode(403).body("code", equalTo("STAGING_SHORTCUT_OUTDATED"));
         verifyNoInteractions(uploads);
     }
 
@@ -40,7 +40,7 @@ class StagingImportResourceTest {
         given().contentType("application/zip")
                 .header(StagingImportResource.CREDENTIAL_HEADER, "capability")
                 .header("X-Filename", "project.zip")
-                .body("bytes")
+                .body(zipBody())
                 .when().post("/api/staging-imports")
                 .then().statusCode(201)
                 .body("stagingId", equalTo(id.toString()))
@@ -57,7 +57,7 @@ class StagingImportResourceTest {
         given().contentType("application/zip")
                 .header(StagingImportResource.CREDENTIAL_HEADER, "capability")
                 .header("X-Filename", "huge.zip")
-                .body("bytes")
+                .body(zipBody())
                 .when().post("/api/staging-imports")
                 .then().statusCode(413).body("code", equalTo("UPLOAD_TOO_LARGE"));
     }
@@ -70,9 +70,13 @@ class StagingImportResourceTest {
         given().contentType("application/zip")
                 .header(StagingImportResource.CREDENTIAL_HEADER, "capability")
                 .header("X-Filename", "project.zip")
-                .body("bytes")
+                .body(zipBody())
                 .when().post("/api/staging-imports")
                 .then().statusCode(429).body("code", equalTo("STAGING_CAPACITY_EXCEEDED"));
     }
+    private static java.io.InputStream zipBody() {
+        return new java.io.ByteArrayInputStream("bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
 }
 

@@ -55,6 +55,12 @@ public final class StagingImport {
 
     public boolean claim(UUID owner, Instant at, Instant claimedExpiresAt) {
         Objects.requireNonNull(owner, "owner"); Objects.requireNonNull(at, "at"); Objects.requireNonNull(claimedExpiresAt, "claimedExpiresAt");
+        // Terminal lifecycle states must consistently fail through the domain transition contract.
+        // The time-based expiry signal is reserved for an AVAILABLE/CLAIMED row whose deadline has
+        // elapsed before cleanup has persisted the EXPIRED state.
+        if (status.terminal()) {
+            StateTransitions.transition(status, StagingImportStatus.CLAIMED, StagingImportStatus.allowedTransitions());
+        }
         if (!at.isBefore(expiresAt)) throw new IllegalStateException("staging import has expired");
         if (!claimedExpiresAt.isAfter(at)) throw new IllegalArgumentException("claimedExpiresAt must be after claim time");
         if (status == StagingImportStatus.CLAIMED && owner.equals(ownerUserId)) return false;

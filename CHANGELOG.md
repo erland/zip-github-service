@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0-rc.53 - 2026-08-08
+
+- Corrected the remaining backend CI regressions discovered in workflow run 31242966490 without changing the phase 9.7 BLOCKED state.
+- Updated approval recovery API coverage to send and verify the required approval-bound `commitMessage`.
+- Updated staging upload API tests to stream binary request bodies for `application/zip` instead of asking RestAssured to serialize text/byte arrays through an unknown content-type encoder.
+- Aligned the missing/revoked staging credential expectation with the phase-9.7 `403 STAGING_SHORTCUT_OUTDATED` contract.
+- Made terminal StagingImport claim attempts consistently fail through `DomainTransitionException`, while deadline expiry before persisted cleanup remains the separate time-expiry signal.
+- Phase 9.7 remains blocked only on the external Apple signing/iOS installation gate; phase 9.8 has not started.
+
 ## 1.0.0-rc.52 - 2026-08-08
 
 - Corrected CI regressions discovered after r0099 without changing the phase 9.7 BLOCKED state.

@@ -205,7 +205,7 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 
 ## Release/packaging discipline
 
-- Application version is `1.0.0-rc.52`; r0100 is a CI-correction revision on top of the blocked 9.7 implementation. Step 9.7 remains blocked only on the external Apple signing/iOS installation gate.
+- Application version is `1.0.0-rc.53`; r0101 is a backend CI-correction revision on top of the blocked 9.7 implementation. Step 9.7 remains blocked only on the external Apple signing/iOS installation gate.
 - Steps 9.1–9.6 are complete. Step 9.7 runtime/distribution support is implemented but remains BLOCKED until a real Apple-signed Shortcut is published and accepted on iOS; do not start 9.8 before that gate is completed.
 - Keep exactly one `NEXT` step in `docs/implementation-status.md`.
 - Every delivered ZIP must include one top-level `zip-github/` folder.
@@ -217,7 +217,7 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 - Advanced three-way/provenance detection for ZIPs created from older repository state is backlog; ordinary ZIPs are not required to contain zip-github metadata.
 - Horizontal backend scaling remains unsupported until shared/persistent coordination is designed for all required runtime locks/state.
 
-## Phase 9.7 current blocker — r0100
+## Phase 9.7 current blocker — r0101
 
 The zip-github runtime side of signed Shortcut distribution is implemented: authenticated `/shortcut`, `/api/shortcut-release` metadata/download, read-only deployment mount, explicit old/revoked credential error and trusted-Mac signing/rotation documentation. The source repository intentionally contains no `.shortcut` binary because the signed artifact embeds the deployment staging credential.
 

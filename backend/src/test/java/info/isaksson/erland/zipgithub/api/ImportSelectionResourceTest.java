@@ -90,13 +90,14 @@ class ImportSelectionResourceTest {
                 .extract().path("selectionDigestSha256");
 
         given().cookie(CurrentUserProvider.SESSION_COOKIE, cookieA).contentType(ContentType.JSON)
-                .body("{\"planDigestSha256\":\"%s\",\"selectionDigestSha256\":\"%s\"}".formatted(PLAN_DIGEST, selectionDigest))
+                .body("{\"planDigestSha256\":\"%s\",\"selectionDigestSha256\":\"%s\",\"commitMessage\":\"Refresh-safe test commit\"}".formatted(PLAN_DIGEST, selectionDigest))
                 .post("/api/imports/{id}/plan/approval", importId).then().statusCode(200);
 
         given().cookie(CurrentUserProvider.SESSION_COOKIE, cookieA)
                 .get("/api/imports/{id}/plan/approval", importId).then().statusCode(200)
                 .body("planDigestSha256", equalTo(PLAN_DIGEST))
                 .body("selectionDigestSha256", equalTo(selectionDigest))
+                .body("commitMessage", equalTo("Refresh-safe test commit"))
                 .body("status", equalTo("APPROVED"));
     }
 

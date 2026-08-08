@@ -1,3 +1,9 @@
+## 1.0.0-rc.64 - 2026-08-08
+
+- Fixed Work GitHub Actions visibility so a failure reading commit check-runs no longer discards successfully fetched workflow runs/jobs.
+- Added a regression based on run 31258714926 / commit f3689dfd3b5f011e2ba04d56e3a5f50b4bc97e69 that simulates unavailable Checks while requiring the push workflow to remain visible.
+- Phase 9 remains complete; this is a post-phase production correction.
+
 ## 1.0.0-rc.63 - 2026-08-08
 
 ### Changed

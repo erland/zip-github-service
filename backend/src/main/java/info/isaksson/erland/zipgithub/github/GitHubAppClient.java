@@ -180,16 +180,20 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
                         parseInstant(run.path("created_at").asText(null)), parseInstant(run.path("updated_at").asText(null)), List.copyOf(jobs)));
             }
 
-            JsonNode checksRoot = getJson("https://api.github.com/repos/" + repositoryFullName
-                    + "/commits/" + commitSha + "/check-runs?per_page=50", installationToken);
             List<GitHubActionsClient.CheckRun> checks = new ArrayList<>();
-            for (JsonNode check : checksRoot.path("check_runs")) {
-                var checkState = GitHubActionsStatusMapper.map(check.path("status").asText(), check.path("conclusion").asText(""));
-                aggregateStates.add(checkState);
-                checks.add(new GitHubActionsClient.CheckRun(check.path("id").asLong(), check.path("name").asText("Unnamed check"),
-                        checkState.value(), checkState.terminal(), check.path("html_url").asText(null),
-                        check.path("app").path("name").asText(""), parseInstant(check.path("started_at").asText(null)),
-                        parseInstant(check.path("completed_at").asText(null))));
+            try {
+                JsonNode checksRoot = getJson("https://api.github.com/repos/" + repositoryFullName
+                        + "/commits/" + commitSha + "/check-runs?per_page=50", installationToken);
+                for (JsonNode check : checksRoot.path("check_runs")) {
+                    var checkState = GitHubActionsStatusMapper.map(check.path("status").asText(), check.path("conclusion").asText(""));
+                    aggregateStates.add(checkState);
+                    checks.add(new GitHubActionsClient.CheckRun(check.path("id").asLong(), check.path("name").asText("Unnamed check"),
+                            checkState.value(), checkState.terminal(), check.path("html_url").asText(null),
+                            check.path("app").path("name").asText(""), parseInstant(check.path("started_at").asText(null)),
+                            parseInstant(check.path("completed_at").asText(null))));
+                }
+            } catch (RuntimeException ignored) {
+                // Workflow runs are independently useful. A Checks permission/transient failure must not hide them.
             }
             int itemCount = workflows.size() + checks.size();
             String state = GitHubActionsStatusMapper.aggregate(true, itemCount, aggregateStates);
@@ -489,7 +493,7 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
         return value == null || value.isBlank() ? null : Instant.parse(value);
     }
 
-    private JsonNode getJson(String url, String token) {
+    protected JsonNode getJson(String url, String token) {
         try {
             HttpRequest request = baseRequest(URI.create(url)).header("Authorization", "Bearer " + token).GET().build();
             return sendJson(request);

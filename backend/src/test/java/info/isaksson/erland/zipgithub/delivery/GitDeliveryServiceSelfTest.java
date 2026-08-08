@@ -31,6 +31,8 @@ public final class GitDeliveryServiceSelfTest {
                 Clock.fixed(Instant.parse("2026-08-06T20:00:00Z"), ZoneOffset.UTC));
         GitCommitIdentity identity = new GitCommitIdentity("Other Author", "other@example.com", "Approver", "approver@example.com");
         String workBranch = "zip-github/work-" + UUID.randomUUID();
+        run(seed, "git", "branch", workBranch, base);
+        run(seed, "git", "push", "origin", workBranch);
         String customMessage = "User selected commit message";
         GitDeliveryResult result = service.deliver("main", workBranch, applied, remote.toUri(), "", identity, customMessage);
         if (!result.branchName().equals(workBranch)) throw new AssertionError();
@@ -58,6 +60,21 @@ public final class GitDeliveryServiceSelfTest {
         if (!pushed2.equals(second.commitSha())) throw new AssertionError();
         String parent2 = run(root, "git", "--git-dir=" + remote, "rev-parse", pushed2 + "^1").trim();
         if (!parent2.equals(pushed)) throw new AssertionError("second import was not based on first work commit");
+
+
+        // Missing-Work regression: delivery must never recreate a branch implicitly.
+        Path missingWorkspace = root.resolve("missing-workspace");
+        run(root, "git", "clone", remote.toUri().toString(), missingWorkspace.toString());
+        run(missingWorkspace, "git", "checkout", "main");
+        Files.writeString(missingWorkspace.resolve("README.md"), "missing work branch\n");
+        AppliedImportWorkspace missingApplied = new AppliedImportWorkspace(UUID.randomUUID(), "owner/repo", base,
+                "1".repeat(64), "2".repeat(64), missingWorkspace, List.of("README.md"), Instant.now());
+        try {
+            service.deliver("main", "zip-github/work-does-not-exist", missingApplied, remote.toUri(), "", identity);
+            throw new AssertionError("missing Work branch was recreated implicitly");
+        } catch (GitDeliveryException expected) {
+            if (!expected.getMessage().contains("branch no longer exists")) throw expected;
+        }
 
         // Stale-base regression: an approved workspace must not be delivered if the work branch moved after review.
         Path staleWorkspace = root.resolve("stale-workspace");

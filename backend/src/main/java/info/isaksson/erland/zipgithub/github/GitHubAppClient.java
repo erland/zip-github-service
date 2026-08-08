@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
-public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallationTokenProvider, GitHubPullRequestClient, GitHubCheckStatusClient, GitHubActionsClient, GitHubActionsDetailsClient, GitHubActionsControlClient, GitHubCommitHistoryClient {
+public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallationTokenProvider, GitHubPullRequestClient, GitHubCheckStatusClient, GitHubActionsClient, GitHubActionsDetailsClient, GitHubActionsControlClient, GitHubCommitHistoryClient, GitHubBranchClient {
     @ConfigProperty(name = "zipgithub.github.app-id") long appId;
     @ConfigProperty(name = "zipgithub.github.app-private-key") Optional<String> privateKeyPem;
     @Inject ObjectMapper mapper;
@@ -366,6 +366,61 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
             return new GitHubActionsControlClient.RerunResult(runId, "https://github.com/" + repositoryFullName + "/actions/runs/" + runId);
         } catch (Exception e) {
             throw new IllegalStateException("Could not rerun failed workflow jobs", e);
+        }
+    }
+
+
+    @Override
+    public List<GitHubBranchClient.Branch> listBranches(String installationToken, String repositoryFullName) {
+        try {
+            JsonNode root = getJson("https://api.github.com/repos/" + repositoryFullName + "/branches?per_page=100", installationToken);
+            List<GitHubBranchClient.Branch> result = new ArrayList<>();
+            for (JsonNode item : root) {
+                result.add(new GitHubBranchClient.Branch(item.path("name").asText(), item.path("commit").path("sha").asText(), item.path("protected").asBoolean(false)));
+            }
+            return List.copyOf(result);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not list repository branches", e);
+        }
+    }
+
+    @Override
+    public String branchHeadSha(String installationToken, String repositoryFullName, String branchName) {
+        try {
+            String encoded = java.net.URLEncoder.encode(branchName, StandardCharsets.UTF_8).replace("+", "%20");
+            JsonNode json = getJson("https://api.github.com/repos/" + repositoryFullName + "/git/ref/heads/" + encoded, installationToken);
+            String sha = json.path("object").path("sha").asText(null);
+            if (sha == null || !sha.matches("[0-9a-fA-F]{40,64}")) throw new IllegalStateException("GitHub returned an invalid branch SHA");
+            return sha.toLowerCase();
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not resolve repository branch", e);
+        }
+    }
+
+    @Override
+    public void createBranch(String installationToken, String repositoryFullName, String branchName, String fromCommitSha) {
+        try {
+            String payload = mapper.createObjectNode().put("ref", "refs/heads/" + branchName).put("sha", fromCommitSha).toString();
+            HttpRequest request = baseRequest(URI.create("https://api.github.com/repos/" + repositoryFullName + "/git/refs"))
+                    .header("Authorization", "Bearer " + installationToken).header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8)).build();
+            sendJson(request);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not create repository branch", e);
+        }
+    }
+
+    @Override
+    public void deleteBranch(String installationToken, String repositoryFullName, String branchName) {
+        try {
+            String encoded = java.net.URLEncoder.encode(branchName, StandardCharsets.UTF_8).replace("+", "%20");
+            HttpRequest request = baseRequest(URI.create("https://api.github.com/repos/" + repositoryFullName + "/git/refs/heads/" + encoded))
+                    .header("Authorization", "Bearer " + installationToken).DELETE().build();
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 204 && response.statusCode() != 404)
+                throw new IllegalStateException("GitHub API returned HTTP " + response.statusCode());
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not delete repository branch", e);
         }
     }
 

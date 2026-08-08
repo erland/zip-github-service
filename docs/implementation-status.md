@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0106`
-- Last completed step: `9.7`
-- Next step: `9.8` — Work lifecycle, project lifecycle and robust branch provisioning
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 STEP 9.8 NEXT`
+- Repository revision: `r0109`
+- Last completed step: `9.10`
+- Next step: `none` — implementation plan complete
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE`
 
 ## Step ledger
 
@@ -92,14 +92,15 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.5` | Fas 9 — gemensam commit UX | Användarstyrt commitmeddelande i approval/delivery | **DONE** | 2026-08-08 | `docs/user-controlled-commit-message.md`, `docs/step-9.5-report.md` |
 | `9.6` | Fas 9 — Shortcut/StagingImport | Retention, abuse-skydd och säkerhetsregression | **DONE** | 2026-08-08 | `docs/staging-retention-and-abuse.md`, `docs/step-9.6-report.md` |
 | `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **DONE** | 2026-08-08 | `docs/signed-shortcut-release.md`, `docs/step-9.7-report.md` |
-| `9.8` | Fas 9 — Work lifecycle | Projektlivscykel och robust branch-provisionering | **NEXT** | — | — |
-| `9.9` | Fas 9 — Work/GitHub visibility | Actions-status och kopierbara fel på Work-sidan | **PENDING** | — | — |
-| `9.10` | Fas 9 — regression/release | E2E-regression, drift och slutlig releasegrind | **PENDING** | — | — |
+| `9.8` | Fas 9 — Work lifecycle | Projektlivscykel och robust branch-provisionering | **DONE** | 2026-08-08 | `docs/step-9.8-report.md` |
+| `9.9` | Fas 9 — Work/GitHub visibility | Actions-status och kopierbara fel på Work-sidan | **DONE** | 2026-08-08 | `docs/step-9.9-report.md` |
+| `9.10` | Fas 9 — regression/release | E2E-regression, drift och slutlig releasegrind | **DONE** | 2026-08-08 | `docs/step-9.10-report.md` |
 
 ## Revision history
 
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
+| `r0109` | 2026-08-08 | `9.10` final phase-9 E2E/release gate | Cross-step phase-9 release script, signed Shortcut manifest/hash/readability checks, operations/security/API/release documentation audit; active implementation plan complete | `none` |
 | `r0001` | 2026-08-06 | Documentation package created | Documentation conversion/package only | `0.1` |
 | `r0002` | 2026-08-06 | `0.1` Legacy project unpacked and inventoried | Structural inspection; no builds or tests run by design | `0.2` |
 | `r0003` | 2026-08-06 | `0.2` Legacy baseline build/test paths verified | Shell syntax and ZIP integrity passed; Maven/Docker unavailable; npm proxy dependency 404 documented | `0.3` |
@@ -250,3 +251,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0104` | 2026-08-08 | CI/release-gate correction + phase-9 plan refinement | Made signed Shortcut verification source-checkout-safe via tracked manifest + optional byte verification; expanded remaining plan to 9.8 Work lifecycle, 9.9 Actions visibility and 9.10 final E2E | blocked at `9.7` pending deployed `/shortcut` download + iOS install check |
 | `r0105` | 2026-08-08 | Shortcut release verification planning refinement | Added explicit friendly download filename (`Skicka till zip-github.shortcut`) and backend runtime-readability acceptance criteria to 9.7 and final 9.10 E2E | blocked at `9.7`; 9.8 not started |
 | `r0106` | 2026-08-08 | Step 9.7 completion | Implemented friendly Shortcut download filename and runtime-readable release permissions; operator verified deployed `/shortcut` download and iOS import | `9.8` |
+
+| `r0107` | 2026-08-08 | Step 9.8 | Added verified remote Work provisioning/recovery, abandon/resume/archive lifecycle, default-branch GitHub link and delivery preflight | `9.9` |
+
+| `r0108` | 2026-08-08 | Step 9.9 | Added commit-correct revisitable Actions status/details and bounded copyable failure diagnostics on the Work page | `9.10` |

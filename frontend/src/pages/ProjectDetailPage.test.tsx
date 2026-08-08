@@ -14,6 +14,8 @@ beforeEach(() => {
       { id: 'import-review', projectId: 'project-1', baseBranch: 'main', status: 'READY_FOR_REVIEW', createdAt: '2026-08-06T21:00:00Z', sourceFilename: 'draft.zip', sourceSizeBytes: 90, sourceType: 'WEB_UPLOAD', sourceReference: null, planDigestSha256: 'b'.repeat(64), pullRequestNumber: null, pullRequestUrl: null, resumeStage: 'REVIEW' },
       { id: 'import-old-upload', projectId: 'project-1', baseBranch: 'main', status: 'UPLOADED', createdAt: '2026-08-06T19:00:00Z', sourceFilename: 'older-draft.zip', sourceSizeBytes: 80, sourceType: 'WEB_UPLOAD', sourceReference: null, planDigestSha256: null, pullRequestNumber: null, pullRequestUrl: null, resumeStage: 'UPLOAD' },
     ]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/work/actions/details')) return new Response(JSON.stringify({ importId: 'import-result', repositoryFullName: 'owner/repo', commitSha: '1234567890abcdef', detailsUrl: 'https://github.com/owner/repo/actions', artifacts: [], failures: [{ workflowRunId: 7, workflowName: 'CI', jobId: 8, jobName: 'backend', stepName: 'test', tool: 'maven', lines: ['BUILD FAILURE', 'Tests failed'], githubUrl: 'https://github.com/owner/repo/actions/runs/7' }], checkedAt: '2026-08-08T15:00:01Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/work/actions')) return new Response(JSON.stringify({ importId: 'import-result', repositoryFullName: 'owner/repo', commitSha: '1234567890abcdef', state: 'failure', terminal: true, detailsUrl: 'https://github.com/owner/repo/actions', workflows: [{ id: 7, workflowId: 70, workflowPath: '.github/workflows/ci.yml', headBranch: 'zip-github/work-1', headSha: '1234567890abcdef', name: 'CI', state: 'failure', terminal: true, event: 'push', htmlUrl: 'https://github.com/owner/repo/actions/runs/7', createdAt: '2026-08-08T15:00:00Z', updatedAt: '2026-08-08T15:00:01Z', jobs: [{ id: 8, name: 'backend', state: 'failure', terminal: true, htmlUrl: 'https://github.com/owner/repo/actions/runs/7/job/8', startedAt: '2026-08-08T15:00:00Z', completedAt: '2026-08-08T15:00:01Z' }] }], checks: [], checkedAt: '2026-08-08T15:00:01Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/work/commits')) return new Response(JSON.stringify({ githubAvailable: true, commits: [
       { sha: '1234567890abcdef', message: 'Update game board\n\nDetails', authorName: 'Erland', authorEmail: 'e@example.test', authoredAt: '2026-08-06T20:00:00Z', htmlUrl: 'https://github.com/owner/repo/commit/1234567890abcdef', fallback: false },
     ] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -27,6 +29,10 @@ describe('ProjectDetailPage work history', () => {
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'Bokprojekt' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Commits i arbetet' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'GitHub Actions' })).toBeInTheDocument();
+    expect(await screen.findByText('Kondenserade fel')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Uppdatera status' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Kopiera fel' })).toBeInTheDocument();
     expect(screen.getByText('Update game board')).toBeInTheDocument();
     expect(screen.getByText(/1234567890ab/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Öppna commit' })).toHaveAttribute('href', 'https://github.com/owner/repo/commit/1234567890abcdef');
@@ -39,6 +45,21 @@ describe('ProjectDetailPage work history', () => {
     expect(screen.queryByText('older-draft.zip')).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Importhistorik' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Arbetet är klart – skapa pull request' })).toBeDisabled();
+  });
+
+  it('copies commit-correct condensed Actions failures from the revisitable Work view', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: 'Kopiera fel' }));
+    expect(writeText).toHaveBeenCalledTimes(1);
+    const copied = String(writeText.mock.calls[0][0]);
+    expect(copied).toContain('Repository: owner/repo');
+    expect(copied).toContain('Branch: zip-github/work-1');
+    expect(copied).toContain('Commit: 1234567890abcdef');
+    expect(copied).toContain('Workflow: CI');
+    expect(copied).toContain('BUILD FAILURE');
   });
 });
 
@@ -119,5 +140,32 @@ describe('ProjectDetailPage cancellation lifecycle', () => {
     expect(screen.queryByRole('link', { name: 'Fortsätt granska' })).not.toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Ladda upp nästa ZIP' })).toHaveLength(1);
     expect(fetchMock).toHaveBeenCalledWith('/api/imports/import-review/cancel', expect.objectContaining({ method: 'POST' }));
+  });
+});
+
+describe('ProjectDetailPage step 9.8 lifecycle', () => {
+  it('links the repository, starts a verified new Work, and offers resumable non-default branches', async () => {
+    const user = userEvent.setup();
+    let active = false;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/imports')) return new Response(JSON.stringify([]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      if (url.endsWith('/work/commits')) return new Response(JSON.stringify({ githubAvailable: true, commits: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      if (url.endsWith('/work/branches')) return new Response(JSON.stringify([{ name: 'old-work', commitSha: 'a'.repeat(40) }]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      if (url.endsWith('/work') && init?.method === 'POST') { active = true; return new Response(JSON.stringify({ id: 'work-2', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-2', status: 'ACTIVE', headCommitSha: null, pullRequestNumber: null, pullRequestUrl: null, createdAt: '2026-08-08T14:00:00Z', updatedAt: '2026-08-08T14:00:00Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } }); }
+      if (url.endsWith('/work')) return active
+        ? new Response(JSON.stringify({ id: 'work-2', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-2', status: 'ACTIVE', headCommitSha: null, pullRequestNumber: null, pullRequestUrl: null, createdAt: '2026-08-08T14:00:00Z', updatedAt: '2026-08-08T14:00:00Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+        : new Response(null, { status: 204 });
+      return new Response(JSON.stringify({ id: 'project-1', name: 'Bokprojekt', githubInstallationId: 1, githubRepositoryId: 2, repositoryFullName: 'owner/repo', privateRepository: true, defaultBranch: 'main', active: true, createdAt: '2026-08-06T18:00:00Z', updatedAt: '2026-08-06T18:00:00Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
+    const repo = await screen.findByRole('link', { name: 'owner/repo' });
+    expect(repo).toHaveAttribute('href', 'https://github.com/owner/repo/tree/main');
+    expect(await screen.findByRole('option', { name: 'old-work' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Skapa ny Work-branch' }));
+    expect(await screen.findByText('zip-github/work-2')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/project-1/work', expect.objectContaining({ method: 'POST' }));
   });
 });

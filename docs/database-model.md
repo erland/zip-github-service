@@ -65,3 +65,8 @@ Application queries must still scope every read and write by the authenticated u
 ## Resumable import state (V8)
 
 `import_resume_payload` stores the restart-critical serialized state for an `import_session`: upload metadata, locked repository snapshot, immutable plan, immutable selection, approval, Git identity and delivery metadata. Its `(import_session_id, owner_user_id)` foreign key is bound to the same owner on `import_session`. Temporary workspace paths are intentionally excluded and rebuilt after restart.
+
+
+## Phase 9.8 lifecycle persistence
+
+Migration `V13__work_lifecycle_and_project_archive.sql` adds `project.archived_at`, permits repeated historical use of the same branch name across completed Work sessions, and enforces at most one open (`PROVISIONING`/`ACTIVE`) Work per project.

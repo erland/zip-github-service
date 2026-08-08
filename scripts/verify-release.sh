@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.58"
+expected_version="1.0.0-rc.61"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.58 - 2026-08-08' CHANGELOG.md
+grep -q '## 1.0.0-rc.61 - 2026-08-08' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,9 +23,9 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0106`' docs/implementation-status.md
-grep -q 'Last completed step: `9.7`' docs/implementation-status.md
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 STEP 9.8 NEXT`' docs/implementation-status.md
+grep -q 'Repository revision: `r0109`' docs/implementation-status.md
+grep -q 'Last completed step: `9.10`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE`' docs/implementation-status.md
 grep -q '| `7.9` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.10` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.11` .*\*\*DONE\*\*' docs/implementation-status.md
@@ -143,7 +143,7 @@ grep -q 'chown -R 10001:10001' docker-compose.yml
 grep -q 'GIT_COMMITTER_NAME' backend/src/main/java/info/isaksson/erland/zipgithub/delivery/GitDeliveryService.java
 grep -q 'authorMode' frontend/src/pages/NewImportPage.tsx
 grep -q 'CREATE TABLE work_session' backend/src/main/resources/db/migration/V6__work_sessions.sql
-grep -q 'zip-github/work-' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/WorkPersistenceStore.java
+grep -q 'zip-github/work-' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
 grep -q 'Arbetet är klart' frontend/src/pages/ProjectDetailPage.tsx
 ! grep -q 'ZIP_GITHUB_GIT_AUTHOR_' .env.example docker-compose.yml backend/src/main/resources/application.properties
 
@@ -192,7 +192,11 @@ grep -Fq '| `9.3` | Fas 9 — Shortcut/StagingImport | Autentiserad claim från 
 grep -Fq '| `9.4` | Fas 9 — Shortcut/StagingImport | Projektval och promotion till vanlig Import | **DONE**' docs/implementation-status.md
 grep -Fq '| `9.5` | Fas 9 — gemensam commit UX | Användarstyrt commitmeddelande i approval/delivery | **DONE**' docs/implementation-status.md
 grep -Fq '| `9.6` | Fas 9 — Shortcut/StagingImport | Retention, abuse-skydd och säkerhetsregression | **DONE**' docs/implementation-status.md
-grep -Fq '| `9.8` | Fas 9 — Work lifecycle | Projektlivscykel och robust branch-provisionering | **NEXT**' docs/implementation-status.md
+grep -Fq '| `9.8` | Fas 9 — Work lifecycle | Projektlivscykel och robust branch-provisionering | **DONE**' docs/implementation-status.md
+grep -Fq '| `9.9` | Fas 9 — Work/GitHub visibility | Actions-status och kopierbara fel på Work-sidan | **DONE**' docs/implementation-status.md
+grep -Fq '| `9.10` | Fas 9 — regression/release | E2E-regression, drift och slutlig releasegrind | **DONE**' docs/implementation-status.md
+test -s docs/step-9.10-report.md
+test -x scripts/verify-phase9-release.sh
 grep -q '^## Steg 9.5 - Låt användaren ange commitmeddelandet$' docs/implementation-steps.md
 grep -q '^## Steg 9.8 - Work lifecycle, projektlivscykel och robust branch-provisionering$' docs/implementation-steps.md
 grep -q '^## Steg 9.9 - GitHub Actions-status och fel direkt på Work-sidan$' docs/implementation-steps.md
@@ -299,9 +303,11 @@ grep -q 'SIGNED_SHORTCUT_SECRET_ARTIFACT' backend/src/main/java/info/isaksson/er
 grep -q 'ZIP_GITHUB_SHORTCUT_VERSION:-1' docker-compose.yml
 grep -q 'ZIP_GITHUB_SHORTCUT_GENERATION:-g1' docker-compose.yml
 grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **DONE**' docs/implementation-status.md
-grep -Fq '| `9.8` | Fas 9 — Work lifecycle | Projektlivscykel och robust branch-provisionering | **NEXT**' docs/implementation-status.md
-grep -Fq '| `9.9` | Fas 9 — Work/GitHub visibility | Actions-status och kopierbara fel på Work-sidan | **PENDING**' docs/implementation-status.md
-grep -Fq '| `9.10` | Fas 9 — regression/release | E2E-regression, drift och slutlig releasegrind | **PENDING**' docs/implementation-status.md
+grep -Fq '| `9.8` | Fas 9 — Work lifecycle | Projektlivscykel och robust branch-provisionering | **DONE**' docs/implementation-status.md
+grep -Fq '| `9.9` | Fas 9 — Work/GitHub visibility | Actions-status och kopierbara fel på Work-sidan | **DONE**' docs/implementation-status.md
+grep -Fq '| `9.10` | Fas 9 — regression/release | E2E-regression, drift och slutlig releasegrind | **DONE**' docs/implementation-status.md
+test -s docs/step-9.10-report.md
+test -x scripts/verify-phase9-release.sh
 grep -Fq 'initialt **`Skicka till zip-github.shortcut`**' docs/implementation-steps.md
 grep -Fq 'observerade `0600`-fallet' docs/implementation-steps.md
 grep -Fq 'downloaded from `/shortcut` and accepted/imported on iOS' docs/release-checklist.md
@@ -327,3 +333,36 @@ grep -q 'COPY target/quarkus-app/' backend/Dockerfile.runtime
 grep -q 'COPY dist/' frontend/Dockerfile.runtime
 ! grep -Eq '\b(mvn|npm ci|npm run build)\b' backend/Dockerfile.runtime frontend/Dockerfile.runtime
 printf 'rc.54 runtime-only container assembly assertions verified for %s.\n' "$actual_version"
+
+# Phase 9 step 9.8 (Work lifecycle and verified branch provisioning).
+test -s docs/step-9.8-report.md
+test -s backend/src/main/resources/db/migration/V13__work_lifecycle_and_project_archive.sql
+grep -q "status='PROVISIONING'" backend/src/main/java/info/isaksson/erland/zipgithub/persistence/WorkPersistenceStore.java
+grep -q 'githubBranches.createBranch' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -q 'githubBranches.branchHeadSha' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -q 'The remote Work branch is missing or moved after review' backend/src/main/java/info/isaksson/erland/zipgithub/delivery/GitDeliveryService.java
+grep -q 'Avsluta utan PR' frontend/src/pages/ProjectDetailPage.tsx
+grep -q 'Fortsätt på vald branch' frontend/src/pages/ProjectDetailPage.tsx
+grep -q 'Ta bort projekt' frontend/src/pages/ProjectDetailPage.tsx
+grep -q 'archived_at' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/ProjectPersistenceStore.java
+grep -q 'class WorkLifecycleServiceTest' backend/src/test/java/info/isaksson/erland/zipgithub/application/WorkLifecycleServiceTest.java
+printf 'Phase 9.8 Work lifecycle assertions verified for %s.\n' "$actual_version"
+
+
+# Phase 9 step 9.9 (revisitable, exact-commit Actions status/details on Work).
+test -s docs/step-9.9-report.md
+grep -q '@Path("/{projectId}/work/actions")' backend/src/main/java/info/isaksson/erland/zipgithub/api/ProjectResource.java
+grep -q '@Path("/{projectId}/work/actions/details")' backend/src/main/java/info/isaksson/erland/zipgithub/api/ProjectResource.java
+grep -q 'work.lastImportId()' backend/src/main/java/info/isaksson/erland/zipgithub/api/ProjectResource.java
+grep -q 'work.headCommitSha()' backend/src/main/java/info/isaksson/erland/zipgithub/api/ProjectResource.java
+grep -q 'getProjectWorkActions' frontend/src/pages/ProjectDetailPage.tsx
+grep -q 'Uppdatera status' frontend/src/pages/ProjectDetailPage.tsx
+grep -q 'Kopiera fel' frontend/src/pages/ProjectDetailPage.tsx
+grep -q 'copies commit-correct condensed Actions failures' frontend/src/pages/ProjectDetailPage.test.tsx
+grep -q 'return new State("in_progress", false)' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubActionsStatusMapper.java
+grep -q 'return new State("queued", false)' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubActionsStatusMapper.java
+printf 'Phase 9.9 Work Actions assertions verified for %s.\n' "$actual_version"
+
+# Phase 9 final cross-step gate
+bash ./scripts/verify-phase9-release.sh
+printf 'Phase 9 final release assertions verified for %s.\n' "$actual_version"

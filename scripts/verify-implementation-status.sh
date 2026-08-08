@@ -16,6 +16,15 @@ if [[ "$next_count" -eq 1 && "$blocked_count" -eq 0 ]]; then
   exit 0
 fi
 
+# AGENTS.md also permits zero NEXT when the implementation plan is complete.
+if [[ "$next_count" -eq 0 && "$blocked_count" -eq 0 ]]; then
+  pending_count=$(grep -c '| \*\*PENDING\*\* |' "$status_file" || true)
+  if [[ "$pending_count" -eq 0 ]] && grep -Fq -- '- Next step: `none` — implementation plan complete' "$status_file"; then
+    printf 'Implementation ledger verified: plan complete; no NEXT step remains.\n'
+    exit 0
+  fi
+fi
+
 # AGENTS.md permits a delivered revision without NEXT when the current step is blocked.
 if [[ "$next_count" -eq 0 && "$blocked_count" -eq 1 ]]; then
   blocked_step=$(awk -F'|' '/\*\*BLOCKED\*\*/ {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); gsub(/`/, "", $2); print $2}' "$status_file")

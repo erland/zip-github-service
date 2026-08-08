@@ -17,6 +17,8 @@ import info.isaksson.erland.zipgithub.delivery.GitCommitIdentity;
 import info.isaksson.erland.zipgithub.persistence.ProjectPersistenceStore;
 import info.isaksson.erland.zipgithub.persistence.WorkPersistenceStore;
 import info.isaksson.erland.zipgithub.persistence.ImportResumePersistenceStore;
+import info.isaksson.erland.zipgithub.github.GitHubBranchClient;
+import info.isaksson.erland.zipgithub.github.GitHubInstallationTokenProvider;
 import info.isaksson.erland.zipgithub.pullrequest.PullRequestResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -46,6 +48,8 @@ public class ProjectApplicationService {
     @Inject ProjectPersistenceStore persistentProjects;
     @Inject WorkPersistenceStore persistentWork;
     @Inject ImportResumePersistenceStore persistentImports;
+    @Inject GitHubInstallationTokenProvider installationTokens;
+    @Inject GitHubBranchClient githubBranches;
 
     /** Clears the temporary in-memory store between Quarkus tests.
      *  This method must be removed when persistent repositories replace the prototype store.
@@ -120,6 +124,121 @@ public class ProjectApplicationService {
         return work != null && work.ownerUserId().equals(ownerUserId) && "ACTIVE".equals(work.status()) ? Optional.of(work) : Optional.empty();
     }
 
+    public List<GitHubBranchClient.Branch> availableWorkBranches(UUID ownerUserId, UUID projectId) {
+        ProjectResponse project = requireOwnedProject(ownerUserId, projectId).response;
+        if (installationTokens == null || githubBranches == null) return List.of();
+        String token = installationTokens.createInstallationToken(project.githubInstallationId());
+        return githubBranches.listBranches(token, project.repositoryFullName()).stream()
+                .filter(branch -> !branch.protectedBranch())
+                .filter(branch -> !branch.name().equals(project.defaultBranch()))
+                .filter(branch -> !persistentProjects.enabled() || !persistentWork.activeBranchInUse(ownerUserId, projectId, branch.name()))
+                .toList();
+    }
+
+    public synchronized WorkSession startWork(UUID ownerUserId, UUID projectId, String existingBranch) {
+        ProjectResponse project = requireOwnedProject(ownerUserId, projectId).response;
+        if (!project.active()) throw ApiException.conflict("PROJECT_INACTIVE", "The project is inactive.");
+        Optional<WorkSession> existing = activeWork(ownerUserId, projectId);
+        if (existing.isPresent()) return existing.get();
+        if (!persistentProjects.enabled() || installationTokens == null || githubBranches == null)
+            return getOrCreateInMemoryWork(ownerUserId, projectId, project.defaultBranch());
+
+        String token = installationTokens.createInstallationToken(project.githubInstallationId());
+        var open = persistentWork.findOpen(ownerUserId, projectId);
+        if (open.isPresent() && "PROVISIONING".equals(open.get().status())) {
+            WorkSession pending = open.get();
+            try {
+                String remoteSha = githubBranches.branchHeadSha(token, project.repositoryFullName(), pending.branchName());
+                if (pending.baseCommitSha() != null && pending.baseCommitSha().equalsIgnoreCase(remoteSha))
+                    return persistentWork.activate(ownerUserId, projectId, pending.branchName(), remoteSha);
+            } catch (RuntimeException ignored) { }
+            persistentWork.abandon(ownerUserId, projectId);
+        }
+        boolean resume = existingBranch != null && !existingBranch.isBlank();
+        String branchName = resume ? existingBranch.trim() : "zip-github/work-" + UUID.randomUUID();
+        if (resume && branchName.equals(project.defaultBranch()))
+            throw ApiException.conflict("DEFAULT_BRANCH_AS_WORK_FORBIDDEN", "The configured default branch cannot be used as a Work branch.");
+        if (resume) {
+            var candidate = githubBranches.listBranches(token, project.repositoryFullName()).stream().filter(b -> b.name().equals(branchName)).findFirst()
+                    .orElseThrow(() -> ApiException.notFound("WORK_BRANCH_NOT_FOUND", "The selected GitHub branch does not exist."));
+            if (candidate.protectedBranch()) throw ApiException.conflict("PROTECTED_WORK_BRANCH_FORBIDDEN", "A protected GitHub branch cannot be used as a Work branch.");
+        }
+        if (persistentWork.activeBranchInUse(ownerUserId, projectId, branchName))
+            throw ApiException.conflict("WORK_BRANCH_ALREADY_ACTIVE", "The selected branch is already used by an active work.");
+        String baseSha;
+        try {
+            if (resume) {
+                baseSha = githubBranches.branchHeadSha(token, project.repositoryFullName(), branchName);
+            } else {
+                baseSha = githubBranches.branchHeadSha(token, project.repositoryFullName(), project.defaultBranch());
+            }
+            persistentWork.createProvisioning(ownerUserId, projectId, resume ? branchName : project.defaultBranch(), branchName, baseSha);
+            if (!resume) githubBranches.createBranch(token, project.repositoryFullName(), branchName, baseSha);
+            String verifiedSha = githubBranches.branchHeadSha(token, project.repositoryFullName(), branchName);
+            if (!verifiedSha.equalsIgnoreCase(baseSha)) {
+                persistentWork.abandon(ownerUserId, projectId);
+                throw ApiException.conflict("WORK_BRANCH_VERIFICATION_FAILED", "GitHub branch did not resolve to the expected commit after provisioning.");
+            }
+            return persistentWork.activate(ownerUserId, projectId, branchName, verifiedSha);
+        } catch (ApiException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            try { if (persistentWork.findOpen(ownerUserId, projectId).isPresent()) persistentWork.abandon(ownerUserId, projectId); } catch (RuntimeException ignored) {}
+            throw ApiException.badGateway("WORK_BRANCH_PROVISIONING_FAILED", "Could not create or verify the GitHub work branch.");
+        }
+    }
+
+    private void ensureActiveWorkBranch(UUID ownerUserId, ProjectResponse project, WorkSession work) {
+        if (!persistentProjects.enabled() || installationTokens == null || githubBranches == null) return;
+        String token = installationTokens.createInstallationToken(project.githubInstallationId());
+        try {
+            githubBranches.branchHeadSha(token, project.repositoryFullName(), work.branchName());
+            return;
+        } catch (RuntimeException missing) {
+            if (work.hasCommit())
+                throw ApiException.conflict("WORK_BRANCH_MISSING", "The active Work branch no longer exists on GitHub. End the work and choose how to continue.");
+        }
+        // Compatibility repair for pre-9.8 ACTIVE rows that were persisted before the remote ref existed.
+        try {
+            String baseSha = githubBranches.branchHeadSha(token, project.repositoryFullName(), project.defaultBranch());
+            githubBranches.createBranch(token, project.repositoryFullName(), work.branchName(), baseSha);
+            String verified = githubBranches.branchHeadSha(token, project.repositoryFullName(), work.branchName());
+            if (!baseSha.equalsIgnoreCase(verified)) throw new IllegalStateException("work branch readback mismatch");
+        } catch (RuntimeException e) {
+            throw ApiException.badGateway("WORK_BRANCH_PROVISIONING_FAILED", "Could not create or verify the GitHub work branch.");
+        }
+    }
+
+    public synchronized WorkSession abandonWork(UUID ownerUserId, UUID projectId, boolean deleteBranch) {
+        ProjectResponse project = requireOwnedProject(ownerUserId, projectId).response;
+        WorkSession work = requireActiveWork(ownerUserId, projectId);
+        if (hasActiveImport(ownerUserId, projectId))
+            throw ApiException.conflict("ACTIVE_IMPORT_EXISTS", "Cancel the active import before ending the work.");
+        if (deleteBranch) {
+            if (work.branchName().equals(project.defaultBranch()))
+                throw ApiException.conflict("DEFAULT_BRANCH_DELETE_FORBIDDEN", "The configured default branch cannot be deleted.");
+            if (installationTokens != null && githubBranches != null) {
+                String token = installationTokens.createInstallationToken(project.githubInstallationId());
+                githubBranches.deleteBranch(token, project.repositoryFullName(), work.branchName());
+            }
+        }
+        if (persistentProjects.enabled()) return persistentWork.abandon(ownerUserId, projectId);
+        WorkSession ended = new WorkSession(work.id(), work.projectId(), work.ownerUserId(), work.baseBranch(), work.branchName(),
+                "ABANDONED", work.headCommitSha(), work.baseCommitSha(), work.lastImportId(), work.lastPlanDigestSha256(),
+                work.pullRequestNumber(), work.pullRequestUrl(), work.createdAt(), Instant.now());
+        workByProject.put(projectId, ended); return ended;
+    }
+
+    public synchronized void archiveProject(UUID ownerUserId, UUID projectId) {
+        requireOwnedProject(ownerUserId, projectId);
+        if (activeWork(ownerUserId, projectId).isPresent())
+            throw ApiException.conflict("ACTIVE_WORK_EXISTS", "End the active work before removing the project.");
+        if (hasActiveImport(ownerUserId, projectId))
+            throw ApiException.conflict("ACTIVE_IMPORT_EXISTS", "Cancel the active import before removing the project.");
+        if (persistentProjects.enabled()) persistentProjects.archiveProject(ownerUserId, projectId);
+        projects.remove(projectId);
+    }
+
     public WorkSession requireActiveWork(UUID ownerUserId, UUID projectId) {
         return activeWork(ownerUserId, projectId).orElseThrow(() ->
                 ApiException.conflict("ACTIVE_WORK_REQUIRED", "The project has no active work."));
@@ -162,8 +281,9 @@ public class ProjectApplicationService {
         ProjectResponse project = requireOwnedProject(ownerUserId, projectId).response;
         if (!project.active()) throw ApiException.conflict("PROJECT_INACTIVE", "The project is inactive.");
         assertNoActiveImport(ownerUserId, projectId);
-        WorkSession work = getOrCreateWork(ownerUserId, projectId, project.defaultBranch());
-        String branch = work.hasCommit() ? work.branchName() : work.baseBranch();
+        WorkSession work = activeWork(ownerUserId, projectId).orElseGet(() -> startWork(ownerUserId, projectId, null));
+        ensureActiveWorkBranch(ownerUserId, project, work);
+        String branch = work.branchName();
         String requestedName = request == null ? null : request.authorName();
         String requestedEmail = request == null ? null : request.authorEmail();
         boolean customAuthor = (requestedName != null && !requestedName.isBlank()) || (requestedEmail != null && !requestedEmail.isBlank());
@@ -291,6 +411,11 @@ public class ProjectApplicationService {
 
     public ImportResponse getImport(UUID ownerUserId, UUID importId) {
         return requireOwnedImport(ownerUserId, importId).response;
+    }
+
+    private boolean hasActiveImport(UUID ownerUserId, UUID projectId) {
+        try { assertNoActiveImport(ownerUserId, projectId); return false; }
+        catch (ApiException e) { if ("ACTIVE_IMPORT_EXISTS".equals(e.code())) return true; throw e; }
     }
 
     private void assertNoActiveImport(UUID ownerUserId, UUID projectId) {
@@ -651,8 +776,7 @@ public class ProjectApplicationService {
         return Optional.ofNullable(pullRequestsByImport.get(importId));
     }
 
-    private WorkSession getOrCreateWork(UUID ownerUserId, UUID projectId, String baseBranch) {
-        if (persistentProjects.enabled()) return persistentWork.getOrCreateActive(ownerUserId, projectId, baseBranch);
+    private WorkSession getOrCreateInMemoryWork(UUID ownerUserId, UUID projectId, String baseBranch) {
         return workByProject.compute(projectId, (id, existing) -> {
             if (existing != null && "ACTIVE".equals(existing.status())) return existing;
             UUID workId = UUID.randomUUID(); Instant now = Instant.now();

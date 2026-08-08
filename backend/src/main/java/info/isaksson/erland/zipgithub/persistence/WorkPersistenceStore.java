@@ -17,21 +17,50 @@ public class WorkPersistenceStore {
         return find("SELECT * FROM work_session WHERE owner_user_id=? AND project_id=? AND status='ACTIVE'", ownerUserId, projectId);
     }
 
-    public WorkSession getOrCreateActive(UUID ownerUserId, UUID projectId, String baseBranch) {
-        var existing = findActive(ownerUserId, projectId);
-        if (existing.isPresent()) return existing.get();
+    public WorkSession createProvisioning(UUID ownerUserId, UUID projectId, String baseBranch, String branchName, String baseCommitSha) {
         UUID id = UUID.randomUUID();
         Instant now = Instant.now();
-        String branch = "zip-github/work-" + id;
         try (Connection c = dataSource.getConnection(); PreparedStatement s = c.prepareStatement("""
-                INSERT INTO work_session (id, project_id, owner_user_id, base_branch, branch_name, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?)
-                ON CONFLICT DO NOTHING
+                INSERT INTO work_session (id, project_id, owner_user_id, base_branch, branch_name, status, base_commit_sha, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 'PROVISIONING', ?, ?, ?)
                 """)) {
-            s.setObject(1,id); s.setObject(2,projectId); s.setObject(3,ownerUserId); s.setString(4,baseBranch); s.setString(5,branch);
-            s.setTimestamp(6,Timestamp.from(now)); s.setTimestamp(7,Timestamp.from(now)); s.executeUpdate();
-        } catch (SQLException e) { throw new IllegalStateException("Could not create work session.", e); }
-        return findActive(ownerUserId, projectId).orElseThrow(() -> new IllegalStateException("Could not load active work session."));
+            s.setObject(1,id); s.setObject(2,projectId); s.setObject(3,ownerUserId); s.setString(4,baseBranch); s.setString(5,branchName); s.setString(6,baseCommitSha);
+            s.setTimestamp(7,Timestamp.from(now)); s.setTimestamp(8,Timestamp.from(now)); s.executeUpdate();
+        } catch (SQLException e) { throw new IllegalStateException("Could not create provisioning work session.", e); }
+        return findOpen(ownerUserId, projectId).orElseThrow(() -> new IllegalStateException("Could not load provisioning work session."));
+    }
+
+    public Optional<WorkSession> findOpen(UUID ownerUserId, UUID projectId) {
+        return find("SELECT * FROM work_session WHERE owner_user_id=? AND project_id=? AND status IN ('PROVISIONING','ACTIVE')", ownerUserId, projectId);
+    }
+
+    public WorkSession activate(UUID ownerUserId, UUID projectId, String expectedBranch, String baseCommitSha) {
+        try (Connection c = dataSource.getConnection(); PreparedStatement s = c.prepareStatement("""
+                UPDATE work_session SET status='ACTIVE', base_commit_sha=?, updated_at=?
+                WHERE owner_user_id=? AND project_id=? AND status='PROVISIONING' AND branch_name=?
+                """)) {
+            s.setString(1,baseCommitSha); s.setTimestamp(2,Timestamp.from(Instant.now())); s.setObject(3,ownerUserId); s.setObject(4,projectId); s.setString(5,expectedBranch);
+            if (s.executeUpdate()!=1) throw new IllegalStateException("No provisioning work session could be activated.");
+        } catch (SQLException e) { throw new IllegalStateException("Could not activate work session.", e); }
+        return findActive(ownerUserId, projectId).orElseThrow();
+    }
+
+    public WorkSession abandon(UUID ownerUserId, UUID projectId) {
+        try (Connection c = dataSource.getConnection(); PreparedStatement s = c.prepareStatement("""
+                UPDATE work_session SET status='ABANDONED', updated_at=?
+                WHERE owner_user_id=? AND project_id=? AND status IN ('PROVISIONING','ACTIVE')
+                """)) {
+            s.setTimestamp(1,Timestamp.from(Instant.now())); s.setObject(2,ownerUserId); s.setObject(3,projectId);
+            if (s.executeUpdate()!=1) throw new IllegalStateException("No active work session could be abandoned.");
+        } catch (SQLException e) { throw new IllegalStateException("Could not abandon work session.", e); }
+        return findLatest(ownerUserId, projectId).orElseThrow();
+    }
+
+    public boolean activeBranchInUse(UUID ownerUserId, UUID projectId, String branchName) {
+        try (Connection c=dataSource.getConnection(); PreparedStatement s=c.prepareStatement("SELECT 1 FROM work_session WHERE owner_user_id=? AND project_id=? AND status IN ('PROVISIONING','ACTIVE') AND branch_name=? LIMIT 1")) {
+            s.setObject(1,ownerUserId); s.setObject(2,projectId); s.setString(3,branchName);
+            try (ResultSet r=s.executeQuery()) { return r.next(); }
+        } catch (SQLException e) { throw new IllegalStateException("Could not validate active work branch.", e); }
     }
 
     public WorkSession recordCommit(UUID ownerUserId, UUID projectId, UUID importId, String baseCommitSha,

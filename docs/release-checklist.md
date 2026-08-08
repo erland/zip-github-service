@@ -174,3 +174,16 @@ Production version `1.0.0` may be created only when every external acceptance it
 - [x] A real reference Shortcut has been created in Apple Shortcuts with the documented flow and deployment credential; the operator verified its signed reference-client flow on iPhone.
 - [x] The reference Shortcut has been signed for `anyone` in Apple Shortcuts and published in the deployment bundle as `shortcut/releases/zip-github.shortcut` (SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`).
 - [x] The published signed artifact has been downloaded from `/shortcut` and accepted/imported on iOS. The served-copy gate is complete; the observed filename behavior is handled by the friendly `Content-Disposition` download name.
+
+
+## Phase 9 step 9.10 final gate
+
+- [x] Shortcut/staging upload, claim and promotion contracts are covered together by the final phase-9 gate and existing integration regressions.
+- [x] Browser/stored-Upload convergence proves identical ZIP bytes reach equivalent inventory/comparison/policy/plan semantics; Git file-mode resolver covers executable preservation/defaults.
+- [x] Work is activated only after remote branch readback; provisioning retry is recovery-safe and delivery refuses a missing remote Work branch.
+- [x] Abandon without PR, optional remote-branch deletion, resume-existing-branch and soft project archive are implemented and owner scoped.
+- [x] Work Actions status/details are exact-head-commit-bound, revisitable and reuse bounded/redacted error extraction.
+- [x] Signed Shortcut was downloaded from `/shortcut` and imported on iPhone; friendly download filename, manifest hash and runtime readability are release-gated.
+- [x] Old staging upload credentials are rejected immediately after rotation without GitHub credential rotation or database migration.
+- [x] Operations, threat model, API contract and Shortcut release documentation reflect the completed phase-9 behavior.
+- [ ] Full Maven/Quarkus and frontend Vitest suites must still be confirmed by normal CI for this revision because the sandbox cannot resolve/install all external dependencies.

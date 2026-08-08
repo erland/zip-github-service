@@ -15,3 +15,8 @@ Step 5.3 turns a verified temporary workspace into exactly one remote Git branch
 ## Step 9.5 — commit message source
 
 Git delivery no longer generates the normal interactive commit message itself. It receives the already normalized, approval-bound message from `ImportPlanApproval` and passes it as a direct argument to `git commit -m`. The legacy overload keeps the former deterministic value only for compatibility with old/internal callers.
+
+
+## Phase 9.8 remote Work invariant
+
+A Work ref must exist on GitHub and be read back at the expected SHA before Work becomes `ACTIVE`. Delivery verifies the remote Work ref still exists and equals the approved workspace base SHA before committing/pushing; missing or moved Work refs are never implicitly recreated at delivery time.

@@ -305,7 +305,7 @@ export async function cancelImport(importId: string): Promise<ImportResponse> {
   return requestJson(`/api/imports/${encodeURIComponent(importId)}/cancel`, { method: 'POST' });
 }
 
-export type ActionsItemState = 'not_started' | 'pending' | 'success' | 'failure' | 'cancelled' | 'unavailable';
+export type ActionsItemState = 'not_started' | 'pending' | 'queued' | 'in_progress' | 'success' | 'failure' | 'cancelled' | 'unavailable';
 
 export interface ActionsJobResponse {
   id: number;

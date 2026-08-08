@@ -201,6 +201,6 @@ function formatBytes(bytes:number) {
 }
 
 function StateBadge({state}:{state:string}) { return <span className={`status-badge status-badge--${state}`}>{stateLabel(state)}</span>; }
-function stateLabel(state:string) { return ({pending:'Pågår',success:'Lyckad',failure:'Misslyckad',cancelled:'Avbruten',unavailable:'Ej tillgänglig',not_started:'Inte startad'} as Record<string,string>)[state] ?? state; }
+function stateLabel(state:string) { return ({pending:'Pågår',queued:'Köad',in_progress:'Pågår',success:'Lyckad',failure:'Misslyckad',cancelled:'Avbruten',unavailable:'Ej tillgänglig',not_started:'Inte startad'} as Record<string,string>)[state] ?? state; }
 function ResultLink({label,value,href}:{label:string;value:string;href:string}) { return <div><dt>{label}</dt><dd><a href={href} target="_blank" rel="noreferrer">{value}</a></dd></div>; }
 function githubLinks(result: GitDeliveryResponse) { const repository=`https://github.com/${result.repositoryFullName}`; return { repository, branch:`${repository}/tree/${encodeURIComponent(result.branchName)}`, commit:`${repository}/commit/${result.commitSha}`, actions:`${repository}/actions?query=${encodeURIComponent(`branch:${result.branchName}`)}` }; }

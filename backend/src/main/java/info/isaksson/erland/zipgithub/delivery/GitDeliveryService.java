@@ -66,6 +66,9 @@ public class GitDeliveryService {
             String remoteBase = remoteBranchSha(directory, remote, token, baseBranch);
             if (!workspace.baseCommitSha().equalsIgnoreCase(remoteBase))
                 throw new GitDeliveryException("The base branch moved after approval; create a new import plan.");
+            String remoteWork = remoteBranchSha(directory, remote, token, branchName);
+            if (!workspace.baseCommitSha().equalsIgnoreCase(remoteWork))
+                throw new GitDeliveryException("The remote Work branch is missing or moved after review; start a new review before delivery.");
 
             runPlain(directory, "git", "checkout", "--quiet", "-b", branchName);
             runPlain(directory, "git", "add", "--all");

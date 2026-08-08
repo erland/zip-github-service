@@ -182,7 +182,7 @@ For an interrupted delivery, use the idempotent delivery and PR endpoints. Do no
 
 ## Capacity and scaling
 
-The MVP is a single backend replica because sessions and several application stores are still in memory. Do not horizontally scale until those stores are moved to PostgreSQL or a shared session store. Temporary workspace capacity must accommodate configured ZIP expansion limits plus one or more concurrent Git workspaces.
+The current release persists project configuration, resumable import state, Work lifecycle, staging lifecycle and approval/delivery recovery data in PostgreSQL. Web login sessions remain deployment-scoped, so horizontal scaling still requires a deliberately shared/sticky session strategy before multiple backend replicas are introduced. Temporary workspace capacity must accommodate configured ZIP expansion limits plus concurrent Git workspaces.
 
 
 ## Container storage initialization
@@ -200,7 +200,7 @@ docker compose exec backend sh -c 'id; ls -ld /var/lib/zip-github/uploads /var/l
 
 From `1.0.0-rc.13`, authenticated user identity, per-user GitHub App installation visibility and project configuration are stored in PostgreSQL. Project lists therefore survive backend restarts and image deployments.
 
-In-progress import execution state (uploaded-source associations, snapshots, plans, approvals and delivery state) is still held in application memory in the current MVP. Avoid restarting the backend while an import is actively being reviewed or delivered. A completed/recreated project does not need to be recreated after later deployments.
+In-progress imports are restart-resumable: source associations, immutable plan/selection/approval state and delivery recovery metadata are persisted, while temporary Git workspaces are intentionally disposable and rebuilt after restart. Preserve PostgreSQL and the upload volume across backend replacement; do not manually remove files for non-terminal imports.
 
 ## Git askpass runtime helper (RC13)
 
@@ -226,3 +226,10 @@ The reference Shortcut is a separately signed deployment artifact, not a backend
 Publication/rotation procedure is documented in `docs/signed-shortcut-release.md`. In short: update the Shortcut and deployment upload credential in a trusted Apple environment, export and sign with an iCloud-signed-in Mac for `anyone`, place the signed file in `shortcut/releases/`, advance `ZIP_GITHUB_SHORTCUT_VERSION`/`ZIP_GITHUB_SHORTCUT_GENERATION`, rotate `ZIP_GITHUB_STAGING_UPLOAD_CREDENTIAL`, then redeploy. There is deliberately no current/previous grace credential in the first version.
 
 If no signed artifact is mounted, `/shortcut` stays usable but reports that no installer is published. Never work around this by serving an unsigned file.
+
+
+## Phase 9 final operational gate
+
+Before promoting a deployment, run `bash scripts/verify-phase9-release.sh` and `bash scripts/verify-release.sh`. The signed Shortcut binary is deployment material rather than Git source: when present at `shortcut/releases/zip-github.shortcut`, its bytes/size/SHA must match `shortcut/releases/release-manifest.txt` and it must be readable by the backend runtime user through the read-only mount. The authenticated download intentionally exposes the friendly filename `Skicka till zip-github.shortcut`.
+
+For Work recovery, a Work is not active until its remote GitHub branch has been created/read back at the expected SHA. If a remote Work branch disappears or moves unexpectedly, delivery must fail closed; do not recreate or force-push it as an operational workaround. Use the explicit abandon/archive/restart-work controls instead. Actions diagnostics on the Work page are commit-bound and may be refreshed after reconnect/login.

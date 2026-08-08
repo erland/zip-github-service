@@ -62,3 +62,9 @@ The automated security regression additionally asserts that:
 - delivery retains the stale-base/work-branch guard.
 
 JUnit/self-tests add behavioral coverage for mixed ordinary/blocked/deletion trees, exact path application, excluded-file preservation and stale branch movement.
+
+## Phase 9 final regression gate
+
+The final phase-9 release gate is `scripts/verify-phase9-release.sh`. It composes evidence from the dedicated staging, promotion, Work lifecycle, delivery, file-mode, Actions and Shortcut regressions and verifies the signed release manifest when the deployment binary is present. It is intentionally source-safe: a clean Git checkout may omit the credential-bearing `.shortcut` binary, while a deployment bundle that contains it must match the tracked manifest and be runtime-readable.
+
+Normal CI remains authoritative for the full Quarkus/JUnit and frontend Vitest suites. The shell gate supplements those suites with cross-step contract checks; it does not replace them.

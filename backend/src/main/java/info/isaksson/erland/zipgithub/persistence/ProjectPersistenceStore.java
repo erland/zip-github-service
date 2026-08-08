@@ -110,7 +110,7 @@ public class ProjectPersistenceStore {
                      SELECT id, name, github_installation_id, github_repository_id,
                             repository_owner, repository_name, private_repository,
                             default_branch, active, created_at, updated_at
-                     FROM project WHERE owner_user_id = ? ORDER BY created_at
+                     FROM project WHERE owner_user_id = ? AND archived_at IS NULL ORDER BY created_at
                      """)) {
             statement.setObject(1, ownerUserId);
             try (ResultSet result = statement.executeQuery()) {
@@ -130,7 +130,7 @@ public class ProjectPersistenceStore {
                      SELECT id, name, github_installation_id, github_repository_id,
                             repository_owner, repository_name, private_repository,
                             default_branch, active, created_at, updated_at
-                     FROM project WHERE owner_user_id = ? AND id = ?
+                     FROM project WHERE owner_user_id = ? AND id = ? AND archived_at IS NULL
                      """)) {
             statement.setObject(1, ownerUserId);
             statement.setObject(2, projectId);
@@ -142,11 +142,23 @@ public class ProjectPersistenceStore {
         }
     }
 
+
+    public void archiveProject(UUID ownerUserId, UUID projectId) {
+        if (!enabled) return;
+        execute("UPDATE project SET archived_at=?, active=false, updated_at=? WHERE id=? AND owner_user_id=? AND archived_at IS NULL", statement -> {
+            Instant now = Instant.now();
+            statement.setTimestamp(1, Timestamp.from(now));
+            statement.setTimestamp(2, Timestamp.from(now));
+            statement.setObject(3, projectId);
+            statement.setObject(4, ownerUserId);
+        });
+    }
+
     public boolean projectNameExists(UUID ownerUserId, String name, UUID excludedId) {
         if (!enabled) return false;
         String sql = excludedId == null
-                ? "SELECT 1 FROM project WHERE owner_user_id = ? AND lower(name) = lower(?) LIMIT 1"
-                : "SELECT 1 FROM project WHERE owner_user_id = ? AND lower(name) = lower(?) AND id <> ? LIMIT 1";
+                ? "SELECT 1 FROM project WHERE owner_user_id = ? AND lower(name) = lower(?) AND archived_at IS NULL LIMIT 1"
+                : "SELECT 1 FROM project WHERE owner_user_id = ? AND lower(name) = lower(?) AND id <> ? AND archived_at IS NULL LIMIT 1";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setObject(1, ownerUserId);

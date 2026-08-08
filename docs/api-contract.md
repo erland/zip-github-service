@@ -369,3 +369,28 @@ GET /api/shortcut-release/download
 Metadata returns `available`, non-secret `version`/`generation`, filename, byte size, SHA-256 and a download URL only when a readable pre-signed `.shortcut` artifact is configured. The backend never synthesizes an unsigned substitute. Download is `private, no-store` and requires the normal authenticated zip-github owner session.
 
 Capability staging uploads using a missing/old/revoked `X-ZipGitHub-Upload-Credential` now return `403 STAGING_SHORTCUT_OUTDATED` with instructions to sign in and install the current Shortcut release. This error conveys no user, Project or GitHub authorization information.
+
+
+## Phase 9.8 Work lifecycle API
+
+- `GET /api/projects/{projectId}/work/branches` lists owner-scoped, non-default, non-protected GitHub branches eligible for a new Work.
+- `POST /api/projects/{projectId}/work` starts a new verified Work branch or resumes an explicitly selected existing branch. New Work is persisted as `PROVISIONING`, the GitHub ref is created/read back, then state becomes `ACTIVE`.
+- `POST /api/projects/{projectId}/work/abandon` ends Work without a PR; `deleteBranch=true` separately removes the remote Work branch.
+- `DELETE /api/projects/{projectId}` archives the project from normal lists; active Work/imports must be ended first.
+
+
+## Work Actions status (step 9.9)
+
+- `GET /api/projects/{projectId}/work/actions` returns the same bounded Actions status contract as the import result path, but is resolved from the authenticated project's active Work and exact `headCommitSha`.
+- `GET /api/projects/{projectId}/work/actions/details` returns the existing sanitized artifacts/failure-detail contract for the same exact Work-head commit.
+- Both return a conflict when the active Work has no delivered commit yet. They never search by branch alone.
+
+
+## Phase 9 final contract invariants
+
+- Staging capability create never conveys Project, user or GitHub authorization; invalid/rotated capabilities use `STAGING_SHORTCUT_OUTDATED`.
+- Claim binds exactly one authenticated owner and promotion uses stable `staging-import:<id>` source identity to recover/reuse exactly one ordinary Import.
+- Work creation may remain `PROVISIONING` until GitHub confirms the branch at the expected SHA; `ACTIVE` is not returned merely from a locally generated branch name.
+- Existing Work branches may be selected only when they are neither the default branch nor protected/in use by another active Work.
+- Work Actions endpoints are bound to both the active Work and its exact head commit.
+- Signed Shortcut download returns the configured signed bytes with `Content-Disposition` filename `Skicka till zip-github.shortcut`; the technical server filename is not part of the user-facing contract.

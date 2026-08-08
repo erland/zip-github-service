@@ -103,6 +103,33 @@ export async function createWorkPullRequest(projectId: string) {
   });
 }
 
+export type WorkBranch = { name: string; commitSha: string };
+
+export async function getAvailableWorkBranches(projectId: string): Promise<WorkBranch[]> {
+  return requestJson(`/api/projects/${encodeURIComponent(projectId)}/work/branches`);
+}
+
+export async function startProjectWork(projectId: string, existingBranch?: string): Promise<WorkSessionResponse> {
+  return requestJson(`/api/projects/${encodeURIComponent(projectId)}/work`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Zip-GitHub-Request': '1' },
+    body: JSON.stringify({ existingBranch: existingBranch || null }),
+  });
+}
+
+export async function abandonProjectWork(projectId: string, deleteBranch: boolean): Promise<WorkSessionResponse> {
+  return requestJson(`/api/projects/${encodeURIComponent(projectId)}/work/abandon`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Zip-GitHub-Request': '1' },
+    body: JSON.stringify({ deleteBranch }),
+  });
+}
+
+export async function archiveProject(projectId: string): Promise<void> {
+  const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
+    method: 'DELETE', credentials: 'include', headers: { 'X-Zip-GitHub-Request': '1' },
+  });
+  if (!response.ok) throw new Error(`API-fel ${response.status}`);
+}
+
 async function requestJson<T>(url: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(url, { credentials: 'include', ...init });
   if (!response.ok) {
@@ -115,4 +142,12 @@ async function requestJson<T>(url: string, init: RequestInit = {}): Promise<T> {
     }
   }
   return response.json() as Promise<T>;
+}
+
+export async function getProjectWorkActions(projectId: string): Promise<import('./imports').ImportActionsStatusResponse> {
+  return requestJson(`/api/projects/${encodeURIComponent(projectId)}/work/actions`);
+}
+
+export async function getProjectWorkActionDetails(projectId: string): Promise<import('./imports').ImportActionsDetailsResponse> {
+  return requestJson(`/api/projects/${encodeURIComponent(projectId)}/work/actions/details`);
 }

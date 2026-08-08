@@ -4,8 +4,8 @@ import java.util.List;
 
 public final class GitHubActionsStatusMapperSelfTest {
     public static void main(String[] args) {
-        assertState("pending", false, "queued", "");
-        assertState("pending", false, "in_progress", "");
+        assertState("queued", false, "queued", "");
+        assertState("in_progress", false, "in_progress", "");
         assertState("success", true, "completed", "success");
         assertState("success", true, "completed", "neutral");
         assertState("success", true, "completed", "skipped");
@@ -17,7 +17,7 @@ public final class GitHubActionsStatusMapperSelfTest {
         assertEquals("unavailable", GitHubActionsStatusMapper.aggregate(false, 0, List.of()));
         assertEquals("pending", GitHubActionsStatusMapper.aggregate(true, 2, List.of(
                 new GitHubActionsStatusMapper.State("success", true),
-                new GitHubActionsStatusMapper.State("pending", false))));
+                new GitHubActionsStatusMapper.State("queued", false))));
         assertEquals("failure", GitHubActionsStatusMapper.aggregate(true, 2, List.of(
                 new GitHubActionsStatusMapper.State("success", true),
                 new GitHubActionsStatusMapper.State("failure", true))));

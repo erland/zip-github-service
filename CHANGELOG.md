@@ -1,3 +1,29 @@
+## 1.0.0-rc.61 - 2026-08-08
+
+### Changed
+- Completed phase 9 step 9.10 with a final cross-step release gate covering staging credential rotation, claim/promotion convergence, Work provisioning/recovery, missing-branch delivery refusal, file-mode invariants, revisitable Actions diagnostics and the signed Shortcut release manifest.
+- Added `scripts/verify-phase9-release.sh` so the phase-9 contracts are checked together instead of relying only on isolated step gates.
+- Updated operations, threat model, API contract, release checklist and Shortcut release guidance to reflect the completed persistent import/Work lifecycle and the deployed signed Shortcut verification.
+- The active implementation plan is complete; no `NEXT` step remains. Future AI/integration work stays in the explicitly separate backlog.
+
+## 1.0.0-rc.60 - 2026-08-08
+
+### Changed
+- Completed phase 9 step 9.9 by exposing the existing commit-scoped GitHub Actions status/detail services directly from the active Work view.
+- Added project Work Actions endpoints that are bound to the Work session's `lastImportId` and exact `headCommitSha`, preventing stale runs for an older branch commit from being shown as current status.
+- Added revisitable workflow/job status, GitHub run links, explicit refresh, bounded polling while active, condensed failure details and copyable AI/support-friendly failure text on the project page.
+- Reused the existing phase-8 GitHub failure extraction/redaction path; no permanent backend monitor or new background authorization was introduced.
+- Step 9.10 is NEXT; final phase-9 E2E/release regression remains intentionally out of scope for this revision.
+
+## 1.0.0-rc.59 - 2026-08-08
+
+### Changed
+- Completed phase 9 step 9.8 with explicit Work provisioning (`PROVISIONING -> ACTIVE`) backed by real GitHub branch creation/readback before imports can proceed.
+- Added restart-safe provisioning recovery and a compatibility repair for pre-9.8 ACTIVE Work rows whose remote branch was never created.
+- Delivery now requires the remote Work branch to already exist at the approved base SHA; it never recreates a missing Work branch implicitly.
+- Added project-page GitHub default-branch link, explicit end-without-PR with optional branch deletion, resumable existing non-default/non-protected branches, and soft project archive/removal.
+- Step 9.9 is NEXT; Actions status on the Work page remains intentionally out of scope for this revision.
+
 ## 1.0.0-rc.58 - 2026-08-08
 
 ### Changed

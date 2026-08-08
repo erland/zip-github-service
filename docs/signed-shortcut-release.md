@@ -64,3 +64,8 @@ The final 9.7 gate has been exercised operationally: the authenticated `/shortcu
 ## Runtime permissions and download identity
 
 The signed deployment artifact should be readable by the backend runtime user in the read-only bind mount. `scripts/sign-shortcut-release.sh` therefore sets mode `0644`; deployment models using ACLs or different ownership may use an equivalent read-only policy. The authenticated download response uses `Content-Disposition: attachment; filename="Skicka till zip-github.shortcut"` while serving the unchanged signed bytes recorded by the release manifest.
+
+
+## Final release verification (9.10)
+
+The reference release has been exercised through the authenticated `/shortcut` page and imported on iPhone. Final automated release verification checks the tracked manifest, friendly download filename contract, Git-ignore/import-policy protection and, when the binary is present in the deployment bundle, exact size/SHA plus runtime readability. Credential rotation is covered by the staging credential regression: the old credential stops matching immediately and the server returns the documented outdated-Shortcut path.

@@ -89,7 +89,9 @@ grep -q 'currentUser.requireUserId()' backend/src/main/java/info/isaksson/erland
 grep -q 'Cache-Control.*private, no-store' backend/src/main/java/info/isaksson/erland/zipgithub/api/ShortcutReleaseResource.java || fail 'signed Shortcut download cache control missing'
 grep -q 'STAGING_SHORTCUT_OUTDATED' backend/src/main/java/info/isaksson/erland/zipgithub/api/StagingImportResource.java || fail 'old/revoked Shortcut update error missing'
 grep -q '/shortcut/releases/\*.shortcut' .gitignore || fail 'secret-bearing signed Shortcut artifacts are not ignored'
-grep -q 'SIGNED_SHORTCUT_SECRET_ARTIFACT' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java || fail 'signed Shortcut deployment artifact is not hard-blocked from Git import'
+grep -q 'GITIGNORE_IGNORED' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java || fail 'repository .gitignore matches are not represented as ignored warnings'
+! grep -q 'SIGNED_SHORTCUT_SECRET_ARTIFACT' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java || fail 'project-specific signed Shortcut hard block must not exist'
+grep -q 'GitIgnoreMatcher' backend/src/main/java/info/isaksson/erland/zipgithub/comparison/ImportComparisonService.java || fail 'repository .gitignore is not applied during import comparison'
 shortcut_count=$(find shortcut/releases -maxdepth 1 -type f -name '*.shortcut' | wc -l | tr -d '[:space:]')
 [[ "$shortcut_count" -le 1 ]] || fail 'multiple signed Shortcut binaries are present in the deployment bundle'
 if [[ "$shortcut_count" == "1" ]]; then

@@ -7,7 +7,7 @@ import ImportReviewPage from './ImportReviewPage';
 
 const plan = {
   id: 'plan-1', importId: 'import-1', sourceUploadSha256: 'a'.repeat(64), baseCommitSha: 'b'.repeat(40),
-  policyVersion: 'mvp-3', planDigestSha256: 'c'.repeat(64), status: 'READY', approvable: true,
+  policyVersion: 'mvp-4', planDigestSha256: 'c'.repeat(64), status: 'READY', approvable: true,
   added: 1, modified: 1, unchanged: 1, ignored: 1, blocked: 1, hardBlocked: 0, overridableBlocked: 1,
   warnings: 1, createdAt: '2026-08-06T19:00:00Z',
   entries: [
@@ -88,9 +88,29 @@ describe('ImportReviewPage', () => {
     expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeEnabled();
   });
 
+  it('presents gitignored ZIP files as informational warnings and keeps filters as the only buttons', async () => {
+    const ignoredPlan = { ...plan, ignored: 2, warnings: 2, entries: [...plan.entries,
+      { path: 'shortcut/releases/zip-github.shortcut', status: 'IGNORED', comparisonStatus: 'IGNORED', severity: 'WARNING', blockerType: 'NONE', policyCode: 'GITIGNORE_IGNORED', message: 'Filen matchar repositoryts .gitignore och kommer inte att tas med i Git-committen.', archiveSizeBytes: 23821, archiveSha256: '7'.repeat(64), repositorySizeBytes: null, repositorySha256: null, textCandidate: false }] };
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (!init?.method && url.endsWith('/plan')) return response(ignoredPlan);
+      if (!init?.method && (url.endsWith('/selection') || url.endsWith('/plan/approval') || url.endsWith('/delivery'))) return response({}, 404);
+      return response({});
+    }));
+    const user = userEvent.setup();
+    renderPage();
+    const summary = await screen.findByLabelText('Sammanfattning av importplanen');
+    expect(summary).toHaveTextContent('2 ignorerade');
+    expect(within(summary).queryByRole('button')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Ignorerade \(2\)/ }));
+    expect(screen.getByTitle('shortcut/releases/zip-github.shortcut')).toBeInTheDocument();
+    expect(screen.getByText(/matchar repositoryts .gitignore/i)).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /shortcut\/releases\/zip-github.shortcut/ })).not.toBeInTheDocument();
+  });
+
   it('filters to blocked entries', async () => {
     const user = userEvent.setup(); renderPage(); await screen.findByText('README.md');
-    await user.click(screen.getByRole('button', { name: 'Blockerade' }));
+    await user.click(screen.getByRole('button', { name: /Blockerade/ }));
     const list = screen.getByRole('list', { name: 'Filträd' });
     expect(within(list).getByTitle('.github/workflows/ci.yml')).toBeInTheDocument();
     expect(within(list).queryByText('README.md')).not.toBeInTheDocument();
@@ -134,7 +154,7 @@ describe('ImportReviewPage', () => {
     const fetchMock = installHappyPath(mixedPlan, mixedSelection);
     renderPage(); await screen.findByText('README.md');
     await user.click(screen.getByRole('checkbox', { name: 'Exkludera README.md' }));
-    await user.click(screen.getByRole('button', { name: 'Blockerade' }));
+    await user.click(screen.getByRole('button', { name: /Blockerade/ }));
     expect(screen.getByRole('checkbox', { name: 'Inkludera .git/config' })).toBeDisabled();
     await user.click(screen.getByRole('checkbox', { name: 'Jag förstår risken och vill ta med denna blockerade förändring' }));
     await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));
@@ -156,7 +176,7 @@ describe('ImportReviewPage', () => {
 
   it('requires explicit override before an overridable blocker is selected', async () => {
     const user = userEvent.setup(); renderPage(); await screen.findByText('README.md');
-    await user.click(screen.getByRole('button', { name: 'Blockerade' }));
+    await user.click(screen.getByRole('button', { name: /Blockerade/ }));
     expect(screen.getByRole('checkbox', { name: 'Inkludera .github/workflows/ci.yml' })).toBeDisabled();
     await user.click(screen.getByRole('checkbox', { name: 'Jag förstår risken och vill ta med denna blockerade förändring' }));
     expect(screen.getByRole('checkbox', { name: 'Exkludera .github/workflows/ci.yml' })).toBeChecked();

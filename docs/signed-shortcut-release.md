@@ -56,7 +56,7 @@ If no readable `.shortcut` is configured, metadata returns `available=false` and
 
 The operator supplied an Apple-signed reference Shortcut and confirmed the Shortcut itself on iPhone. The r0103 deployment bundle publishes it at `shortcut/releases/zip-github.shortcut` with default metadata version `1`, generation `g1`, size 23821 bytes and SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`.
 
-Because the signed binary embeds the staging upload credential, the source-control ignore remains in place and the ordinary zip-github import policy now hard-blocks this exact release path with policy code `SIGNED_SHORTCUT_SECRET_ARTIFACT`. This permits the deployment ZIP to carry the release while preventing an accidental Git delivery when the same ZIP is reviewed through zip-github.
+Because the signed binary embeds the staging upload credential, the source-control ignore remains in place. Import review now evaluates the target repository's tracked `.gitignore` rules generically: a new file matching `/shortcut/releases/*.shortcut` is shown as an ignored warning and is not selectable or delivered. There is no Shortcut-specific filename hard block in the import policy.
 
 The final 9.7 gate has been exercised operationally: the authenticated `/shortcut` route served the signed artifact and the downloaded copy was imported successfully on iPhone. The server keeps the technical artifact name `zip-github.shortcut`, while the HTTP download exposes `Skicka till zip-github.shortcut` so iOS gives the imported Shortcut the intended user-facing name.
 

@@ -27,18 +27,18 @@ class ImportPolicyServiceTest {
                 entry("large.bin", ImportFileStatus.ADDED, 101L),
                 entry("old.txt", ImportFileStatus.WOULD_DELETE, null),
                 entry("secret.pem", ImportFileStatus.ADDED, 10L),
-                entry("shortcut/releases/zip-github.shortcut", ImportFileStatus.ADDED, 23_821L),
+                entry("generated.bin", ImportFileStatus.IGNORED, 23_821L),
                 entry("src/App.java", ImportFileStatus.MODIFIED, 10L)));
 
         ImportPolicyResult result = new ImportPolicyService(100).evaluate(archive, comparison);
 
         assertTrue(result.approvable());
-        assertEquals(5, result.blockers());
-        assertEquals(3, result.hardBlockers());
+        assertEquals(4, result.blockers());
+        assertEquals(2, result.hardBlockers());
         assertEquals(2, result.overridableBlockers());
-        assertEquals(1, result.warnings());
-        assertEquals(1, result.count(ImportFileStatus.IGNORED));
-        assertEquals(List.of(".env.local", ".github/workflows/ci.yml", "__MACOSX/._README.md", "large.bin", "old.txt", "secret.pem", "shortcut/releases/zip-github.shortcut", "src/App.java"),
+        assertEquals(2, result.warnings());
+        assertEquals(2, result.count(ImportFileStatus.IGNORED));
+        assertEquals(List.of(".env.local", ".github/workflows/ci.yml", "__MACOSX/._README.md", "generated.bin", "large.bin", "old.txt", "secret.pem", "src/App.java"),
                 result.entries().stream().map(ImportPolicyEntry::path).toList());
         assertEquals("ENVIRONMENT_FILE_WARNING", result.entries().get(0).policyCode());
         assertEquals(ImportPolicyBlockerType.OVERRIDABLE_BLOCKED,
@@ -47,9 +47,11 @@ class ImportPolicyServiceTest {
                 result.entries().stream().filter(e -> e.path().equals("old.txt")).findFirst().orElseThrow().blockerType());
         assertEquals(ImportPolicyBlockerType.HARD_BLOCKED,
                 result.entries().stream().filter(e -> e.path().equals("secret.pem")).findFirst().orElseThrow().blockerType());
-        var shortcut = result.entries().stream().filter(e -> e.path().equals("shortcut/releases/zip-github.shortcut")).findFirst().orElseThrow();
-        assertEquals(ImportPolicyBlockerType.HARD_BLOCKED, shortcut.blockerType());
-        assertEquals("SIGNED_SHORTCUT_SECRET_ARTIFACT", shortcut.policyCode());
+        var ignored = result.entries().stream().filter(e -> e.path().equals("generated.bin")).findFirst().orElseThrow();
+        assertEquals(ImportFileStatus.IGNORED, ignored.status());
+        assertEquals(ImportPolicySeverity.WARNING, ignored.severity());
+        assertEquals(ImportPolicyBlockerType.NONE, ignored.blockerType());
+        assertEquals("GITIGNORE_IGNORED", ignored.policyCode());
     }
 
     @Test

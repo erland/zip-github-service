@@ -10,7 +10,7 @@ Use `scripts/sign-shortcut-release.sh` on a trusted, iCloud-signed-in Mac to sig
 
 ## Current delivery artifact
 
-The r0103 delivery bundle contains the operator-provided Apple-signed `zip-github.shortcut` (version `1`, generation `g1`, 23821 bytes, SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`). It is intentionally still matched by `.gitignore` and by the server import policy's `SIGNED_SHORTCUT_SECRET_ARTIFACT` hard block because the binary embeds the staging upload credential.
+The r0103 delivery bundle contains the operator-provided Apple-signed `zip-github.shortcut` (version `1`, generation `g1`, 23821 bytes, SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`). It is intentionally matched by the repository `.gitignore` because the binary embeds the staging upload credential. Import review evaluates `.gitignore` generically, so this untracked release artifact is shown as ignored and is never selectable for Git delivery; there is no Shortcut-specific import-policy rule.
 
 The artifact is present in the downloadable deployment bundle so `docker-compose.yml` can mount and serve it, but it must never be intentionally committed to a public or private Git repository.
 

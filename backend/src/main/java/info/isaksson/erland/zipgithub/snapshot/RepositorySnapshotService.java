@@ -18,6 +18,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /** Creates a shallow, temporary Git workspace and inventories one exact branch commit. */
@@ -68,12 +70,19 @@ public class RepositorySnapshotService {
             if (!baseSha.equalsIgnoreCase(fetchedSha)) throw new RepositorySnapshotException("Fetched commit does not match the locked branch SHA.");
 
             String tree = run(workspace, token, "git", "ls-tree", "-r", "-z", "--long", fetchedSha);
-            List<RepositorySnapshotEntry> entries = parseTree(tree).stream()
+            List<RepositorySnapshotEntry> treeEntries = parseTree(tree);
+            List<RepositorySnapshotEntry> entries = treeEntries.stream()
                     .map(entry -> new RepositorySnapshotEntry(entry.path(), entry.mode(), entry.objectType(),
                             entry.objectId(), entry.sizeBytes(), hashBlob(workspace, token, entry.objectId())))
                     .toList();
+            Map<String, String> gitIgnoreFiles = new LinkedHashMap<>();
+            for (RepositorySnapshotEntry entry : treeEntries) {
+                if ("blob".equals(entry.objectType()) && isGitIgnorePath(entry.path())) {
+                    gitIgnoreFiles.put(entry.path(), readBlobText(workspace, token, entry.objectId()));
+                }
+            }
             return new RepositorySnapshot(importId, repositoryFullName, branch, fetchedSha,
-                    entries, Instant.now(clock));
+                    entries, gitIgnoreFiles, Instant.now(clock));
         } catch (IOException e) {
             throw new RepositorySnapshotException("Could not create the repository snapshot.", e);
         } finally {
@@ -96,6 +105,29 @@ public class RepositorySnapshotService {
         return List.copyOf(result);
     }
 
+
+    private static boolean isGitIgnorePath(String path) {
+        return ".gitignore".equals(path) || path.endsWith("/.gitignore");
+    }
+
+    private String readBlobText(Path directory, String token, String objectId) {
+        try {
+            ProcessBuilder builder = new ProcessBuilder("git", "cat-file", "blob", objectId)
+                    .directory(directory.toFile()).redirectErrorStream(false);
+            configureGitEnvironment(builder, token);
+            Process process = builder.start();
+            byte[] bytes = process.getInputStream().readAllBytes();
+            String error = new String(process.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+            int exit = process.waitFor();
+            if (exit != 0) throw new RepositorySnapshotException("Git could not read .gitignore content: " + sanitize(error, token));
+            return new String(bytes, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RepositorySnapshotException("Could not read .gitignore content.", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RepositorySnapshotException("Reading .gitignore content was interrupted.", e);
+        }
+    }
 
     private String hashBlob(Path directory, String token, String objectId) {
         try {

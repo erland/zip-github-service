@@ -86,11 +86,9 @@ dd { margin: .25rem 0 0; overflow-wrap: anywhere; }
 .review-decision--ready { background: #edf9f1; border-color: #98d6ad; color: #155b34; }
 .review-decision--blocked { background: #fff1f1; border-color: #e5a4a4; color: #8d1d1d; }
 .status-badge { background: rgb(255 255 255 / 75%); border-radius: 999px; font-size: .75rem; font-weight: 800; padding: .35rem .65rem; }
-.review-summary { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .7rem; margin: 1rem 0 1.5rem; }
-.summary-card { border: 1px solid #dce1e8; border-radius: .7rem; padding: .8rem; }
-.summary-card dd { font-size: 1.6rem; font-weight: 800; }
-.summary-card--blocked { border-color: #e5a4a4; }
-.summary-card--warning { border-color: #e5c17a; }
+.review-summary { background: #f7f9fc; border-radius: .7rem; color: #475467; display: flex; flex-wrap: wrap; gap: .45rem 1rem; margin: 1rem 0 1.5rem; padding: .7rem .85rem; }
+.review-summary span { white-space: nowrap; }
+.review-summary strong { color: #1f2937; font-variant-numeric: tabular-nums; }
 .plan-identity { background: #f7f9fc; border-radius: .7rem; margin-bottom: 1.25rem; padding: .85rem 1rem; }
 .plan-identity summary { cursor: pointer; font-weight: 750; }
 .plan-identity dl { display: grid; gap: .75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -122,7 +120,6 @@ dd { margin: .25rem 0 0; overflow-wrap: anywhere; }
 
 @media (max-width: 760px) {
   .review-decision, .review-file__main, .review-actions { align-items: stretch; flex-direction: column; }
-  .review-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .plan-identity dl { grid-template-columns: 1fr; }
   .review-toolbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .filter-button { width: 100%; }

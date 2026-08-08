@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.67"
+expected_version="1.0.0-rc.68"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.67 - 2026-08-08' CHANGELOG.md
+grep -q '## 1.0.0-rc.68 - 2026-08-08' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,15 +23,16 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0115`' docs/implementation-status.md
-grep -q 'Last completed step: `9.11`' docs/implementation-status.md
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — ACTIONS UX CI CORRECTION APPLIED`' docs/implementation-status.md
+grep -q 'Repository revision: `r0116`' docs/implementation-status.md
+grep -q 'Last completed step: `9.12`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — GITIGNORE/REVIEW UX CORRECTION APPLIED`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
 grep -q 'ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES=209715200' .env.example
 test -s docs/step-9.11-report.md
 test -s docs/rc67-frontend-actions-panel-ci-correction.md
+test -s docs/step-9.12-report.md
 test -s frontend/src/components/ActionsPanel.tsx
 test -s frontend/src/components/ActionsControls.tsx
 test -s frontend/src/components/ActionsPanel.test.tsx
@@ -64,6 +65,7 @@ grep -q '| `9.5` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `9.6` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `9.7` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `9.11` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `9.12` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q 'Fas 9 - Shortcut och kortlivad StagingImport' docs/implementation-steps.md
 grep -q 'Framtida backlog - AI- och integrationsyta' docs/implementation-steps.md
 test -s docs/phase8-plus-continuation-handoff.md
@@ -134,7 +136,7 @@ grep -q 'ImportSource.STORED_UPLOAD' backend/src/main/java/info/isaksson/erland/
 grep -q 'class AlternativeZipIngestionRegressionTest' backend/src/test/java/info/isaksson/erland/zipgithub/application/AlternativeZipIngestionRegressionTest.java
 grep -q 'browserAndStoredZipProduceEquivalentInventoryPolicyAndPlanEntries' backend/src/test/java/info/isaksson/erland/zipgithub/application/AlternativeZipIngestionRegressionTest.java
 grep -q 'Alternative ingestion convergence (step 7.14)' docs/architecture.md
-grep -q 'POLICY_VERSION = "mvp-3"' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java
+grep -q 'POLICY_VERSION = "mvp-4"' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java
 grep -q 'unchangedWorkflowDoesNotRequireOverrideButActualWorkflowChangesDo' backend/src/test/java/info/isaksson/erland/zipgithub/policy/ImportPolicyServiceTest.java
 grep -q '@Path("/{importId}/prepare-review")' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
 grep -q 'prepareImportReview' frontend/src/pages/NewImportPage.tsx
@@ -314,7 +316,11 @@ grep -Fxq 'version=1' shortcut/releases/release-manifest.txt
 grep -Fxq 'generation=g1' shortcut/releases/release-manifest.txt
 grep -Fxq 'size_bytes=23821' shortcut/releases/release-manifest.txt
 grep -Fxq 'sha256=21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a' shortcut/releases/release-manifest.txt
-grep -q 'SIGNED_SHORTCUT_SECRET_ARTIFACT' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java
+grep -q 'GITIGNORE_IGNORED' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java
+! grep -q 'SIGNED_SHORTCUT_SECRET_ARTIFACT' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java
+grep -q 'GitIgnoreMatcher' backend/src/main/java/info/isaksson/erland/zipgithub/comparison/ImportComparisonService.java
+grep -q 'gitIgnoreFiles' backend/src/main/java/info/isaksson/erland/zipgithub/snapshot/RepositorySnapshot.java
+grep -Fq '{candidate.label} ({filterCount(plan, candidate.id)})' frontend/src/pages/ImportReviewPage.tsx
 grep -q 'ZIP_GITHUB_SHORTCUT_VERSION:-1' docker-compose.yml
 grep -q 'ZIP_GITHUB_SHORTCUT_GENERATION:-g1' docker-compose.yml
 grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **DONE**' docs/implementation-status.md

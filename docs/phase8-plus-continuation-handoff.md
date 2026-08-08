@@ -2,7 +2,7 @@
 
 > **Planning refinement r0105 / 1.0.0-rc.57:** Phase 9.7 now explicitly requires the authenticated Shortcut download to expose `Skicka till zip-github.shortcut` via `Content-Disposition` and requires deployment verification that the backend runtime user can read the signed bind-mounted artifact (avoiding the observed `0600` failure). The same checks are included in the final 9.10 E2E gate. No 9.8 implementation has started.
 
-> **Signed Shortcut integration r0103 / 1.0.0-rc.55:** The operator-provided Apple-signed reference Shortcut is now included in the deployment bundle at `shortcut/releases/zip-github.shortcut` (version 1 / g1, SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`). The file is gitignored and hard-blocked from ordinary Import delivery to prevent credential leakage. Step 9.7 is now blocked only on deploying this bundle, downloading the artifact through authenticated `/shortcut`, and confirming that exact served copy installs on iOS.
+> **Signed Shortcut integration r0103 / 1.0.0-rc.55:** The operator-provided Apple-signed reference Shortcut is now included in the deployment bundle at `shortcut/releases/zip-github.shortcut` (version 1 / g1, SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`). The file is gitignored; import review evaluates repository `.gitignore` rules generically and excludes matching untracked files from delivery without a Shortcut-specific hard block. Step 9.7 is now blocked only on deploying this bundle, downloading the artifact through authenticated `/shortcut`, and confirming that exact served copy installs on iOS.
 
 # Continuation handoff — phase 8 and later
 
@@ -228,7 +228,7 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 
 ## Phase 9 current position — r0115
 
-The zip-github runtime side of signed Shortcut distribution is implemented and r0103 now carries the operator-provided signed `.shortcut` in the deployment bundle. The binary embeds the deployment staging credential, so it remains gitignored and is hard-blocked from ordinary Import delivery.
+The zip-github runtime side of signed Shortcut distribution is implemented and r0103 now carries the operator-provided signed `.shortcut` in the deployment bundle. The binary embeds the deployment staging credential, so it remains gitignored. Since 9.12, ordinary Import review applies the repository `.gitignore` generically and marks the untracked artifact ignored/non-selectable instead of using a Shortcut-specific hard block.
 
 9.7 is **DONE**. The operator-provided Apple-signed artifact is published as `shortcut/releases/zip-github.shortcut`; the authenticated `/shortcut` download was exercised and the downloaded copy imported on iPhone. The technical server filename is decoupled from the user-facing download filename, and the standard deployment mode is runtime-readable. Steps 9.8 and 9.9 are DONE; 9.10 is NEXT.
 

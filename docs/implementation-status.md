@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0115`
-- Last completed step: `9.11`
+- Repository revision: `r0116`
+- Last completed step: `9.12`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — ACTIONS UX CI CORRECTION APPLIED`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — GITIGNORE/REVIEW UX CORRECTION APPLIED`
 
 ## Step ledger
 
@@ -96,11 +96,13 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.9` | Fas 9 — Work/GitHub visibility | Actions-status och kopierbara fel på Work-sidan | **DONE** | 2026-08-08 | `docs/step-9.9-report.md` |
 | `9.10` | Fas 9 — regression/release | E2E-regression, drift och slutlig releasegrind | **DONE** | 2026-08-08 | `docs/step-9.10-report.md` |
 | `9.11` | Fas 9 — Actions correction | Actions-visibilitet, gemensam Work/commit-vy och utökad feldiagnostik | **DONE** | 2026-08-08 | `docs/step-9.11-report.md` |
+| `9.12` | Fas 9 — Import/review correction | Repository `.gitignore` i importplan och tydligare review-filter | **DONE** | 2026-08-08 | `docs/step-9.12-report.md` |
 
 ## Revision history
 
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
+| `r0116` | 2026-08-08 | `9.12` gitignore/review UX correction | Repository `.gitignore` now classifies untracked ZIP paths as non-selectable warnings, removes Shortcut filename special-casing and simplifies duplicated review summary/filter affordances | `none` |
 | `r0115` | 2026-08-08 | Frontend ActionsPanel CI correction after `9.11` | Prevented runtime crash for partial/legacy workflow payloads without `headSha`; no backend behavior or phase state changed | `none` |
 | `r0114` | 2026-08-08 | `9.11` Actions visibility/diagnostics correction | Shared Work/result Actions UI, explicit permission diagnostics, resilient run/jobs/check handling and bounded contextual job logs | `none` |
 | `r0109` | 2026-08-08 | `9.10` final phase-9 E2E/release gate | Cross-step phase-9 release script, signed Shortcut manifest/hash/readability checks, operations/security/API/release documentation audit; active implementation plan complete | `none` |

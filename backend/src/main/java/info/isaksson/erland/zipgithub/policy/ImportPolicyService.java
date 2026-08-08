@@ -16,7 +16,7 @@ import java.util.Set;
 /** Applies the deterministic MVP import policy without mutating either source inventory. */
 @ApplicationScoped
 public class ImportPolicyService {
-    public static final String POLICY_VERSION = "mvp-3";
+    public static final String POLICY_VERSION = "mvp-4";
     private static final Set<String> PRIVATE_KEY_FILENAMES = Set.of(
             "id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", "identity", "credentials.json", "service-account.json");
 
@@ -57,9 +57,9 @@ public class ImportPolicyService {
         if (lower.equals(".git") || lower.startsWith(".git/")) {
             return hardBlocked(entry, "GIT_METADATA_PROTECTED", "Git repository metadata may never be imported or selected.");
         }
-        if (lower.equals("shortcut/releases/zip-github.shortcut")) {
-            return hardBlocked(entry, "SIGNED_SHORTCUT_SECRET_ARTIFACT",
-                    "The signed deployment Shortcut embeds the staging upload credential and may never be committed to Git.");
+        if (entry.status() == ImportFileStatus.IGNORED) {
+            return from(entry, ImportFileStatus.IGNORED, ImportPolicySeverity.WARNING, ImportPolicyBlockerType.NONE,
+                    "GITIGNORE_IGNORED", "Filen matchar repositoryts .gitignore och kommer inte att tas med i Git-committen.");
         }
         if ((lower.equals(".github") || lower.startsWith(".github/")) && isRepositoryChange(entry.status())) {
             return overridableBlocked(entry, "GITHUB_WORKFLOW_PROTECTED", "Changes under .github/** are excluded by default and require explicit override before inclusion.");

@@ -614,6 +614,18 @@ Fas 9 ska samtidigt täppa till metadataförlust som kan uppstå i ZIP→GitHub-
 
 **Kvalitetsgrind för 9.11:** en exakt matchande push-run får inte döljas av sekundära GitHub API-fel; permissionsproblem är diagnostiserbara; Work- och commit/resultatvyn använder samma Actions-komponent och samma kontroller; felvisningen innehåller både säkert kondenserat fel, användbart föregående sammanhang och bounded/sanerad jobblogg.
 
+## Steg 9.12 - Repository `.gitignore` i importplan och tydligare review-filter
+
+- Läs de `.gitignore`-filer som är spårade i den låsta repository-snapshoten och använd deras regler när nya ZIP-paths klassificeras.
+- En path som inte redan är spårad och som matchar repositoryts `.gitignore` ska få status `IGNORED`, visas som en informations-/varningspost och aldrig ingå i default selection eller kunna väljas för commit. Ingen override eller särskild acknowledgement ska krävas.
+- Redan spårade Git-paths ska fortfarande jämföras normalt även om en `.gitignore`-regel matchar dem; `.gitignore` får inte göra en tracked modification osynlig.
+- `.git/**` ska fortsätta vara hårt blockerad oberoende av `.gitignore`. Övriga säkerhets-/policyregler ska inte innehålla projektspecifika filnamn för zip-githubs egen signerade Shortcut.
+- Ta bort den exakta `shortcut/releases/zip-github.shortcut`-specialregeln. Skyddet för den deploymentartefakten ska i stället följa repositoryts generella `/shortcut/releases/*.shortcut`-regel i `.gitignore`.
+- Förenkla review-UI:t så sammanfattningen högst upp är neutral information, inte en andra uppsättning kort/knappar som liknar filtren. Behåll ett enda tydligt filterområde nära fillistan och visa kategoriernas antal där.
+- Lägg regression för root/nested `.gitignore`, negation (`!`), tracked-file-semantik, signerad Shortcut som vanlig ignored path samt review-UI utan duplicerade knapp-liknande sammanfattningskontroller.
+
+**Kvalitetsgrind för 9.12:** en ny ZIP-fil som Git skulle ignorera får inte bli blockerande eller valbar; tracked paths försvinner inte på grund av ignore; `.git/**` förblir hard-blocked; ingen produktionspolicy specialbehandlar zip-githubs Shortcut-filnamn; review-sidan har endast ett klickbart filterområde.
+
 # Framtida backlog - AI- och integrationsyta
 
 Det tidigare steg 8.4 flyttas uttryckligen utanför den aktiva fasplanen. Det ska omprövas först efter verklig användning av Actions- och Shortcut-flödena.

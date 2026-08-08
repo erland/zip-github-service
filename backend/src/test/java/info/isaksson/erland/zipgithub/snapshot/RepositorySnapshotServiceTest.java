@@ -24,6 +24,7 @@ class RepositorySnapshotServiceTest {
         git(source, "config", "user.name", "Snapshot Test");
         git(source, "config", "user.email", "snapshot@example.invalid");
         Files.writeString(source.resolve("README.md"), "hello\n");
+        Files.writeString(source.resolve(".gitignore"), "/shortcut/releases/*.shortcut\n*.log\n");
         Files.createDirectories(source.resolve("src"));
         Files.writeString(source.resolve("src/App.java"), "class App {}\n");
         git(source, "add", ".");
@@ -39,9 +40,11 @@ class RepositorySnapshotServiceTest {
 
         assertEquals(expectedSha, snapshot.baseCommitSha());
         assertEquals("main", snapshot.branch());
-        assertEquals(2, snapshot.entries().size());
-        assertEquals("README.md", snapshot.entries().get(0).path());
-        assertEquals("src/App.java", snapshot.entries().get(1).path());
+        assertEquals(3, snapshot.entries().size());
+        assertEquals(".gitignore", snapshot.entries().get(0).path());
+        assertEquals("README.md", snapshot.entries().get(1).path());
+        assertEquals("src/App.java", snapshot.entries().get(2).path());
+        assertEquals("/shortcut/releases/*.shortcut\n*.log\n", snapshot.gitIgnoreFiles().get(".gitignore"));
         assertTrue(snapshot.entries().stream().allMatch(entry -> entry.objectType().equals("blob")));
         assertTrue(snapshot.entries().stream().allMatch(entry -> entry.sha256() != null && entry.sha256().matches("[0-9a-f]{64}")));
         assertFalse(Files.exists(temp.resolve("workspaces").resolve(importId.toString())), "temporary workspace must be deleted");

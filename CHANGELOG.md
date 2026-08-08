@@ -1,3 +1,11 @@
+## 1.0.0-rc.68 - 2026-08-08
+
+- Added corrective step 9.12 so import planning evaluates the target repository's tracked `.gitignore` files before policy classification.
+- New ZIP paths ignored by Git are now informational warnings (`GITIGNORE_IGNORED`) rather than blockers; they are never selectable and require no override or acknowledgement.
+- Removed the project-specific `shortcut/releases/zip-github.shortcut` hard block. The signed Shortcut remains protected generically by the repository `.gitignore`; `.git/**` stays hard-blocked independently of ignore rules.
+- Preserved tracked-file semantics: an already tracked repository path is still compared normally even if a `.gitignore` rule matches it.
+- Simplified the review summary to one neutral statistics strip and kept one explicit filter-control row, with counts on the actual filter buttons.
+
 ## 1.0.0-rc.67 - 2026-08-08
 
 - Corrected the shared ActionsPanel runtime crash observed by GitHub Actions frontend CI when legacy/partial workflow payloads omitted `headSha`.

@@ -4,7 +4,7 @@ Step 4.3 introduced deterministic policy evaluation after archive normalization 
 
 ## Policy version
 
-The flexible-review policy is identified as `mvp-3`. The version is returned by the API and is included in the immutable plan digest so approval can always be tied to the exact rules that were applied.
+The flexible-review policy is identified as `mvp-4`. The version is returned by the API and is included in the immutable plan digest so approval can always be tied to the exact rules that were applied.
 
 ## Outcomes and blocker types
 
@@ -53,3 +53,8 @@ The high-risk-secret hard-block rule remains filename based. Content scanning fo
 - locked base SHA and policy version.
 
 The plan digest includes `blockerType`, so changing blocker classification changes the immutable plan identity.
+
+
+## Repository `.gitignore`
+
+Before policy classification, the comparison uses the `.gitignore` files captured from the exact locked repository commit. New ZIP paths that match those rules are classified `IGNORED`; the policy exposes them with severity `WARNING`, blocker type `NONE` and code `GITIGNORE_IGNORED`. They are informational and cannot be selected, so no override is required. Existing tracked repository paths are never hidden by `.gitignore`. `.git/**` remains hard-blocked independently of ignore rules.

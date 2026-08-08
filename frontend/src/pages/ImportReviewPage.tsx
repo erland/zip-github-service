@@ -206,15 +206,15 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
         <span className="status-badge">{plan.status}</span>
       </div>
 
-      <dl className="review-summary" aria-label="Sammanfattning av importplanen">
-        <SummaryItem label="Tillagda" value={plan.added} status="added" />
-        <SummaryItem label="Ändrade" value={plan.modified} status="modified" />
-        <SummaryItem label="Hårt blockerade" value={plan.hardBlocked} status="blocked" />
-        <SummaryItem label="Överstyrbara" value={plan.overridableBlocked} status="blocked" />
-        <SummaryItem label="Varningar" value={plan.warnings} status="warning" />
-        <SummaryItem label="Oförändrade" value={plan.unchanged} status="unchanged" />
-        <SummaryItem label="Ignorerade" value={plan.ignored} status="ignored" />
-      </dl>
+      <div className="review-summary" aria-label="Sammanfattning av importplanen">
+        <span><strong>{plan.added}</strong> tillagda</span>
+        <span><strong>{plan.modified}</strong> ändrade</span>
+        <span><strong>{plan.hardBlocked}</strong> hårt blockerade</span>
+        <span><strong>{plan.overridableBlocked}</strong> överstyrbara</span>
+        <span><strong>{plan.warnings}</strong> varningar</span>
+        <span><strong>{plan.unchanged}</strong> oförändrade</span>
+        <span><strong>{plan.ignored}</strong> ignorerade</span>
+      </div>
 
       <details className="plan-identity">
         <summary>Planidentitet och låst GitHub-version</summary>
@@ -235,7 +235,7 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
             aria-pressed={filter === candidate.id}
             onClick={() => setFilter(candidate.id)}
           >
-            {candidate.label}
+            {candidate.label} ({filterCount(plan, candidate.id)})
           </button>
         ))}
       </div>
@@ -317,8 +317,13 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
   );
 }
 
-function SummaryItem({ label, value, status }: { label: string; value: number; status: string }) {
-  return <div className={`summary-card summary-card--${status}`}><dt>{label}</dt><dd>{value}</dd></div>;
+function filterCount(plan: ImportPlanResponse, filter: ReviewFilter): number {
+  if (filter === 'CHANGES') return plan.added + plan.modified;
+  if (filter === 'BLOCKED') return plan.blocked;
+  if (filter === 'WARNINGS') return plan.warnings;
+  if (filter === 'UNCHANGED') return plan.unchanged;
+  if (filter === 'IGNORED') return plan.ignored;
+  return plan.entries.length;
 }
 
 function matchesFilter(entry: ImportPlanEntry, filter: ReviewFilter): boolean {

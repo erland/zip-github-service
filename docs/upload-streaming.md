@@ -43,7 +43,7 @@ Two compressed-size checks are used:
 1. A positive `Content-Length` above the configured maximum is rejected before storage begins.
 2. The number of bytes actually read is counted and the upload is aborted as soon as it exceeds the maximum. This remains authoritative when `Content-Length` is absent or incorrect.
 
-The initial default maximum is 100 MiB (`104857600` bytes). The same configured maximum is used by the neutral ingestion primitive regardless of the future source channel.
+The deployment default maximum is 200 MiB (`209715200` bytes). The same configured maximum is used by the neutral ingestion primitive regardless of the future source channel.
 
 ## Atomic completion and cleanup
 
@@ -66,9 +66,10 @@ while retaining the neutral artifact metadata. Only safe metadata is returned to
 
 - `ZIP_GITHUB_UPLOAD_STORAGE_ROOT`
 - `ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES`
+- `ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE` (frontend-container proxy request-body limit; defaults to `200M`)
 - `ZIP_GITHUB_UPLOAD_RETENTION_HOURS`
 
-No new configuration is required by step 7.11.
+The frontend nginx proxy has a separate request-body ceiling (`ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE`, default `200M`) so proxy and backend limits can be coordinated explicitly.
 
 ## Scope boundary
 

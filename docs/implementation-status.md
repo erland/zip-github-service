@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0112`
+- Repository revision: `r0113`
 - Last completed step: `9.10`
 - Next step: `none` — implementation plan complete
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE`
@@ -103,6 +103,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0109` | 2026-08-08 | `9.10` final phase-9 E2E/release gate | Cross-step phase-9 release script, signed Shortcut manifest/hash/readability checks, operations/security/API/release documentation audit; active implementation plan complete | `none` |
 | `r0110` | 2026-08-08 | Frontend CI correction after phase 9 completion | Updated stale routing/SHA/clipboard frontend tests to the 9.8/9.9 UI contract; no production behavior or phase state changed | `none` |
 | `r0111` | 2026-08-08 | Final frontend CI test correction after phase 9 completion | Scoped the degraded Work-history fallback assertion to its exact message after Actions introduced a second legitimate live-status region; no production behavior changed | `none` |
+| `r0113` | 2026-08-08 | Container upload-limit production correction | Added explicit runtime-configurable frontend nginx body-size limit and aligned deployment/backend defaults to 200 MiB so nginx no longer rejects >1 MB ZIPs before Quarkus | `none` |
 | `r0112` | 2026-08-08 | Work Actions visibility production correction | Isolated workflow-run retrieval from optional check-run retrieval so Checks permission/transient failures cannot hide matching Actions runs; added concrete regression for got-test-repo run 31258714926 | `none` |
 | `r0001` | 2026-08-06 | Documentation package created | Documentation conversion/package only | `0.1` |
 | `r0002` | 2026-08-06 | `0.1` Legacy project unpacked and inventoried | Structural inspection; no builds or tests run by design | `0.2` |

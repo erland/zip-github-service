@@ -1,3 +1,10 @@
+## 1.0.0-rc.65 - 2026-08-08
+
+- Fixed HTTP 413 for ZIP uploads above nginx's 1 MB default by giving the frontend proxy an explicit runtime-configurable `client_max_body_size`.
+- Added `ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE` with a `200M` container/Compose default and switched frontend nginx config to the official runtime template path.
+- Aligned the backend compressed-upload default and `.env.example` to 200 MiB (`209715200` bytes); backend streaming enforcement remains authoritative.
+- Phase 9 remains complete; this is a post-phase deployment correction.
+
 ## 1.0.0-rc.64 - 2026-08-08
 
 - Fixed Work GitHub Actions visibility so a failure reading commit check-runs no longer discards successfully fetched workflow runs/jobs.

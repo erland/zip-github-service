@@ -1,4 +1,4 @@
-> **Current handoff r0112 / 1.0.0-rc.64:** Phase 9 is complete. r0112 is a final frontend CI test correction only; no product behavior or implementation-step state changed.
+> **Current handoff r0113 / 1.0.0-rc.65:** Phase 9 is complete. r0113 is a deployment correction for frontend-nginx upload body size; no implementation-step state changed.
 
 > **Planning refinement r0105 / 1.0.0-rc.57:** Phase 9.7 now explicitly requires the authenticated Shortcut download to expose `Skicka till zip-github.shortcut` via `Content-Disposition` and requires deployment verification that the backend runtime user can read the signed bind-mounted artifact (avoiding the observed `0600` failure). The same checks are included in the final 9.10 E2E gate. No 9.8 implementation has started.
 
@@ -10,8 +10,8 @@
 
 
 Date: 8 August 2026  
-Repository revision: r0112  
-Application version: 1.0.0-rc.64  
+Repository revision: r0113  
+Application version: 1.0.0-rc.65  
 Last completed implementation step: 9.7  
 Current position: 9.8 NEXT — Work lifecycle, project lifecycle and robust branch provisioning
 
@@ -214,7 +214,7 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 
 ## Release/packaging discipline
 
-- Application version is `1.0.0-rc.64`; repository revision is r0112. Phase 9 is complete; r0112 only scopes the final degraded-history frontend test to the exact fallback message now that the page legitimately contains multiple live-status regions.
+- Application version is `1.0.0-rc.65`; repository revision is r0113. Phase 9 is complete; r0113 fixes the frontend nginx request-body limit so uploads up to the configured 200M proxy/default backend limit can reach Quarkus.
 - Steps 9.1–9.9 are complete. The signed Shortcut is device-verified, Work lifecycle uses verified GitHub branches, and Actions status/failures are revisitable from the active Work view. Step 9.10 is NEXT.
 - Keep exactly one `NEXT` step in `docs/implementation-status.md`.
 - Every delivered ZIP must include one top-level `zip-github/` folder.
@@ -226,7 +226,7 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 - Advanced three-way/provenance detection for ZIPs created from older repository state is backlog; ordinary ZIPs are not required to contain zip-github metadata.
 - Horizontal backend scaling remains unsupported until shared/persistent coordination is designed for all required runtime locks/state.
 
-## Phase 9 current position — r0112
+## Phase 9 current position — r0113
 
 The zip-github runtime side of signed Shortcut distribution is implemented and r0103 now carries the operator-provided signed `.shortcut` in the deployment bundle. The binary embeds the deployment staging credential, so it remains gitignored and is hard-blocked from ordinary Import delivery.
 
@@ -247,6 +247,10 @@ The active Work view now exposes exact-head GitHub Actions status/details using 
 
 Step 9.10 completed the final cross-step regression/release gate. Phase 9 is complete and the active implementation ledger has no NEXT step. The signed Shortcut has real iPhone download/import evidence; Work provisioning is remote-verified before ACTIVE; delivery fails closed on missing/stale Work branches; Actions diagnostics are revisitable and commit-bound. Future AI/integration items remain a separate backlog, not an automatic continuation step.
 
+
+### r0113 container upload-limit correction
+
+The frontend nginx container now renders `client_max_body_size` from `ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE` (default `200M`). This removes nginx's implicit 1 MB request-body ceiling. The backend compressed upload default is aligned to 200 MiB and remains the authoritative byte-level limit.
 
 ### r0112 Actions visibility correction
 Work Actions status now preserves successfully fetched workflow runs/jobs if the separate commit check-runs request fails (for example due to Checks permission drift or a transient GitHub error). This was verified against the shape of got-test-repo run `31258714926` at commit `f3689dfd3b5f011e2ba04d56e3a5f50b4bc97e69`.

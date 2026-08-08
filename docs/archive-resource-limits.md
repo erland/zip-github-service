@@ -7,7 +7,7 @@ The archive is still never executed.
 
 | Limit | Default |
 |---|---:|
-| Compressed ZIP | 100 MiB |
+| Compressed ZIP | 200 MiB |
 | Total uncompressed content | 500 MiB |
 | Entries | 20,000 |
 | One regular file | 50 MiB |

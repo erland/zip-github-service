@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.64"
+expected_version="1.0.0-rc.65"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.64 - 2026-08-08' CHANGELOG.md
+grep -q '## 1.0.0-rc.65 - 2026-08-08' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,9 +23,13 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0112`' docs/implementation-status.md
+grep -q 'Repository revision: `r0113`' docs/implementation-status.md
 grep -q 'Last completed step: `9.10`' docs/implementation-status.md
 grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE`' docs/implementation-status.md
+grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
+grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
+grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
+grep -q 'ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES=209715200' .env.example
 grep -q '| `7.9` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.10` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.11` .*\*\*DONE\*\*' docs/implementation-status.md

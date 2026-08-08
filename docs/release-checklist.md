@@ -19,6 +19,7 @@ This checklist separates repository-complete controls from environment-dependent
 - [x] Automated regressions cover mixed trees, partial selection, empty selection, overrides, hard blockers and stale work-branch movement.
 - [x] Draft pull request creation is idempotent and recoverable.
 - [x] CSRF, restricted CORS, security headers and rate limiting are present.
+- [x] Phase 9 staging-create uses a separate deny-all-by-default deployment credential, exact POST-only CSRF exemption, 256-bit hash-only claim tokens and no anonymous list/read endpoint.
 - [x] Docker Compose does not mount the Docker socket.
 - [x] CI builds backend and frontend container images after tests succeed.
 - [ ] GHCR backend and frontend images publish successfully from the release commit.
@@ -104,3 +105,72 @@ Production version `1.0.0` may be created only when every external acceptance it
 - [ ] An allowlisted failed run can rerun failed jobs; non-failed/unlisted/other-SHA/other-branch runs are rejected.
 - [ ] Duplicate requests using one idempotency key create at most one GitHub-side write and persist one owner-bound audit record.
 - [ ] An old result tab becomes read-only after another import advances Work or the Work is finalized.
+
+## Phase 9 step 9.1 gate
+
+- [x] StagingImport lifecycle is durable and restart-safe.
+- [x] Only claim-token SHA-256 is persisted; no raw claim token is stored.
+- [x] Claim/promotion concurrency and idempotency rules are explicit.
+- [x] Neutral stored-upload metadata can carry `100644`/`100755` without filename inference.
+- [x] No anonymous staging API or GitHub authority was introduced in step 9.1.
+
+
+## Phase 9 step 9.2 gate
+
+- [x] Staging create is protected only by the dedicated deployment-scoped upload credential.
+- [x] Raw claim token is returned once and only its SHA-256 is persisted.
+- [x] No anonymous staging list/read/download route exists.
+- [x] Capability staging-create is the only explicit CSRF exemption.
+
+## Phase 9 step 9.3 gate
+
+- [x] Claim token is captured from URL fragment into same-tab sessionStorage and the fragment is removed.
+- [x] OAuth continuation carries only `/staging/claim`, never the claim token.
+- [x] Claim requires the normal authenticated session and existing same-origin CSRF protection.
+- [x] Ownership is bound atomically under a row lock and same-owner retry is idempotent.
+- [x] Wrong, expired, taken and terminal claims share one neutral 410 response.
+- [x] Claim creates no Project selection, ordinary Import or GitHub side effect.
+
+## Phase 9 step 9.4 acceptance
+
+- [x] Claimed staging state can be read only by its authenticated owner.
+- [x] Project selection uses only ordinary owner-scoped active Projects.
+- [x] Promotion reuses the stored ZIP and ordinary Import pipeline; no anonymous/staging-specific Git path exists.
+- [x] Promotion recovery is restart-safe through a persisted non-secret staging source reference and converges on one Import.
+- [x] Existing `ACTIVE_IMPORT_EXISTS`, inactive Project and Work guards remain authoritative.
+- [x] Trustworthy ZIP executable metadata is captured for browser and staging uploads without filename inference.
+- [x] Existing files with missing ZIP mode metadata preserve base-repository `100644`/`100755`; new files default to `100644`.
+- [x] Mode-only changes are visible/reviewable and included in the immutable plan digest.
+- [x] Only selected paths receive approved modes and staged Git index modes are verified before commit.
+
+
+## Phase 9 step 9.5 acceptance
+
+- [x] Browser and StagingImport reviews share one editable commit-message field; generated text is only a suggestion.
+- [x] Interactive approval requires a non-empty server-normalized message capped at 500 characters and rejects unsupported control characters.
+- [x] Commit message is persisted in restart-safe approval state and returned by approval recovery.
+- [x] A recorded approval cannot be silently reused with a different commit message.
+- [x] Delivery uses the approval-bound message and retry/restart does not regenerate it.
+- [x] Legacy/internal approval data without the new field has a documented deterministic compatibility fallback.
+
+## Phase 9.6 staging retention gate
+
+- [x] AVAILABLE and CLAIMED have separate configurable short deadlines.
+- [x] Expired/terminal staging artifacts are physically deleted with restart-safe retry markers.
+- [x] Promotion and cleanup coordinate through database row locks; promoted artifacts are not staging-deleted.
+- [x] Live staging object/byte quotas are enforced under serialized database accounting.
+- [x] Per-capability/global rate limits remain; network-source limiting is opt-in only behind trusted forwarded headers.
+- [x] Upload credential can be revoked/rotated without database migration or GitHub credential rotation.
+- [x] Existing staging rows keep independent claim/TTL semantics across upload-credential rotation.
+- [ ] Full Maven/JUnit/Quarkus suite to be confirmed by normal CI because sandbox Maven bootstrap was network-blocked.
+
+## Phase 9 step 9.7 signed Shortcut gate
+
+- [x] Authenticated release metadata/download endpoints exist and never synthesize an unsigned fallback.
+- [x] `/shortcut` provides an authenticated mobile installation/update page and reports unpublished state safely.
+- [x] Signed Shortcut bytes are deployment artifacts ignored by Git and mounted read-only in Compose.
+- [x] Old/revoked staging credentials return the explicit `STAGING_SHORTCUT_OUTDATED` update path.
+- [x] Manual trusted-Mac export/sign/publish and credential rotation procedures are documented.
+- [ ] A real reference Shortcut has been created in Apple Shortcuts with the documented flow and deployment credential.
+- [ ] The reference Shortcut has been signed for `anyone` from an iCloud-signed-in trusted Apple environment and published as `shortcut/releases/zip-github.shortcut`.
+- [ ] The published signed artifact has been downloaded from `/shortcut` and accepted for installation on iOS. This remains the external blocker before 9.7 can be marked DONE.

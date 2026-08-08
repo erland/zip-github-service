@@ -1,7 +1,7 @@
 # Implementation status — zip-github
 
 Version 1.0  
-Updated: 7 August 2026
+Updated: 8 August 2026
 
 ## Purpose
 
@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0089`
-- Last completed step: `8.3`
-- Next step: `9.1`
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 8 COMPLETE`
+- Repository revision: `r0099`
+- Last completed step: `9.6`
+- Next step: blocked at `9.7`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 BLOCKED ON SIGNED SHORTCUT ARTIFACT`
 
 ## Step ledger
 
@@ -85,13 +85,14 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `8.2` | Fas 8 — efter MVP: integrerade Actions-resultat | Artifacts och kondenserade fel | **DONE** | 2026-08-07 | `docs/actions-artifacts-and-condensed-errors.md`, `docs/step-8.2-report.md` |
 | `8.3` | Fas 8 — efter MVP: integrerade Actions-resultat | Kontrollerad workflow dispatch och omkörning | **DONE** | 2026-08-07 | `docs/controlled-workflow-actions.md`, `docs/step-8.3-report.md` |
 | `8.4` | Fas 8 — tidigare plan | AI- och integrationsyta — flyttad till framtida backlog | **SKIPPED** | 2026-08-07 | `docs/r0084-phase8-9-handoff-planning.md` |
-| `9.1` | Fas 9 — Shortcut/StagingImport | Definiera och persistiera StagingImport-livscykeln | **NEXT** | — | — |
-| `9.2` | Fas 9 — Shortcut/StagingImport | Capability-skyddad staging-upload | **PENDING** | — | — |
-| `9.3` | Fas 9 — Shortcut/StagingImport | Autentiserad claim från webbläsaren | **PENDING** | — | — |
-| `9.4` | Fas 9 — Shortcut/StagingImport | Projektval och promotion till vanlig Import | **PENDING** | — | — |
-| `9.5` | Fas 9 — Shortcut/StagingImport | Retention, abuse-skydd och säkerhetsregression | **PENDING** | — | — |
-| `9.6` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **PENDING** | — | — |
-| `9.7` | Fas 9 — Shortcut/StagingImport | E2E-regression, drift och releasegrind | **PENDING** | — | — |
+| `9.1` | Fas 9 — Shortcut/StagingImport | Definiera och persistiera StagingImport-livscykeln | **DONE** | 2026-08-08 | `docs/staging-import-lifecycle.md`, `docs/step-9.1-report.md` |
+| `9.2` | Fas 9 — Shortcut/StagingImport | Capability-skyddad staging-upload | **DONE** | 2026-08-08 | `docs/staging-upload.md`, `docs/step-9.2-report.md` |
+| `9.3` | Fas 9 — Shortcut/StagingImport | Autentiserad claim från webbläsaren | **DONE** | 2026-08-08 | `docs/staging-claim.md`, `docs/step-9.3-report.md` |
+| `9.4` | Fas 9 — Shortcut/StagingImport | Projektval och promotion till vanlig Import | **DONE** | 2026-08-08 | `docs/staging-promotion.md`, `docs/step-9.4-report.md` |
+| `9.5` | Fas 9 — gemensam commit UX | Användarstyrt commitmeddelande i approval/delivery | **DONE** | 2026-08-08 | `docs/user-controlled-commit-message.md`, `docs/step-9.5-report.md` |
+| `9.6` | Fas 9 — Shortcut/StagingImport | Retention, abuse-skydd och säkerhetsregression | **DONE** | 2026-08-08 | `docs/staging-retention-and-abuse.md`, `docs/step-9.6-report.md` |
+| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **BLOCKED** | — | `docs/signed-shortcut-release.md`, `docs/step-9.7-report.md` |
+| `9.8` | Fas 9 — Shortcut/StagingImport | E2E-regression, drift och releasegrind | **PENDING** | — | — |
 
 ## Revision history
 
@@ -225,3 +226,17 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0087` | 2026-08-07 | Step 8.3 | Added default-deny controlled workflow dispatch/failed-job rerun with exact Work guards, audit and idempotency; phase 8 complete | `9.1` |
 | `r0088` | 2026-08-07 | RC43 CI correction | Made CI shell entrypoints executable-bit-independent, fixed GitHub Actions permission lookup compilation and scoped the controlled-Actions frontend regression | `9.1` |
 | `r0089` | 2026-08-07 | RC44 CI correction | Made empty Actions allowlists Quarkus-safe while preserving deny-all defaults and removed nested executable-bit assumptions from release verification | `9.1` |
+
+| `r0090` | 2026-08-08 | Phase 9 file-mode planning refinement | Assigned deterministic Git file-mode preservation across 9.1/9.4/9.7; application version unchanged | `9.1` |
+| `r0091` | 2026-08-08 | Phase 9 commit-message planning refinement | Added dedicated step 9.5 for user-controlled, persisted, approval-bound commit messages and renumbered later phase-9 steps; application version unchanged | `9.1` |
+| `r0092` | 2026-08-08 | Phase 9 Shortcut distribution/security planning refinement | Locked static pre-signed Shortcut distribution, deployment-scoped low-privilege upload credential, immediate revoke/replacement flow and no hosted-Actions signing dependency; application version unchanged | `9.1` |
+
+| `r0093` | 2026-08-08 | Step 9.1 | Added durable StagingImport lifecycle/persistence, hashed claim-token state and neutral Git file-mode metadata representation | `9.2` |
+
+| `r0094` | 2026-08-08 | Step 9.2 | Added low-privilege capability staging-create endpoint, hash-only 256-bit claim tokens, exact CSRF boundary and dedicated rate limiting | `9.3` |
+
+| `r0095` | 2026-08-08 | Step 9.3 | Added authenticated fragment-preserving browser claim, atomic owner binding, neutral unavailable responses and same-owner retry | `9.4` |
+| `r0096` | 2026-08-08 | Step 9.4 | Added owner-scoped project selection, restart-safe ordinary Import promotion and approval-bound Git file-mode preservation | `9.5` |
+| `r0097` | 2026-08-08 | Step 9.5 | Added user-controlled, persisted and approval-bound commit messages shared by browser and staging imports | `9.6` |
+| `r0098` | 2026-08-08 | Step 9.6 | Added deterministic staging retention, quota/abuse controls, DB-coordinated promotion cleanup and credential-rotation guidance | `9.7` |
+| `r0099` | 2026-08-08 | `9.7` implementation complete except external Apple signing/install gate; status BLOCKED | Repository/static/self-test verification; signed artifact unavailable in this environment | blocked at `9.7` |

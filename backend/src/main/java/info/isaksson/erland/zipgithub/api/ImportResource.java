@@ -119,13 +119,14 @@ public class ImportResource {
         var sources = service.comparisonSources(ownerUserId, importId);
         try {
             var archive = archiveInventories.createInventory(sources.upload().storagePath());
-            var comparison = comparisons.compare(archive, sources.snapshot());
+            var comparison = comparisons.compare(archive, sources.snapshot(), sources.upload().fileModes());
             return new ImportComparisonResponse(comparison.importId(), comparison.baseCommitSha(),
                     comparison.count(ImportFileStatus.ADDED), comparison.count(ImportFileStatus.MODIFIED),
                     comparison.count(ImportFileStatus.UNCHANGED), comparison.count(ImportFileStatus.WOULD_DELETE),
                     comparison.entries().stream().map(entry -> new ImportComparisonResponse.Entry(
                             entry.path(), entry.status().name(), entry.archiveSizeBytes(), entry.archiveSha256(),
-                            entry.repositorySizeBytes(), entry.repositorySha256())).toList());
+                            entry.repositorySizeBytes(), entry.repositorySha256(), entry.archiveMode(), entry.repositoryMode(),
+                            entry.effectiveMode(), entry.modeChanged())).toList());
         } catch (IOException | RuntimeException e) {
             if (e instanceof ApiException apiException) throw apiException;
             throw ApiException.badRequest("IMPORT_COMPARISON_FAILED", e.getMessage());
@@ -139,7 +140,7 @@ public class ImportResource {
         var sources = service.comparisonSources(ownerUserId, importId);
         try {
             var archive = archiveInventories.createInventory(sources.upload().storagePath());
-            var comparison = comparisons.compare(archive, sources.snapshot());
+            var comparison = comparisons.compare(archive, sources.snapshot(), sources.upload().fileModes());
             var result = importPolicy.evaluate(archive, comparison);
             return new ImportPolicyResponse(result.importId(), result.baseCommitSha(), result.policyVersion(), result.approvable(),
                     result.count(ImportFileStatus.ADDED), result.count(ImportFileStatus.MODIFIED),
@@ -187,9 +188,9 @@ public class ImportResource {
         var sources = service.comparisonSources(ownerUserId, importId);
         try {
             var archive = archiveInventories.createInventory(sources.upload().storagePath());
-            var comparison = comparisons.compare(archive, sources.snapshot());
+            var comparison = comparisons.compare(archive, sources.snapshot(), sources.upload().fileModes());
             var policy = importPolicy.evaluate(archive, comparison);
-            var created = importPlans.create(ownerUserId, sources.upload().sha256(), archive, policy, java.time.Instant.now());
+            var created = importPlans.create(ownerUserId, sources.upload().sha256(), archive, policy, comparison, java.time.Instant.now());
             return toPlanResponse(service.recordImportPlan(ownerUserId, importId, created));
         } catch (IOException | RuntimeException e) {
             if (e instanceof ApiException apiException) throw apiException;
@@ -237,9 +238,10 @@ public class ImportResource {
         UUID ownerUserId = currentUser.requireUserId();
         var approval = service.approveImportPlan(ownerUserId, importId,
                 request == null ? null : request.planDigestSha256(),
-                request == null ? null : request.selectionDigestSha256());
+                request == null ? null : request.selectionDigestSha256(),
+                request == null ? null : request.commitMessage());
         return new ImportPlanApprovalResponse(approval.importId(), approval.planId(),
-                approval.planDigestSha256(), approval.selectionDigestSha256(), "APPROVED", approval.approvedAt());
+                approval.planDigestSha256(), approval.selectionDigestSha256(), approval.commitMessage(), "APPROVED", approval.approvedAt());
     }
 
     @GET
@@ -249,7 +251,7 @@ public class ImportResource {
                 .orElseThrow(() -> ApiException.notFound("IMPORT_PLAN_APPROVAL_NOT_FOUND",
                         "No approval has been recorded for this import."));
         return new ImportPlanApprovalResponse(approval.importId(), approval.planId(),
-                approval.planDigestSha256(), approval.selectionDigestSha256(), "APPROVED", approval.approvedAt());
+                approval.planDigestSha256(), approval.selectionDigestSha256(), approval.commitMessage(), "APPROVED", approval.approvedAt());
     }
 
 
@@ -293,7 +295,7 @@ public class ImportResource {
         try {
             var identity = service.gitCommitIdentity(ownerUserId, importId);
             var delivered = gitDelivery.deliver(sources.githubInstallationId(), sources.snapshot().branch(),
-                    service.workBranchForImport(ownerUserId, importId), workspace, identity);
+                    service.workBranchForImport(ownerUserId, importId), workspace, identity, sources.approval().commitMessage());
             var stored = service.recordGitDelivery(ownerUserId, importId, delivered);
             importWorkspaces.delete(workspace);
             return new GitDeliveryResponse(stored.importId(), stored.repositoryFullName(), stored.baseBranch(),
@@ -470,7 +472,7 @@ public class ImportResource {
                 unchanged, ignored, blocked, hardBlocked, overridableBlocked, warnings, plan.entries().stream().map(e -> new ImportPlanResponse.Entry(
                         e.path(), e.status(), e.comparisonStatus(), e.severity(), e.blockerType(), e.policyCode(), e.message(),
                         e.archiveSizeBytes(), e.archiveSha256(), e.repositorySizeBytes(), e.repositorySha256(),
-                        e.textCandidate())).toList(), plan.createdAt());
+                        e.archiveMode(), e.repositoryMode(), e.effectiveMode(), e.modeChanged(), e.textCandidate())).toList(), plan.createdAt());
     }
 
     @PUT

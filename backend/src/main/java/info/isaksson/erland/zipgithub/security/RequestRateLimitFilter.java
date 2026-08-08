@@ -18,13 +18,32 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 public class RequestRateLimitFilter implements ContainerRequestFilter {
     private final FixedWindowRateLimiter standard = new FixedWindowRateLimiter(120, Duration.ofMinutes(1));
     private final FixedWindowRateLimiter uploads = new FixedWindowRateLimiter(12, Duration.ofMinutes(1));
+    private final FixedWindowRateLimiter stagingUploads = new FixedWindowRateLimiter(30, Duration.ofMinutes(1));
+    private final FixedWindowRateLimiter stagingGlobal = new FixedWindowRateLimiter(120, Duration.ofMinutes(1));
+    private final FixedWindowRateLimiter stagingNetworks = new FixedWindowRateLimiter(60, Duration.ofMinutes(1));
 
     @ConfigProperty(name = "zipgithub.security.rate-limit.enabled", defaultValue = "true") boolean enabled;
+    @ConfigProperty(name = "zipgithub.security.trust-forwarded-for", defaultValue = "false") boolean trustForwardedFor;
 
     @Override
     public void filter(ContainerRequestContext request) {
         String path = request.getUriInfo().getPath();
         if (!enabled || !path.startsWith("api/") || isSafe(request.getMethod())) return;
+        boolean stagingUpload = "POST".equals(request.getMethod()) && "api/staging-imports".equals(path);
+        if (stagingUpload) {
+            String capabilityKey = hash(request.getHeaderString("X-ZipGitHub-Upload-Credential") == null
+                    ? "missing" : request.getHeaderString("X-ZipGitHub-Upload-Credential"));
+            boolean networkAllowed = true;
+            if (trustForwardedFor) {
+                String forwarded = request.getHeaderString("X-Forwarded-For");
+                String source = forwarded == null ? "missing" : forwarded.split(",", 2)[0].trim();
+                networkAllowed = stagingNetworks.allow(hash(source));
+            }
+            if (!stagingGlobal.allow("all-staging") || !stagingUploads.allow(capabilityKey) || !networkAllowed) {
+                throw ApiException.tooManyRequests("RATE_LIMIT_EXCEEDED", "Too many requests. Retry after a short delay.");
+            }
+            return;
+        }
         String key = clientKey(request);
         FixedWindowRateLimiter limiter = path.matches("api/imports/[^/]+/upload") ? uploads : standard;
         if (!limiter.allow(key)) {
@@ -35,6 +54,10 @@ public class RequestRateLimitFilter implements ContainerRequestFilter {
     private static String clientKey(ContainerRequestContext request) {
         Cookie cookie = request.getCookies().get(CurrentUserProvider.SESSION_COOKIE);
         String value = cookie == null ? "anonymous" : cookie.getValue();
+        return hash(value);
+    }
+
+    private static String hash(String value) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {

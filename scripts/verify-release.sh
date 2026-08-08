@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.44"
+expected_version="1.0.0-rc.51"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
@@ -21,9 +21,9 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0089`' docs/implementation-status.md
-grep -q 'Last completed step: `8.3`' docs/implementation-status.md
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 8 COMPLETE`' docs/implementation-status.md
+grep -q 'Repository revision: `r0099`' docs/implementation-status.md
+grep -q 'Last completed step: `9.6`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 BLOCKED ON SIGNED SHORTCUT ARTIFACT`' docs/implementation-status.md
 grep -q '| `7.9` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.10` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.11` .*\*\*DONE\*\*' docs/implementation-status.md
@@ -41,7 +41,12 @@ grep -q '| `7.23` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.24` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `8.1` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `8.4` .*\*\*SKIPPED\*\*' docs/implementation-status.md
-grep -q '| `9.1` .*\*\*NEXT\*\*' docs/implementation-status.md
+grep -q '| `9.1` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `9.2` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `9.3` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `9.5` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `9.6` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `9.7` .*\*\*BLOCKED\*\*' docs/implementation-status.md
 grep -q 'Fas 9 - Shortcut och kortlivad StagingImport' docs/implementation-steps.md
 grep -q 'Framtida backlog - AI- och integrationsyta' docs/implementation-steps.md
 test -s docs/phase8-plus-continuation-handoff.md
@@ -179,4 +184,105 @@ grep -q 'STALE_WORK' backend/src/main/java/info/isaksson/erland/zipgithub/action
 grep -q 'uq_actions_control_idempotency' backend/src/main/resources/db/migration/V9__actions_control_audit.sql
 grep -q 'dispatchImportWorkflow' frontend/src/pages/ImportResultPage.tsx
 grep -q 'rerunImportWorkflowFailedJobs' frontend/src/pages/ImportResultPage.tsx
-grep -Fq '| `9.1` | Fas 9 — Shortcut/StagingImport | Definiera och persistiera StagingImport-livscykeln | **NEXT**' docs/implementation-status.md
+grep -Fq '| `9.1` | Fas 9 — Shortcut/StagingImport | Definiera och persistiera StagingImport-livscykeln | **DONE**' docs/implementation-status.md
+grep -Fq '| `9.2` | Fas 9 — Shortcut/StagingImport | Capability-skyddad staging-upload | **DONE**' docs/implementation-status.md
+grep -Fq '| `9.3` | Fas 9 — Shortcut/StagingImport | Autentiserad claim från webbläsaren | **DONE**' docs/implementation-status.md
+grep -Fq '| `9.4` | Fas 9 — Shortcut/StagingImport | Projektval och promotion till vanlig Import | **DONE**' docs/implementation-status.md
+grep -Fq '| `9.5` | Fas 9 — gemensam commit UX | Användarstyrt commitmeddelande i approval/delivery | **DONE**' docs/implementation-status.md
+grep -Fq '| `9.6` | Fas 9 — Shortcut/StagingImport | Retention, abuse-skydd och säkerhetsregression | **DONE**' docs/implementation-status.md
+grep -Fq '| `9.8` | Fas 9 — Shortcut/StagingImport | E2E-regression, drift och releasegrind | **PENDING**' docs/implementation-status.md
+grep -q '^## Steg 9.5 - Låt användaren ange commitmeddelandet$' docs/implementation-steps.md
+grep -q '^## Steg 9.8 - E2E-regression, drift och releasegrind för Shortcut/StagingImport$' docs/implementation-steps.md
+grep -q '^## Planning revision r0092 - 2026-08-08$' CHANGELOG.md
+test -s docs/planning-revision-r0091-commit-message.md
+test -s docs/planning-revision-r0092-shortcut-distribution.md
+grep -q 'X-ZipGitHub-Upload-Credential' docs/implementation-steps.md
+grep -q 'static, pre-signed' docs/shortcut-stagingimport-design.md
+grep -q 'GitHub-hosted macOS runner' docs/planning-revision-r0092-shortcut-distribution.md
+
+
+# Phase 9 step 9.1
+grep -q 'Step 9.1 report' docs/step-9.1-report.md
+grep -q 'CREATE TABLE staging_import' backend/src/main/resources/db/migration/V10__staging_import_lifecycle.sql
+grep -q 'claim_token_sha256' backend/src/main/resources/db/migration/V10__staging_import_lifecycle.sql
+grep -q 'CREATE UNIQUE INDEX uq_import_session_staging_source_reference' backend/src/main/resources/db/migration/V11__staging_import_source_idempotency.sql
+grep -q "WHERE source_type = 'STAGING_IMPORT' AND source_reference IS NOT NULL" backend/src/main/resources/db/migration/V11__staging_import_source_idempotency.sql
+grep -q 'SELECT \* FROM staging_import WHERE claim_token_sha256=? FOR UPDATE' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/StagingImportPersistenceStore.java
+grep -q 'enum StagingImportStatus' backend/src/main/java/info/isaksson/erland/zipgithub/domain/status/StagingImportStatus.java
+grep -q 'Map<String, GitFileMode> fileModes' backend/src/main/java/info/isaksson/erland/zipgithub/upload/StoredUploadArtifact.java
+
+
+# Phase 9 step 9.2
+grep -q 'Step 9.2 report' docs/step-9.2-report.md
+grep -q '@Path("/api/staging-imports")' backend/src/main/java/info/isaksson/erland/zipgithub/api/StagingImportResource.java
+grep -q 'X-ZipGitHub-Upload-Credential' backend/src/main/java/info/isaksson/erland/zipgithub/api/StagingImportResource.java
+grep -q 'ZIP_GITHUB_STAGING_UPLOAD_CREDENTIAL' .env.example backend/src/main/resources/application.properties docker-compose.yml
+grep -q 'StagingSecretCodecSelfTest passed' backend/src/test/java/info/isaksson/erland/zipgithub/staging/StagingSecretCodecSelfTest.java
+grep -q 'no anonymous GET/list/download endpoint' docs/staging-upload.md
+
+
+# Phase 9 step 9.3
+grep -q 'Step 9.3 report' docs/step-9.3-report.md
+grep -q '@Path("/claim")' backend/src/main/java/info/isaksson/erland/zipgithub/api/StagingImportResource.java
+grep -q 'claimByTokenHash' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/StagingImportPersistenceStore.java
+grep -q 'STAGING_CLAIM_UNAVAILABLE' backend/src/main/java/info/isaksson/erland/zipgithub/staging/StagingClaimService.java
+grep -q 'STAGING_CLAIM_TOKEN_KEY' frontend/src/staging/claimToken.ts
+grep -q 'replaceState' frontend/src/components/AppLayout.tsx
+grep -q 'Fortsätt till granskning' frontend/src/pages/StagingClaimPage.tsx
+
+
+# Phase 9 step 9.4
+grep -q 'Step 9.4 report' docs/step-9.4-report.md
+grep -q '@Path("/{stagingId}/promote")' backend/src/main/java/info/isaksson/erland/zipgithub/api/StagingImportResource.java
+grep -q 'ImportSource.STAGING_IMPORT' backend/src/main/java/info/isaksson/erland/zipgithub/staging/StagingPromotionService.java
+grep -q 'staging-import:' backend/src/main/java/info/isaksson/erland/zipgithub/staging/StagingPromotionService.java
+grep -q 'findBySourceReference' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/ImportResumePersistenceStore.java
+grep -q 'GitFileModeResolver' backend/src/main/java/info/isaksson/erland/zipgithub/comparison/ImportComparisonService.java
+grep -q 'modeChanged' backend/src/main/java/info/isaksson/erland/zipgithub/plan/ImportPlanFactory.java
+grep -q 'verifyStagedModes' backend/src/main/java/info/isaksson/erland/zipgithub/delivery/GitDeliveryService.java
+grep -q 'Mode .*→' frontend/src/components/ReviewFileTree.tsx
+
+
+# Phase 9 step 9.5
+grep -q 'Step 9.5 report' docs/step-9.5-report.md
+grep -q 'class CommitMessagePolicy' backend/src/main/java/info/isaksson/erland/zipgithub/plan/CommitMessagePolicy.java
+grep -q 'String commitMessage' backend/src/main/java/info/isaksson/erland/zipgithub/plan/ImportPlanApproval.java
+grep -q 'request.commitMessage()' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
+grep -q 'sources.approval().commitMessage()' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
+grep -q 'Commitmeddelande' frontend/src/pages/ImportReviewPage.tsx
+grep -q 'lets the user replace the suggested commit message' frontend/src/pages/ImportReviewPage.test.tsx
+grep -Fq '| `9.6` | Fas 9 — Shortcut/StagingImport | Retention, abuse-skydd och säkerhetsregression | **DONE**' docs/implementation-status.md
+grep -q 'Resume-safe message' backend/src/test/java/info/isaksson/erland/zipgithub/application/ImportResumeRecoveryTest.java
+
+grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **BLOCKED**' docs/implementation-status.md
+
+
+# Phase 9 step 9.6
+grep -q 'Step 9.6 report' docs/step-9.6-report.md
+grep -q 'artifact_retention_deadline' backend/src/main/resources/db/migration/V12__staging_retention_and_cleanup.sql
+grep -q 'artifact_deleted_at' backend/src/main/resources/db/migration/V12__staging_retention_and_cleanup.sql
+grep -q 'FOR UPDATE SKIP LOCKED' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/StagingImportPersistenceStore.java
+grep -q 'promoteWithLock' backend/src/main/java/info/isaksson/erland/zipgithub/staging/StagingPromotionService.java
+grep -q 'insertWithinLimits' backend/src/main/java/info/isaksson/erland/zipgithub/staging/StagingUploadService.java
+grep -q 'STAGING_CAPACITY_EXCEEDED' backend/src/main/java/info/isaksson/erland/zipgithub/api/StagingImportResource.java
+grep -q 'ZIP_GITHUB_STAGING_CLAIMED_TTL_MINUTES' .env.example docker-compose.yml
+grep -q 'ZIP_GITHUB_STAGING_MAX_LIVE_BYTES' .env.example docker-compose.yml
+grep -qi 'credential revoke and rotation' docs/staging-retention-and-abuse.md
+grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **BLOCKED**' docs/implementation-status.md
+
+printf 'Phase 9.6 release assertions verified for %s.\n' "$actual_version"
+
+
+# Phase 9 step 9.7 (runtime side complete; external Apple signing gate remains BLOCKED).
+grep -q 'Step 9.7 report' docs/step-9.7-report.md
+grep -q '@Path("/api/shortcut-release")' backend/src/main/java/info/isaksson/erland/zipgithub/api/ShortcutReleaseResource.java
+grep -q 'class ShortcutReleaseService' backend/src/main/java/info/isaksson/erland/zipgithub/shortcut/ShortcutReleaseService.java
+grep -q 'SHORTCUT_RELEASE_UNAVAILABLE' backend/src/main/java/info/isaksson/erland/zipgithub/shortcut/ShortcutReleaseService.java
+grep -q 'Ladda ner aktuell Shortcut' frontend/src/pages/ShortcutInstallPage.tsx
+grep -q 'STAGING_SHORTCUT_OUTDATED' backend/src/main/java/info/isaksson/erland/zipgithub/api/StagingImportResource.java
+grep -q 'zipgithub.shortcut.release-path' backend/src/main/resources/application.properties
+grep -q './shortcut/releases:/var/lib/zip-github/shortcut:ro' docker-compose.yml
+grep -q 'sign it for `anyone`' docs/step-9.7-report.md
+grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **BLOCKED**' docs/implementation-status.md
+grep -Fq '| `9.8` | Fas 9 — Shortcut/StagingImport | E2E-regression, drift och releasegrind | **PENDING**' docs/implementation-status.md
+printf 'Phase 9.7 blocked-release assertions verified for %s.\n' "$actual_version"

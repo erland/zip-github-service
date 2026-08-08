@@ -15,7 +15,18 @@ public record ImmutableImportPlanEntry(
         String archiveSha256,
         Long repositorySizeBytes,
         String repositorySha256,
+        String archiveMode,
+        String repositoryMode,
+        String effectiveMode,
+        boolean modeChanged,
         boolean textCandidate) {
+
+    public ImmutableImportPlanEntry(String path, String status, String comparisonStatus, String severity,
+                                    String blockerType, String policyCode, String message, Long archiveSizeBytes,
+                                    String archiveSha256, Long repositorySizeBytes, String repositorySha256, boolean textCandidate) {
+        this(path, status, comparisonStatus, severity, blockerType, policyCode, message, archiveSizeBytes, archiveSha256,
+                repositorySizeBytes, repositorySha256, null, null, null, false, textCandidate);
+    }
 
     public ImmutableImportPlanEntry {
         Objects.requireNonNull(path, "path");

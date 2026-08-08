@@ -9,6 +9,7 @@ import info.isaksson.erland.zipgithub.domain.model.ImportSource;
 import info.isaksson.erland.zipgithub.snapshot.RepositorySnapshot;
 import info.isaksson.erland.zipgithub.plan.ImmutableImportPlan;
 import info.isaksson.erland.zipgithub.plan.ImportPlanApproval;
+import info.isaksson.erland.zipgithub.plan.CommitMessagePolicy;
 import info.isaksson.erland.zipgithub.selection.ApprovedSelection;
 import info.isaksson.erland.zipgithub.workspace.AppliedImportWorkspace;
 import info.isaksson.erland.zipgithub.delivery.GitDeliveryResult;
@@ -194,7 +195,16 @@ public class ProjectApplicationService {
             UUID ownerUserId, UUID projectId, CreateImportRequest request,
             String committerName, String committerEmail,
             StoredUploadArtifact artifact, String idempotencyKey) {
+        return createImportFromStoredUpload(ownerUserId, projectId, request, committerName, committerEmail, artifact,
+                idempotencyKey, new ImportAuditMetadata(ImportSource.STORED_UPLOAD, "stored-upload:" + artifact.id()));
+    }
+
+    public synchronized StoredUploadImportResult createImportFromStoredUpload(
+            UUID ownerUserId, UUID projectId, CreateImportRequest request,
+            String committerName, String committerEmail, StoredUploadArtifact artifact, String idempotencyKey,
+            ImportAuditMetadata auditMetadata) {
         Objects.requireNonNull(artifact, "artifact");
+        Objects.requireNonNull(auditMetadata, "auditMetadata");
         requireOwnedProject(ownerUserId, projectId);
         String normalizedKey = requireText(idempotencyKey, "idempotencyKey");
         if (normalizedKey.length() > 200)
@@ -220,8 +230,7 @@ public class ProjectApplicationService {
                     "The stored ZIP is already attached to another import.");
         }
 
-        ImportResponse created = createImport(ownerUserId, projectId, request, committerName, committerEmail,
-                new ImportAuditMetadata(ImportSource.STORED_UPLOAD, "stored-upload:" + artifact.id()));
+        ImportResponse created = createImport(ownerUserId, projectId, request, committerName, committerEmail, auditMetadata);
         StoredUpload attached = StoredUpload.attach(ownerUserId, created.id(), artifact);
         SourceUploadResponse upload = recordUpload(ownerUserId, created.id(), attached);
         StoredUploadPromotion promotion = new StoredUploadPromotion(ownerUserId, projectId, created.id(),
@@ -244,6 +253,29 @@ public class ProjectApplicationService {
         return new SourceUploadResponse(upload.id(), upload.importId(), upload.originalFilename(), upload.sizeBytes(),
                 upload.sha256(), "STORED", upload.createdAt(), upload.retentionDeadline());
     }
+
+    public Optional<ImportResponse> findImportBySourceReference(UUID ownerUserId, ImportSource source, String sourceReference) {
+        if (persistentImportsEnabled()) {
+            var state = persistentImports.findBySourceReference(ownerUserId, source, sourceReference);
+            if (state.isPresent()) { hydrate(state.get()); return Optional.of(state.get().response()); }
+        }
+        return imports.values().stream().filter(item -> item.ownerUserId.equals(ownerUserId))
+                .filter(item -> { var audit = auditMetadataByImport.get(item.response.id()); return audit != null && audit.source() == source && Objects.equals(audit.sourceReference(), sourceReference); })
+                .map(item -> item.response).findFirst();
+    }
+
+    public StoredUploadImportResult ensureStoredUploadAttached(UUID ownerUserId, UUID importId, StoredUploadArtifact artifact) {
+        requireOwnedImport(ownerUserId, importId);
+        StoredUpload existing = uploadsByImport.get(importId);
+        if (existing != null) {
+            if (!existing.id().equals(artifact.id()) || !existing.sha256().equals(artifact.sha256()))
+                throw ApiException.conflict("STORED_UPLOAD_PROMOTION_INCOMPLETE", "The import is already attached to another ZIP.");
+            return new StoredUploadImportResult(getImport(ownerUserId, importId), toSourceUploadResponse(existing));
+        }
+        StoredUpload attached = StoredUpload.attach(ownerUserId, importId, artifact);
+        return new StoredUploadImportResult(getImport(ownerUserId, importId), recordUpload(ownerUserId, importId, attached));
+    }
+
 
     public ImportAuditMetadata importAuditMetadata(UUID ownerUserId, UUID importId) {
         requireOwnedImport(ownerUserId, importId);
@@ -395,7 +427,7 @@ public class ProjectApplicationService {
                 .orElseThrow(() -> ApiException.notFound("IMPORT_PLAN_NOT_FOUND", "The import plan was not found."));
     }
 
-    public ImportPlanApproval approveImportPlan(UUID ownerUserId, UUID importId, String submittedDigest, String submittedSelectionDigest) {
+    public ImportPlanApproval approveImportPlan(UUID ownerUserId, UUID importId, String submittedDigest, String submittedSelectionDigest, String submittedCommitMessage) {
         requireMutableImport(ownerUserId, importId);
         ImmutableImportPlan plan = getImportPlan(ownerUserId, importId);
         if (submittedDigest == null || !submittedDigest.matches("[0-9a-f]{64}")) {
@@ -415,15 +447,22 @@ public class ProjectApplicationService {
                     "The submitted selection digest does not match the immutable selection.");
         }
 
+        final String commitMessage;
+        try {
+            commitMessage = CommitMessagePolicy.requireInteractive(submittedCommitMessage);
+        } catch (IllegalArgumentException e) {
+            throw ApiException.badRequest("INVALID_COMMIT_MESSAGE", e.getMessage());
+        }
         ImportPlanApproval candidate = new ImportPlanApproval(importId, plan.id(), ownerUserId,
-                plan.planDigestSha256(), selection.selectionDigestSha256(), Instant.now());
+                plan.planDigestSha256(), selection.selectionDigestSha256(), commitMessage, Instant.now());
         ImportPlanApproval existing = approvalsByImport.putIfAbsent(importId, candidate);
         ImportPlanApproval approval = existing == null ? candidate : existing;
         if (!approval.planDigestSha256().equals(submittedDigest)
                 || !approval.selectionDigestSha256().equals(submittedSelectionDigest)
+                || !approval.commitMessage().equals(commitMessage)
                 || !approval.approvedByUserId().equals(ownerUserId)) {
             throw ApiException.conflict("IMPORT_PLAN_ALREADY_APPROVED",
-                    "This import was already approved with a different plan identity.");
+                    "This import was already approved with a different plan, selection or commit message.");
         }
 
         OwnedImport owned = imports.get(importId);
@@ -432,6 +471,12 @@ public class ProjectApplicationService {
         imports.put(importId, new OwnedImport(ownerUserId, updated));
         if (persistentImportsEnabled()) { persistentImports.saveApproval(ownerUserId, importId, approval); persistentImports.updateStatus(ownerUserId, importId, updated.status(), plan.baseCommitSha()); }
         return approval;
+    }
+
+    /** Compatibility path for legacy/internal callers; interactive API must submit a commit message. */
+    public ImportPlanApproval approveImportPlan(UUID ownerUserId, UUID importId, String submittedDigest, String submittedSelectionDigest) {
+        return approveImportPlan(ownerUserId, importId, submittedDigest, submittedSelectionDigest,
+                CommitMessagePolicy.defaultSuggestion(importId));
     }
 
     public Optional<ImportPlanApproval> findImportPlanApproval(UUID ownerUserId, UUID importId) {

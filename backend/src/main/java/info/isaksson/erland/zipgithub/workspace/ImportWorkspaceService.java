@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
@@ -73,6 +74,7 @@ public class ImportWorkspaceService {
             deleteRecursively(workspace);
             Files.createDirectories(workspace);
             run(workspace, token, "git", "init", "--quiet");
+            run(workspace, token, "git", "config", "core.filemode", "true");
             run(workspace, token, "git", "remote", "add", "origin", remote.toString());
             run(workspace, token, "git", "fetch", "--quiet", "--depth=1", "origin", plan.baseCommitSha());
             String fetched = run(workspace, token, "git", "rev-parse", "FETCH_HEAD^{commit}").trim();
@@ -85,12 +87,15 @@ public class ImportWorkspaceService {
             Map<String, ImmutableImportPlanEntry> expected = selectedChanges(plan, selection);
             applyArchive(sourceZip, strippedWrapperDirectory, workspace, expected);
             applyDeletions(workspace, expected);
+            applyFileModes(workspace, expected);
             verifyWorkspace(workspace, expected);
 
             List<String> applied = expected.keySet().stream().sorted().toList();
+            Map<String,String> expectedModes = expected.values().stream().filter(e -> !"WOULD_DELETE".equals(e.comparisonStatus()))
+                    .collect(java.util.stream.Collectors.toUnmodifiableMap(ImmutableImportPlanEntry::path, ImmutableImportPlanEntry::effectiveMode));
             success = true;
             return new AppliedImportWorkspace(importId, repositoryFullName, fetched,
-                    plan.planDigestSha256(), selection.selectionDigestSha256(), workspace, applied, Instant.now(clock));
+                    plan.planDigestSha256(), selection.selectionDigestSha256(), workspace, applied, expectedModes, Instant.now(clock));
         } catch (IOException e) {
             throw new ImportWorkspaceException("Could not prepare the import workspace.", e);
         } finally {
@@ -203,6 +208,26 @@ public class ImportWorkspaceService {
         }
     }
 
+    private static void applyFileModes(Path workspace, Map<String, ImmutableImportPlanEntry> expected) throws IOException {
+        for (ImmutableImportPlanEntry entry : expected.values()) {
+            if ("WOULD_DELETE".equals(entry.comparisonStatus())) continue;
+            String mode = entry.effectiveMode();
+            if (!"100644".equals(mode) && !"100755".equals(mode))
+                throw new ImportWorkspaceException("Approved file lacks a supported Git mode: " + entry.path());
+            Path file = workspace.resolve(entry.path()).normalize();
+            Set<PosixFilePermission> permissions = new HashSet<>(Files.getPosixFilePermissions(file));
+            permissions.remove(PosixFilePermission.OWNER_EXECUTE);
+            permissions.remove(PosixFilePermission.GROUP_EXECUTE);
+            permissions.remove(PosixFilePermission.OTHERS_EXECUTE);
+            if ("100755".equals(mode)) {
+                permissions.add(PosixFilePermission.OWNER_EXECUTE);
+                permissions.add(PosixFilePermission.GROUP_EXECUTE);
+                permissions.add(PosixFilePermission.OTHERS_EXECUTE);
+            }
+            Files.setPosixFilePermissions(file, permissions);
+        }
+    }
+
     private static void verifyWorkspace(Path workspace, Map<String, ImmutableImportPlanEntry> expected) {
         Set<String> changed = new HashSet<>();
         parseNulPaths(runPlain(workspace, "git", "diff", "--name-only", "--no-renames", "-z")).forEach(changed::add);
@@ -221,6 +246,12 @@ public class ImportWorkspaceService {
                 if (actual.size() != entry.archiveSizeBytes() || !actual.sha256().equals(entry.archiveSha256())) {
                     throw new ImportWorkspaceException("Applied file does not match the approved content: " + entry.path());
                 }
+                Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(file);
+                boolean executable = permissions.contains(PosixFilePermission.OWNER_EXECUTE)
+                        || permissions.contains(PosixFilePermission.GROUP_EXECUTE)
+                        || permissions.contains(PosixFilePermission.OTHERS_EXECUTE);
+                if (("100755".equals(entry.effectiveMode())) != executable)
+                    throw new ImportWorkspaceException("Applied file mode does not match the approved plan: " + entry.path());
             } catch (IOException e) {
                 throw new ImportWorkspaceException("Could not verify applied file: " + entry.path(), e);
             }

@@ -56,3 +56,6 @@ postgres-data/
 
 # Generated project packages (fixtures may still commit ZIP files elsewhere)
 release-packages/
+
+# Signed Shortcut release embeds a deployment upload credential.
+/shortcut/releases/*.shortcut

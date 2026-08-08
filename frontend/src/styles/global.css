@@ -343,3 +343,41 @@ code, pre, .repository-name, .review-file__path { overflow-wrap: anywhere; word-
 .actions-control-group li div { min-width: 0; display: grid; gap: .15rem; }
 .actions-control-group li span { font-size: .875rem; overflow-wrap: anywhere; }
 @media (max-width: 640px) { .actions-control-group li { align-items: stretch; flex-direction: column; } .actions-control-group .button { width: 100%; } }
+
+.detail-list {
+  display: grid;
+  gap: .75rem;
+  margin: 1.25rem 0;
+}
+.detail-list > div {
+  display: grid;
+  gap: .2rem;
+  min-width: 0;
+}
+.detail-list dt { font-weight: 700; color: #344054; }
+.detail-list dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.detail-list code { overflow-wrap: anywhere; word-break: break-all; }
+
+.choice-list { border: 0; padding: 0; margin: 1.25rem 0; display: grid; gap: .75rem; }
+.choice-list legend { font-weight: 700; margin-bottom: .5rem; }
+.choice-row { display: flex; gap: .75rem; align-items: flex-start; padding: .85rem; border: 1px solid var(--border-color, #d7dce2); border-radius: .75rem; cursor: pointer; }
+.choice-row input { margin-top: .2rem; }
+.choice-row span { display: grid; gap: .2rem; min-width: 0; }
+.choice-row small { overflow-wrap: anywhere; }
+
+.commit-message-editor {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color, #d7dce2);
+  border-radius: 0.75rem;
+}
+.commit-message-editor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 5.5rem;
+  margin-top: 0.35rem;
+  font: inherit;
+}
+.commit-message-editor .field-hint { margin-bottom: 0; }
+.approval-summary { margin: 0.75rem 0; }
+.approval-summary div { display: grid; gap: 0.2rem; margin-bottom: 0.5rem; }

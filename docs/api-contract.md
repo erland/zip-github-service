@@ -145,24 +145,25 @@ The endpoint does not introduce a second plan implementation: it delegates to th
 
 `POST /api/imports/{importId}/plan/approval`
 
-Request body includes both `planDigestSha256` and `selectionDigestSha256`. The selection must already exist, belong to the current user/import and match the immutable plan/base identity. Approval locks both digests; a different selection cannot be substituted after approval.
+Request body includes `planDigestSha256`, `selectionDigestSha256` and the user-selected `commitMessage`. The selection must already exist, belong to the current user/import and match the immutable plan/base identity. Approval locks both digests **and the normalized commit message**; a different selection or commit message cannot be substituted after approval.
 
 Request:
 
 ```json
 {
   "planDigestSha256": "<64 lower-case hex characters>",
-  "selectionDigestSha256": "<64 lower-case hex characters>"
+  "selectionDigestSha256": "<64 lower-case hex characters>",
+  "commitMessage": "Describe the approved change"
 }
 ```
 
-The server requires ownership and exact equality with both the stored plan digest and immutable selection digest. A plan containing blockers may still be approved when the immutable selection contains at least one valid selected change and every selected overridable blocker has its explicit audit record. Repeating the same approval is idempotent.
+The server requires ownership and exact equality with both the stored plan digest and immutable selection digest. Interactive commit messages normalize CRLF/CR to LF, trim surrounding whitespace, reject empty/whitespace-only values, reject control characters other than LF, and are capped at 500 characters. A plan containing blockers may still be approved when the immutable selection contains at least one valid selected change and every selected overridable blocker has its explicit audit record. Repeating the same approval including the same normalized commit message is idempotent; a different message conflicts with the already recorded approval.
 
-`GET /api/imports/{importId}/plan/approval` returns the owner-scoped recorded approval, or `404` if no approval exists. This is a recovery/readback endpoint: it never creates or changes an approval.
+`GET /api/imports/{importId}/plan/approval` returns the owner-scoped recorded approval including `commitMessage`, or `404` if no approval exists. This is a recovery/readback endpoint: it never creates or changes an approval. Legacy persisted approvals that predate step 9.5 receive the deterministic previous message `Apply approved ZIP import <importId>` during hydration; new interactive approvals never rely on that fallback.
 
 ### Normal review-to-commit orchestration (step 7.17)
 
-The normal UI exposes one action, **Godkänn valda förändringar**. That one click still preserves the internal security boundaries in this order: create/reuse immutable selection, record/reuse approval, prepare and exactly verify the workspace, then commit and push. The browser calls the existing endpoints in that order; no GitHub write occurs before approval has been recorded.
+The normal UI exposes an editable commit-message field followed by one action, **Godkänn valda förändringar**. The final confirmation shows the chosen message, locked base ref and selected-file count. That one click still preserves the internal security boundaries in this order: create/reuse immutable selection, record/reuse approval including commit message, prepare and exactly verify the workspace, then commit and push. The browser calls the existing endpoints in that order; no GitHub write occurs before approval has been recorded.
 
 If approval exists but delivery did not complete, refresh restores the immutable selection and approval and exposes only the recovery action **Försök skapa commit igen**. Delivery/workspace retries reuse existing identities and are idempotent. If delivery is already recorded, reopening review proceeds to the result page.
 
@@ -178,7 +179,7 @@ Response fields include `importId`, `repositoryFullName`, `baseCommitSha`, `plan
 
 `POST /api/imports/{importId}/delivery`
 
-Requires an exact approved plan and a verified applied workspace. Revalidates that the remote base branch still points at the approved commit, uses the import's active `zip-github/work-<workId>` branch, creates one commit and pushes without force. Returns branch and commit metadata with status `PUSHED`.
+Requires an exact approved plan and a verified applied workspace. Revalidates that the remote base branch still points at the approved commit, uses the import's active `zip-github/work-<workId>` branch, creates one commit using the **approval-bound commit message** and pushes without force. Returns branch and commit metadata with status `PUSHED`.
 
 ### Create draft pull request
 
@@ -288,3 +289,83 @@ The existing owner-scoped `POST /api/projects/{projectId}/work/pull-request` rem
 `POST /api/imports/{importId}/actions/rerun-failed` requires `workflowRunId`, `expectedRef`, `expectedCommitSha`, `idempotencyKey` and `confirmed=true`. The backend fetches the GitHub run and requires an exact current Work SHA/ref match, an explicitly rerun-allowlisted workflow and `conclusion=failure` before calling GitHub's failed-jobs rerun endpoint.
 
 Successful/replayed control responses contain only non-secret audit/result metadata (`operationId`, operation/status, replay flag, workflow/run ids, branch/ref, target commit SHA, GitHub URL and timestamps). Installation/user tokens are never returned.
+
+
+## Phase 9 staging transport — step 9.2
+
+### `POST /api/staging-imports`
+
+Unauthenticated web-session-wise, but protected by the deployment-scoped `X-ZipGitHub-Upload-Credential`. Accepts `application/zip` or `application/octet-stream` plus `X-Filename`. This capability grants only creation of one transport staging object and is not user authentication.
+
+Success `201` body:
+
+```json
+{
+  "stagingId": "uuid",
+  "originalFilename": "project.zip",
+  "sizeBytes": 12345,
+  "sha256": "...",
+  "expiresAt": "2026-08-08T07:00:00Z",
+  "claimUrl": "https://example/staging/claim#token=<one-time-token>"
+}
+```
+
+The raw claim token is returned only here and only its SHA-256 is persisted. There is no anonymous GET/list/download endpoint. Missing/invalid capability returns generic `STAGING_UPLOAD_UNAUTHORIZED`; oversize input returns `UPLOAD_TOO_LARGE`; invalid upload metadata returns generic `INVALID_STAGING_UPLOAD`. Claim semantics are step 9.3.
+
+
+### Authenticated staging claim (step 9.3)
+
+`POST /api/staging-imports/claim` requires the normal web session and the same-origin CSRF marker. Request body:
+
+```json
+{"token":"<raw one-time claim token>"}
+```
+
+The browser obtains the token from `/staging/claim#token=...`, moves it to same-tab `sessionStorage`, clears the fragment and never places it in OAuth `state`, `returnTo` or a query parameter. Success returns owner-safe staging metadata (`stagingId`, original filename, size, SHA-256, expiry and claim time). Invalid, expired, already-taken, terminal or otherwise unavailable claims all return `410 STAGING_CLAIM_UNAVAILABLE`. A retry by the same authenticated owner is idempotent. Claim does not select a Project or create an ordinary Import.
+
+### Authenticated staging project selection and promotion (step 9.4)
+
+`GET /api/staging-imports/{stagingId}` requires the normal authenticated web session and returns owner-safe metadata only when the staging object is owned by the caller and is `CLAIMED` or `PROMOTED`.
+
+`POST /api/staging-imports/{stagingId}/promote` requires the normal session and CSRF marker. Request body:
+
+```json
+{"projectId":"uuid"}
+```
+
+The backend verifies staging ownership and Project ownership, reuses the ordinary single-active-import/Work invariants, and promotes the already stored ZIP without copy/re-stream through the existing stored-upload import path. The resulting ordinary Import is classified as `STAGING_IMPORT` with non-secret source reference `staging-import:<stagingId>`.
+
+Success body:
+
+```json
+{
+  "stagingId":"uuid",
+  "projectId":"uuid",
+  "importId":"uuid",
+  "status":"PROMOTED",
+  "alreadyPromoted":false
+}
+```
+
+Retry is restart-safe: the persisted source reference is searched before creating an Import, and an already promoted staging object returns the same Import for the same Project. Selecting a Project with an active non-terminal import continues to return the ordinary `ACTIVE_IMPORT_EXISTS` conflict.
+
+The common comparison/plan response now also carries `archiveMode`, `repositoryMode`, `effectiveMode` and `modeChanged` per path. Only `100644`/`100755` are accepted as ordinary-file Git modes. Mode changes are part of the immutable plan identity and therefore the normal selection/approval contract.
+
+## Phase 9 staging retention/capacity errors (step 9.6)
+
+`POST /api/staging-imports` may return `429 STAGING_CAPACITY_EXCEEDED` when the configured live staging object/byte quota is full. Existing archive-size rejection remains `413 UPLOAD_TOO_LARGE`; request-rate exhaustion remains `429 RATE_LIMIT_EXCEEDED`; a revoked/old deployment credential remains the neutral `401 STAGING_UPLOAD_UNAUTHORIZED`. Credential rotation does not invalidate an already-created staging claim token.
+
+The `expiresAt` returned after upload is the AVAILABLE deadline. After successful claim it is the claimed grace deadline. Same-owner claim retry does not extend that deadline.
+
+## Signed Shortcut distribution (phase 9.7)
+
+Authenticated browser session only:
+
+```text
+GET /api/shortcut-release
+GET /api/shortcut-release/download
+```
+
+Metadata returns `available`, non-secret `version`/`generation`, filename, byte size, SHA-256 and a download URL only when a readable pre-signed `.shortcut` artifact is configured. The backend never synthesizes an unsigned substitute. Download is `private, no-store` and requires the normal authenticated zip-github owner session.
+
+Capability staging uploads using a missing/old/revoked `X-ZipGitHub-Upload-Credential` now return `403 STAGING_SHORTCUT_OUTDATED` with instructions to sign in and install the current Shortcut release. This error conveys no user, Project or GitHub authorization information.

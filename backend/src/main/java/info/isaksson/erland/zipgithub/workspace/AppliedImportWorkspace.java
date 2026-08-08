@@ -3,6 +3,7 @@ package info.isaksson.erland.zipgithub.workspace;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -15,7 +16,13 @@ public record AppliedImportWorkspace(
         String selectionDigestSha256,
         Path workspacePath,
         List<String> appliedPaths,
+        Map<String, String> expectedFileModes,
         Instant preparedAt) {
+    public AppliedImportWorkspace(UUID importId, String repositoryFullName, String baseCommitSha, String planDigestSha256,
+                                  String selectionDigestSha256, Path workspacePath, List<String> appliedPaths, Instant preparedAt) {
+        this(importId, repositoryFullName, baseCommitSha, planDigestSha256, selectionDigestSha256, workspacePath, appliedPaths, Map.of(), preparedAt);
+    }
+
     public AppliedImportWorkspace {
         Objects.requireNonNull(importId, "importId");
         Objects.requireNonNull(repositoryFullName, "repositoryFullName");
@@ -24,6 +31,7 @@ public record AppliedImportWorkspace(
         Objects.requireNonNull(selectionDigestSha256, "selectionDigestSha256");
         Objects.requireNonNull(workspacePath, "workspacePath");
         appliedPaths = List.copyOf(appliedPaths);
+        expectedFileModes = expectedFileModes == null ? Map.of() : Map.copyOf(expectedFileModes);
         Objects.requireNonNull(preparedAt, "preparedAt");
     }
 }

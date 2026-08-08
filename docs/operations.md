@@ -210,3 +210,19 @@ The backend image contains `/usr/local/bin/zip-github-git-askpass` as a fixed ex
 ## Resumable imports across backend restarts
 
 From RC34 onward, active import resume state is expected to survive ordinary backend container replacement. Operators should preserve both PostgreSQL and the upload volume. A restart may discard temporary Git workspaces; this is intentional because they are rebuilt and reverified from durable state. Do not delete active upload files manually while an import is non-terminal.
+
+## Phase 9 staging retention and credential incident operations
+
+Defaults: AVAILABLE TTL 60 minutes, CLAIMED grace 240 minutes, cleanup every 5 minutes in batches of 100, maximum 100 non-promoted/not-yet-deleted staging artifacts and 1 GiB staging bytes. Configure with the `ZIP_GITHUB_STAGING_*` variables documented in `.env.example`. Monitor repeated cleanup failures and sustained `STAGING_CAPACITY_EXCEEDED` responses; both can indicate storage pressure.
+
+To revoke/rotate a leaked Shortcut upload credential, replace `ZIP_GITHUB_STAGING_UPLOAD_CREDENTIAL` with a new strong random value and redeploy/restart every backend instance. The old Shortcut then receives `STAGING_UPLOAD_UNAUTHORIZED` immediately. No database migration, GitHub credential rotation or invalidation of already-created staging claim tokens is required. Publish a newly signed Shortcut with the new credential in step 9.7. Do not configure parallel old/new credentials in the first implementation.
+
+Enable `ZIP_GITHUB_TRUST_FORWARDED_FOR=true` only when a trusted ingress strips client-supplied forwarding headers and writes the real network source itself. Otherwise leave it false.
+
+## Signed iOS Shortcut release operations
+
+The reference Shortcut is a separately signed deployment artifact, not a backend build product. Keep `shortcut/releases/zip-github.shortcut` out of Git because it embeds the low-privilege deployment staging credential. Compose mounts `./shortcut/releases` read-only and the backend serves only the configured file to authenticated users.
+
+Publication/rotation procedure is documented in `docs/signed-shortcut-release.md`. In short: update the Shortcut and deployment upload credential in a trusted Apple environment, export and sign with an iCloud-signed-in Mac for `anyone`, place the signed file in `shortcut/releases/`, advance `ZIP_GITHUB_SHORTCUT_VERSION`/`ZIP_GITHUB_SHORTCUT_GENERATION`, rotate `ZIP_GITHUB_STAGING_UPLOAD_CREDENTIAL`, then redeploy. There is deliberately no current/previous grace credential in the first version.
+
+If no signed artifact is mounted, `/shortcut` stays usable but reports that no installer is published. Never work around this by serving an unsigned file.

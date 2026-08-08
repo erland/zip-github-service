@@ -8,5 +8,6 @@ public record ImportPlanApprovalResponse(
         UUID planId,
         String planDigestSha256,
         String selectionDigestSha256,
+        String commitMessage,
         String status,
         Instant approvedAt) { }

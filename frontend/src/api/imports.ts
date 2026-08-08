@@ -38,6 +38,10 @@ export type ImportPlanEntry = {
   archiveSha256: string | null;
   repositorySizeBytes: number | null;
   repositorySha256: string | null;
+  archiveMode?: string | null;
+  repositoryMode?: string | null;
+  effectiveMode?: string | null;
+  modeChanged?: boolean;
   textCandidate: boolean;
 };
 
@@ -47,6 +51,7 @@ export type ImportPlanApprovalResponse = {
   planId: string;
   planDigestSha256: string;
   selectionDigestSha256: string;
+  commitMessage: string;
   status: 'APPROVED';
   approvedAt: string;
 };
@@ -127,11 +132,12 @@ export async function createImportSelection(importId: string, planDigestSha256: 
   });
 }
 
-export async function approveImportPlan(importId: string, planDigestSha256: string, selectionDigestSha256: string): Promise<ImportPlanApprovalResponse> {
+export async function approveImportPlan(importId: string, planDigestSha256: string, selectionDigestSha256: string,
+  commitMessage: string): Promise<ImportPlanApprovalResponse> {
   return requestJson(`/api/imports/${encodeURIComponent(importId)}/plan/approval`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ planDigestSha256, selectionDigestSha256 }),
+    body: JSON.stringify({ planDigestSha256, selectionDigestSha256, commitMessage }),
   });
 }
 

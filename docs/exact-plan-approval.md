@@ -19,3 +19,8 @@ A successful response contains the import ID, plan ID, approved digest, `APPROVE
 Approval requires ownership of the import and plan. The server never trusts a client-supplied approvability flag or plan contents. It only accepts the digest of the immutable server-side plan and changes the import session status to `APPROVED` after the audit record has been created.
 
 The current application service persists the approval in its temporary in-memory store. Migration `V4__import_plan_approval_audit.sql` prepares the database model with `approved_at` and `approved_by_user_id` consistency constraints for the later repository-backed persistence step.
+
+
+## Step 9.5 commit-message binding
+
+Approval now binds `commitMessage` together with plan digest, selection digest and approver. New interactive approval must submit the normalized message explicitly. The persisted approval is the only message source used by delivery; an existing approval cannot be replayed with another message. Legacy resume/internal data without the field uses the former deterministic message solely as a compatibility fallback.

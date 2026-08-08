@@ -1,0 +1,5 @@
+filename=zip-github.shortcut
+version=1
+generation=g1
+size_bytes=23821
+sha256=21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a

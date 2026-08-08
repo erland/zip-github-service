@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0103`
+- Repository revision: `r0104`
 - Last completed step: `9.6`
 - Next step: blocked at `9.7` — deployed download/install verification
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 9 BLOCKED ON DEPLOYED SHORTCUT DOWNLOAD/INSTALL VERIFICATION`
@@ -92,7 +92,9 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.5` | Fas 9 — gemensam commit UX | Användarstyrt commitmeddelande i approval/delivery | **DONE** | 2026-08-08 | `docs/user-controlled-commit-message.md`, `docs/step-9.5-report.md` |
 | `9.6` | Fas 9 — Shortcut/StagingImport | Retention, abuse-skydd och säkerhetsregression | **DONE** | 2026-08-08 | `docs/staging-retention-and-abuse.md`, `docs/step-9.6-report.md` |
 | `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **BLOCKED** | — | `docs/signed-shortcut-release.md`, `docs/step-9.7-report.md` |
-| `9.8` | Fas 9 — Shortcut/StagingImport | E2E-regression, drift och releasegrind | **PENDING** | — | — |
+| `9.8` | Fas 9 — Work lifecycle | Projektlivscykel och robust branch-provisionering | **PENDING** | — | — |
+| `9.9` | Fas 9 — Work/GitHub visibility | Actions-status och kopierbara fel på Work-sidan | **PENDING** | — | — |
+| `9.10` | Fas 9 — regression/release | E2E-regression, drift och slutlig releasegrind | **PENDING** | — | — |
 
 ## Revision history
 
@@ -244,3 +246,5 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0101` | 2026-08-08 | Backend CI correction for blocked 9.7 revision | Fixed approval commit-message fixture, binary ZIP request encoding, outdated-credential expectation and terminal lifecycle exception consistency; phase state unchanged | blocked at `9.7` |
 | `r0102` | 2026-08-08 | Container image CI correction for blocked 9.7 revision | Reused verified backend/frontend CI artifacts for runtime-only container assembly; removed duplicate Maven/npm builds and Maven Central 429 exposure; phase state unchanged | blocked at `9.7` |
 | `r0103` | 2026-08-08 | Signed Shortcut publication for step 9.7 | Added the user-created Apple-signed Shortcut as deployment artifact, version/generation metadata and a hard Git-import block for the credential-bearing binary | blocked at `9.7` pending deployed `/shortcut` download + iOS install check |
+
+| `r0104` | 2026-08-08 | CI/release-gate correction + phase-9 plan refinement | Made signed Shortcut verification source-checkout-safe via tracked manifest + optional byte verification; expanded remaining plan to 9.8 Work lifecycle, 9.9 Actions visibility and 9.10 final E2E | blocked at `9.7` pending deployed `/shortcut` download + iOS install check |

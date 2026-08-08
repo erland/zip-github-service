@@ -557,19 +557,45 @@ Fas 9 ska samtidigt täppa till metadataförlust som kan uppstå i ZIP→GitHub-
 - Ge tydliga felvägar för offline, 401/403 på gammal/revokad Shortcut, 413/429, utgången claim och serverfel. Claim-token eller upload credential får inte läggas i Shortcut-notiser, persistent loggtext eller annan diagnos som användaren typiskt delar.
 - Dokumentera en exakt manuell återbyggnadsinstruktion (actions, header, request body, svar, signering och release) så artefakten kan reproduceras även om den signerade releasefilen behöver ersättas.
 
-## Steg 9.8 - E2E-regression, drift och releasegrind för Shortcut/StagingImport
+## Steg 9.8 - Work lifecycle, projektlivscykel och robust branch-provisionering
 
-- E2E-testa `Share/Shortcut -> staging upload -> öppna claim -> login -> claim -> välj projekt -> promotion -> automatisk review` utan andra ZIP-bytes eller parallell pipeline.
-- Testa logout/login, backend-restart och retry kring claim/promotion så varken stagingobjekt eller vanlig import dupliceras.
-- Testa två användare och samtidiga claimförsök, aktiv-import-konflikt samt expiry/cleanup.
+- Gör repositorynamnet på projektsidan klickbart till det konfigurerade repositoryts default branch på GitHub så användaren enkelt kan öppna GitHub-gränssnittet utan att lämna projektkontexten.
+- Lägg en explicit **Avsluta arbete utan PR**-väg. Ett avslutat arbete ska inte längre räknas som aktivt och ska inte kräva att en pull request skapas.
+- Låt användaren i avslutsdialogen separat välja om Work-branchen också ska tas bort från GitHub. Standard ska vara att **behålla branchen**, så ett övergivet arbete kan återupptas senare. Branch-delete ska vara en separat, tydligt destruktiv handling.
+- Lägg stöd för att **Ta bort projekt** från den normala projektlistan utan att förstöra audit/historik. Implementera detta som archive/soft-delete (`archived_at` eller motsvarande), inte fysisk DELETE av projektets imports/work/audit. Ett projekt med aktivt arbete ska först kräva att arbetet avslutas.
+- När ett nytt arbete startas ska användaren kunna välja mellan **Skapa ny branch** och **Fortsätt på befintlig branch**. Befintliga val ska hämtas ägarsäkert från det konfigurerade repositoryt och en branch som redan används av ett annat aktivt arbete får inte väljas.
+- Ett tidigare avslutat arbete ska kunna återupptas genom att dess kvarvarande branch väljs som bas för ett nytt aktivt Work, utan att tidigare zip-github-internal state återaktiveras.
+- Gör branch-provisionering explicit och server-side verifierad. Ett Work får inte bli `ACTIVE` bara för att zip-github har valt ett branchnamn: GitHub-refen ska faktiskt skapas eller verifieras existera och därefter läsas tillbaka innan Work markeras aktivt.
+- Inför ett tydligt provisioning-läge (`PROVISIONING -> ACTIVE -> FINISHED/ABANDONED` eller semantiskt motsvarande) så ett misslyckat GitHub branch-create aldrig lämnar ett aktivt Work som pekar på en branch som inte finns.
+- Delivery/commit ska dessutom göra en preflight som verifierar att remote Work-branch fortfarande existerar och att dess SHA motsvarar den förväntade Work-baslinjen innan commit/push. Ingen force-push eller implicit branch recreation får ske vid delivery.
+- Lägg regression för det observerade Shortcut-fallet: promotion när inget aktivt arbete finns eller föregående arbete är avslutat ska skapa/verifiera en verklig remote Work-branch innan review/approval kan leda till commit.
+- Lägg ägarskaps-, retry- och restart-regression för create/resume/finish/abandon/archive så samma användarintention är idempotent och cross-user access fortsatt ger neutral not-found.
+
+## Steg 9.9 - GitHub Actions-status och fel direkt på Work-sidan
+
+- Återanvänd befintlig fas-8 Actions-integration så status inte endast är tillgänglig direkt efter commit utan också kan öppnas senare från det aktiva eller senaste Work på projektsidan.
+- Visa senaste relevanta workflow runs för Work-branchen med minst status (`queued`, `in_progress`, `success`, `failure`, `cancelled`), commit-SHA, workflow-/jobnamn och länk till motsvarande GitHub Actions-run.
+- Lägg en explicit **Uppdatera status**-åtgärd. UI får försiktigt polla medan en relevant run pågår men backend ska inte införa permanent monitorering eller ny bakgrundsauktorisation.
+- Vid fel ska användaren kunna öppna kondenserade fel från den befintliga Actions-detaljvägen även efter att commit-resultatdialogen stängts.
+- Lägg **Kopiera fel** som producerar en kompakt, AI-/supportvänlig text med repository, branch, commit, workflow, job/step och relevant kondenserat loggutdrag. Kopierad text ska ha samma sekretessfiltrering och storleksgränser som befintlig Actions-feldiagnostik och får inte innehålla credentials/tokens.
+- Knyt Actions-status till rätt Work/commit och låt inte äldre körningar för samma branch felaktigt presenteras som status för en nyare commit.
+- Lägg frontend/backend-regression för återbesök efter refresh/logout-login, success/failure/in-progress, kopiera-fel och GitHub API-fel/rate limit.
+
+## Steg 9.10 - E2E-regression, drift och slutlig releasegrind för fas 9
+
+- E2E-testa `Share/Shortcut -> staging upload -> öppna claim -> login -> claim -> välj projekt -> promotion -> robust Work-provisionering -> automatisk review -> approval -> delivery` utan andra ZIP-bytes eller parallell pipeline.
+- Testa logout/login, backend-restart och retry kring claim/promotion/Work-provisionering så varken stagingobjekt, Work eller vanlig import dupliceras.
+- Testa två användare och samtidiga claimförsök, aktiv-import-/aktiv-Work-konflikt, archive/abandon samt expiry/cleanup.
 - Verifiera att efter promotion är plan/selection/delivery byte- och digest-ekvivalent med samma ZIP via vanlig web upload mot samma base SHA.
 - Lägg commitmeddelande-regression som bevisar att browser-upload och StagingImport använder samma användarvalda meddelande, att restart/retry inte regenererar eller ändrar det och att samma delivery-intention inte kan skapa dubbla commits.
 - Lägg file-mode-regression för minst: executable-bit bevarad från ZIP (`100755`), befintlig executable fil uppdaterad från ZIP utan mode-metadata behåller `100755`, ny fil utan mode-metadata blir `100644`, explicit godkänd `100644 <-> 100755`-ändring levereras korrekt samt att exkluderad/hårt blockerad fil aldrig får mode ändrat.
 - Verifiera att samma ZIP via Shortcut/StagingImport och vanlig browser-upload ger ekvivalent innehåll, path-urval **och Git file modes** mot samma base SHA.
+- Verifiera Work-lifecyclefallen: ny branch skapas och läses tillbaka innan `ACTIVE`, befintlig branch kan väljas, avslut utan PR fungerar med både bevarad och borttagen branch, arkiverat projekt försvinner från normallistan och delivery vägrar om remote Work-branch saknas eller har oväntad SHA.
+- Verifiera att Actions-status och kondenserade/kopierbara fel kan återbesökas från Work-sidan efter refresh och att de är commit-korrekta och sekretessfiltrerade.
 - E2E-verifiera även att den publicerade signerade Shortcut-artefakten kan installeras på iOS, att en aktuell credential accepterar upload och att en revokad/gammal Shortcut ger det dokumenterade uppdateringsfelet utan GitHub- eller användardataläckage.
 - Uppdatera operations, threat model, API-kontrakt, releasechecklista och Shortcut-installationsguide, inklusive manuell signerad Shortcut-release och credentialrotation/revoke.
 
-**Kvalitetsgrind för fas 9:** en statiskt publicerad och signerad referens-Shortcut kan installeras på iOS och använda en deployment-scoped, lågprivilegierad upload credential som kan revokas/roteras utan GitHub-credentialrotation; gammal Shortcut ger ett tydligt uppdateringsfel och dynamisk server-/GitHub Actions-signering krävs inte. användaren kan före delivery se och ändra commitmeddelandet i den gemensamma review/approval-vägen; det slutliga meddelandet är restart-säkert, approval-bundet och idempotent vid retry. En ZIP kan skickas från iOS till en kortlivad, icke-GitHub-auktoriserad stagingyta, claimas av exakt en autentiserad användare och promoveras utan reupload till samma vanliga importpipeline. Oclaimade uploads kan inte listas/läsas, tokens lagras inte i klartext, abuse begränsas och staging ger aldrig repositoryåtkomst i sig. Git file modes bevaras deterministiskt utan filename-baserad gissning: känd ZIP-metadata används, befintliga paths faller tillbaka till basrepositoryts mode, nya paths utan mode-metadata blir `100644`, och varje godkänd modeförändring ingår i review/approval/staged-diff-verifieringen före commit.
+**Kvalitetsgrind för fas 9:** en statiskt publicerad och signerad referens-Shortcut kan installeras på iOS och använda en deployment-scoped, lågprivilegierad upload credential som kan revokas/roteras utan GitHub-credentialrotation; gammal Shortcut ger ett tydligt uppdateringsfel och dynamisk server-/GitHub Actions-signering krävs inte. Work-branch måste existera och vara verifierad på GitHub innan Work blir aktivt, delivery måste vägra saknad/stale remote branch och användaren kan avsluta utan PR, återuppta via kvarvarande branch och arkivera projekt utan att audit förstörs. Actions-status och kondenserade fel är återbesökbara från Work-sidan. användaren kan före delivery se och ändra commitmeddelandet i den gemensamma review/approval-vägen; det slutliga meddelandet är restart-säkert, approval-bundet och idempotent vid retry. En ZIP kan skickas från iOS till en kortlivad, icke-GitHub-auktoriserad stagingyta, claimas av exakt en autentiserad användare och promoveras utan reupload till samma vanliga importpipeline. Oclaimade uploads kan inte listas/läsas, tokens lagras inte i klartext, abuse begränsas och staging ger aldrig repositoryåtkomst i sig. Git file modes bevaras deterministiskt utan filename-baserad gissning: känd ZIP-metadata används, befintliga paths faller tillbaka till basrepositoryts mode, nya paths utan mode-metadata blir `100644`, och varje godkänd modeförändring ingår i review/approval/staged-diff-verifieringen före commit.
 
 # Framtida backlog - AI- och integrationsyta
 

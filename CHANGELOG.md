@@ -1,3 +1,13 @@
+## 1.0.0-rc.56 - 2026-08-08
+
+### Fixed
+- Corrected the rc.55 Structure and security CI failure: clean Git checkouts no longer require the intentionally ignored credential-bearing `zip-github.shortcut` binary.
+- Added a tracked signed-Shortcut release manifest and conditional byte/hash verification when the deployment artifact is present.
+
+### Planned
+- Split the remaining phase 9 work into 9.8 Work/project lifecycle and robust branch provisioning, 9.9 revisitable GitHub Actions status/copyable failures, and 9.10 final E2E/release regression.
+- No 9.8 implementation is included; step 9.7 remains blocked only on deployed download/install verification.
+
 ## 1.0.0-rc.55 - 2026-08-08
 
 ### Changed

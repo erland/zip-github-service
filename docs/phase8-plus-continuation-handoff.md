@@ -227,3 +227,8 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 The zip-github runtime side of signed Shortcut distribution is implemented and r0103 now carries the operator-provided signed `.shortcut` in the deployment bundle. The binary embeds the deployment staging credential, so it remains gitignored and is hard-blocked from ordinary Import delivery.
 
 9.7 is **BLOCKED**, not DONE, until a trusted Apple environment creates/exports the documented reference Shortcut, signs it for `anyone`, publishes it as `shortcut/releases/zip-github.shortcut` with matching version/generation metadata, and an iOS device accepts the downloaded file. The practical GitHub-hosted macOS test already proved ordinary hosted runners cannot perform this gate without an iCloud-signed-in environment. Do not start 9.8 before 9.7 is completed.
+
+
+## r0104 planning refinement
+
+Remaining phase 9 is now explicitly 9.8 Work/project lifecycle + robust remote branch provisioning, 9.9 revisitable Actions status/copyable condensed failures on Work page, and 9.10 final E2E/release regression. Step 9.7 remains blocked only on deployed `/shortcut` download/install verification. The signed Shortcut binary remains deployment-only; clean Git CI validates `shortcut/releases/release-manifest.txt` and verifies exact bytes only when the binary is present.

@@ -458,24 +458,127 @@ Ett steg får delas ytterligare om oväntad teknisk komplexitet uppstår. Flera 
 
 ## Steg 8.1 - Workflow runs och jobs
 
-- Läs workflow runs och jobs som hör till commit eller PR.
-- Visa status per workflow och check med länk till full GitHub-vy.
+- Läs workflow runs och jobs som hör till aktuell Work-commit eller pull request med kortlivad GitHub App-installationstoken.
+- Mappa GitHubs status/conclusion till en liten stabil intern modell och visa status per workflow/job/check.
+- Länka alltid till full GitHub-run och låt GitHub förbli källa för fullständig körningsinformation.
+- Begränsa polling, backoff och API-användning; terminala körningar ska inte pollas vidare.
+- Hantera att Actions saknas, är avstängt, ännu inte har startat eller tillfälligt inte kan läsas utan att övriga Work-resultat försvinner.
 
 ## Steg 8.2 - Artifacts och kondenserade fel
 
-- Visa artifactlänkar utan permanent lokal lagring.
-- Extrahera begränsade, spårbara felutdrag för prioriterade byggverktyg.
+- Lista relevanta artifacts från GitHub Actions och visa säkra GitHub-länkar utan permanent artifactlagring i zip-github.
+- Hämta endast de begränsade loggdelar som krävs för att identifiera ett kondenserat fel; full logg ska fortsatt öppnas på GitHub.
+- Extrahera begränsade, spårbara felutdrag för prioriterade byggverktyg, initialt Maven/Gradle, npm/Vite, Pandoc och xcodebuild där formatet går att känna igen robust.
+- Begränsa antal rader/bytes, sanera terminalkontrollsekvenser och undvik att exponera tokens/secrets i appens sammanfattning.
+- Visa tydligt vilken workflow/job/step och GitHub-URL som felutdraget kommer från.
 
 ## Steg 8.3 - Kontrollerad workflow dispatch och omkörning
 
-- Tillåt endast uttryckligen konfigurerade workflows.
-- Kontrollera behörighet, audit och idempotens.
+- Tillåt manuell `workflow_dispatch` och/eller rerun endast för uttryckligen tillåtna workflows och operationer.
+- Kontrollera repository-/installationstillhörighet, användarägarskap och nödvändiga GitHub App-behörigheter server-side.
+- Inför audit och idempotens så dubbelklick/retry inte skapar oväntade parallella körningar.
+- Kräv explicit användarhandling och visa vilken branch/ref och workflow som kommer att köras.
+- Lägg regressionsskydd för obehörig workflow, stale Work, dubbel retry och GitHub-fel.
 
-## Steg 8.4 - AI- och integrationsyta
+**Kvalitetsgrind för fas 8:** zip-github ger en mobilvänlig översikt över relevanta Actions-runs/jobs, artifacts och begränsade felutdrag utan att ersätta GitHub som fullständig källa. Kontrollerad dispatch/rerun är explicit, owner-scoped, auditerad och idempotent.
 
-- Lägg ett litet read-only/status-API.
-- Utvärdera Custom GPT Action eller MCP-adapter för små styr- och statusanrop.
-- Lägg export av aktuell GitHub-branch som AI-anpassad ZIP.
+# Fas 9 - Shortcut och kortlivad StagingImport
+
+Fas 9 gör det möjligt att från exempelvis iOS delningsblad/Shortcut skicka en ZIP till zip-github innan användaren öppnar webbappen. Staging är endast en transportbuffert: den får aldrig ge GitHub-åtkomst, skapa en vanlig import under anonym identitet eller införa en separat comparison/policy/delivery-pipeline. Efter autentisering och claim ska den redan lagrade ZIP-filen promoveras genom den befintliga `StoredUploadArtifact`/`createImportFromStoredUpload(...)`-vägen.
+
+Fas 9 ska samtidigt täppa till metadataförlust som kan uppstå i ZIP→GitHub-flödet för Git file modes. Unix executable-bit är en del av projektets Git-semantik och ska, när den finns tillgänglig i ZIP-metadata eller redan finns i basrepositoryt, bevaras genom staging, inventory/plan, granskning och delivery. zip-github får inte gissa körbarhet från filnamn eller filändelse. För vanliga filer stöds initialt de Git-relevanta lägena `100644` och `100755`; övriga/otillåtna modevärden ska normaliseras eller blockeras enligt en explicit säker policy.
+
+## Steg 9.1 - Definiera och persistiera StagingImport-livscykeln
+
+- Inför en separat `StagingImport`-modell/tabell för kortlivad, ännu inte användarägd ZIP med staging-id, storage metadata/SHA-256, skapad tid, expiry, status och claim-token-hash.
+- Statusmodellen ska minst skilja på `AVAILABLE`, `CLAIMED`, `PROMOTED`, `EXPIRED` och `CANCELLED`/motsvarande terminalt läge.
+- Spara aldrig claim-token i klartext och använd aldrig claim-/upload-token som `sourceReference` eller audittext.
+- Staging ska referera till samma neutrala lagringsartefakt som `ZipIngestionService` producerar; inga ZIP-bytes ska kopieras eller streamas om vid promotion.
+- Dokumentera transaktions-/låsningskrav så endast en användare kan claima ett stagingobjekt och promotion kan göras idempotent.
+- Utöka den neutrala upload-/stagingrepresentationen så känd Unix executable-metadata från ZIP kan bevaras per fil utan att göra staging till en separat importpipeline. Representationen ska kunna bära skillnaden mellan vanlig fil (`100644`) och executable (`100755`) vidare till ordinary Import.
+- Definiera säker fallback för saknad mode-metadata: befintliga repositoryfiler ska som utgångspunkt behålla basrepositoryts Git mode, medan helt nya filer utan tillförlitlig mode-information får `100644`; zip-github får inte inferera `100755` från exempelvis `.sh`, `mvnw` eller andra filnamn.
+
+## Steg 9.2 - Lägg capability-skyddad staging-upload
+
+- Lägg ett smalt upload-endpoint avsett för Shortcut/andra enkla klienter som accepterar en ZIP via befintlig `ZipIngestionService`.
+- Skydda endpointen med en separat **deployment-scoped, roterbar och lågprivilegierad upload credential/capability** som endast ger rätt att skapa en staging-upload; capabilityn är uttryckligen **inte användarautentisering** och får aldrig ge list/read/claim/project/GitHub-behörighet. Första fas-9-versionen ska inte göra credentialen användarspecifik.
+- Capability skickas i en dedikerad header (föredraget `X-ZipGitHub-Upload-Credential`) och aldrig i URL. Den ska hållas separat från webbsession/OAuth/GitHub App-secrets och får inte förekomma i access logs, analytics eller audittext. Lägg hård rate limiting, samma ZIP-/storleksgränser som webbuppladdning och generisk felinformation.
+- Credentialens säkerhetsmål är abuse-skydd för stagingkapacitet, inte identitet eller repositoryauktorisation. En läcka ska därför kunna hanteras genom omedelbar revoke/rotation utan att GitHub-credentials eller användarsessioner behöver roteras.
+- Returnera ett ogenomskinligt staging-id, expiry och en engångs-claim-URL/token. Claim-token ska ha hög entropi, returneras endast vid skapandet och endast hash lagras server-side.
+- Det ska inte finnas något anonymt list-endpoint eller möjlighet att läsa tillbaka ZIP/data med endast staging-id eller upload capability.
+
+## Steg 9.3 - Implementera autentiserad claim från webbläsaren
+
+- Lägg en mobilvänlig claim-route som öppnas från Shortcut efter lyckad upload.
+- Minimera tokenläckage genom att föredra claim-token i URL-fragment/client-side state; token får inte hamna i server access logs, analytics eller referrer till tredje part.
+- Om användaren inte är inloggad ska claim-intentionen överleva GitHub-login säkert och återupptas efter callback.
+- Efter vanlig GitHub-inloggning ska backend atomiskt binda stagingobjektet till den autentiserade användaren; en redan claimad token får inte kunna tas över av en annan användare.
+- Claim ska vara idempotent för samma ägare men ge neutralt 404/410-liknande svar för fel token, utgånget eller redan taget objekt så information inte läcker.
+
+## Steg 9.4 - Välj projekt och promovera staging-ZIP till vanlig Import
+
+- Efter claim visar webbappen ZIP-namn/storlek/SHA/expiry och användarens valbara zip-github-projekt; ingen GitHub-data ska vara tillgänglig före vanlig auth.
+- Användaren väljer projekt/Work. Om projektet redan har en aktiv import ska promotion blockeras av samma `ACTIVE_IMPORT_EXISTS`-invariant som webbladdning och användaren får välja annat projekt, avbryta befintlig import eller återkomma.
+- Promovera den redan lagrade artefakten via befintlig `createImportFromStoredUpload(...)` med `ImportSource.STAGING_IMPORT` och endast en icke-hemlig staging-korrelation som `sourceReference`.
+- Ingen ny upload/copy/restream får ske och identisk promotion/retry ska returnera samma vanliga Import.
+- Efter promotion används exakt befintligt flöde: prepare review -> inventory/snapshot/comparison/policy/plan -> selection/approval -> Work-commit/PR.
+- Säkerställ att promotion och den vanliga importpipen bevarar känd file-mode-metadata och att repositorysnapshotens mode används som fallback för befintliga paths när ZIP:en saknar tillförlitlig Unix mode-information.
+- Gör modeförändringar granskningsbara och approval-bundna på samma sätt som innehåll/path-förändringar: exempelvis `100644 -> 100755` eller `100755 -> 100644` ska vara synligt i plan/review och ingå i den exakta verifieringen före commit. Exkluderade paths får inte få mode ändrat.
+- Git delivery ska skapa korrekt index/tree-mode för godkända vanliga filer (`100644`/`100755`) och verifiera den staged Git-diffen inklusive mode före commit.
+
+## Steg 9.5 - Låt användaren ange commitmeddelandet
+
+- Lägg ett tydligt commitmeddelandefält i den ordinarie review/approval-vägen innan commit skapas. Funktionen ska gälla både vanlig browser-upload och en Import som kommer från StagingImport; staging får inte få en separat commitregel.
+- Den nuvarande automatiskt genererade texten får användas som ett **redigerbart förslag** för bekvämlighet, men får inte längre vara ett dolt/slutligt val som användaren inte kan ändra. Användaren ska kunna ersätta hela meddelandet före approval/delivery.
+- Validera och normalisera commitmeddelandet server-side med dokumenterad maxlängd, normaliserade radslut och avvisning av tomt/whitespace-only meddelande i den interaktiva vägen. Ingen osanitiserad kontrolltext får skickas till Git/GitHub.
+- Persistiera det valda commitmeddelandet i den restart-säkra import/approval-state som krävs för att refresh, logout/login, backend-restart och delivery-retry använder exakt samma meddelande och inte genererar ett nytt.
+- Bind det slutliga commitmeddelandet till den explicita approval/delivery-intentionen så att ett meddelande inte kan bytas efter godkännande utan ett nytt explicit godkännande. Idempotent retry av samma godkända delivery ska återanvända samma meddelande och får inte skapa en extra commit.
+- Visa commitmeddelandet i den sista bekräftelsen tillsammans med branch/ref och valt filurval. Efter delivery ska Work-historiken fortsatt visa det faktiska commitmeddelandet från GitHub.
+- Behåll en bakåtkompatibel, deterministisk fallback endast där äldre återupptagningsdata eller icke-interaktiva interna anrop saknar det nya fältet; normal ny UI-flow ska alltid låta användaren se och välja meddelandet. Dokumentera fallbacken tydligt så den inte blir den primära UX:en igen.
+- Lägg backend- och frontendregression för eget meddelande, redigerat förslag, tomt/ogiltigt meddelande, restart/resume och retry/idempotens.
+
+## Steg 9.6 - Retention, abuse-skydd och säkerhetsregression för staging
+
+- Städa oclaimade stagingobjekt automatiskt efter kort konfigurerbar TTL, initialt cirka en timme; terminala/utgångna artifacts ska raderas deterministiskt.
+- Definiera en kort säker frist för claimade men ännu inte promoverade objekt och säkerställ att promotion/cleanup inte kan race:a.
+- Rate-limita per capability och nätverkskälla där möjligt och sätt tak för samtidiga staginguploads/lagringsvolym så en läckt capability inte kan fylla disken.
+- Säkerställ **omedelbar revoke och enkel deployment-credential-rotation utan datamigrering** och dokumentera incidentåtgärd vid läckt upload capability. Första versionen behöver inte stödja `current`/`previous` parallellt: efter rotation får en gammal Shortcut misslyckas tydligt och användaren hänvisas till att hämta/installera den senaste signerade Shortcut-versionen.
+- Stagingobjekt som redan skapats före credentialrotation fortsätter styras av sina separata claim-token/TTL-regler; rotation av upload credential får inte i sig ge eller ta bort claim-/GitHub-behörighet.
+- Lägg tester för revoked/old upload credential, token guessing/reuse, concurrent claim, cross-user isolation, expired claim, cleanup race, överstor ZIP och att staging aldrig kan nå GitHub-operationer före promotion.
+
+## Steg 9.7 - Distribuera en signerad referens-Shortcut för iOS
+
+- Skapa och dokumentera ett minimalt iOS Shortcut-flöde som tar emot en ZIP från Share Sheet/Filer, anropar staging-upload med den dedikerade capability-headern och öppnar returnerad claim-URL i standardwebbläsaren.
+- **Första versionen ska distribueras som en statisk, försignerad `.shortcut`-releaseartefakt**, inte genereras/signeras dynamiskt av Java-backend per användare. En inloggad användare ska kunna hämta den aktuella installerbara Shortcut-filen från zip-githubs UI/installationssida.
+- Den signerade standard-Shortcuten får bära den aktuella deployment-scoped upload credentialen eftersom denna endast ger staging-create/abuse-skydd. Shortcuten får aldrig innehålla GitHub-token, GitHub App private key, zip-github user-id, Project-id som auktorisationsgenväg eller importpolicylogik.
+- Dokumentera build/release-processen för Shortcut-filen: skapa/uppdatera Shortcuten i en betrodd Apple-miljö, signera den för delning (`anyone`) och publicera exakt den signerade artefakten. Det praktiska phase-9-spiket visade att GitHub-hostad macOS-runner har `shortcuts sign` men misslyckar utan en iCloud-inloggad miljö; dynamisk GitHub Actions-signering är därför **inte** ett krav för fas 9.
+- Credentialrotation sker i första versionen genom att backend revokar den gamla deployment-credentialen, en ny signerad Shortcut med ny credential publiceras och gamla installationer får ett tydligt `shortcut outdated/credential revoked`-fel som hänvisar användaren till zip-github för att hämta/installera senaste Shortcut. Ingen `current`/`previous` grace-period krävs.
+- Versionsmärk referens-Shortcuten så UI/felmeddelanden och operationsdokumentation kan identifiera vilken Shortcut-generation som används utan att logga credentialen.
+- Ge tydliga felvägar för offline, 401/403 på gammal/revokad Shortcut, 413/429, utgången claim och serverfel. Claim-token eller upload credential får inte läggas i Shortcut-notiser, persistent loggtext eller annan diagnos som användaren typiskt delar.
+- Dokumentera en exakt manuell återbyggnadsinstruktion (actions, header, request body, svar, signering och release) så artefakten kan reproduceras även om den signerade releasefilen behöver ersättas.
+
+## Steg 9.8 - E2E-regression, drift och releasegrind för Shortcut/StagingImport
+
+- E2E-testa `Share/Shortcut -> staging upload -> öppna claim -> login -> claim -> välj projekt -> promotion -> automatisk review` utan andra ZIP-bytes eller parallell pipeline.
+- Testa logout/login, backend-restart och retry kring claim/promotion så varken stagingobjekt eller vanlig import dupliceras.
+- Testa två användare och samtidiga claimförsök, aktiv-import-konflikt samt expiry/cleanup.
+- Verifiera att efter promotion är plan/selection/delivery byte- och digest-ekvivalent med samma ZIP via vanlig web upload mot samma base SHA.
+- Lägg commitmeddelande-regression som bevisar att browser-upload och StagingImport använder samma användarvalda meddelande, att restart/retry inte regenererar eller ändrar det och att samma delivery-intention inte kan skapa dubbla commits.
+- Lägg file-mode-regression för minst: executable-bit bevarad från ZIP (`100755`), befintlig executable fil uppdaterad från ZIP utan mode-metadata behåller `100755`, ny fil utan mode-metadata blir `100644`, explicit godkänd `100644 <-> 100755`-ändring levereras korrekt samt att exkluderad/hårt blockerad fil aldrig får mode ändrat.
+- Verifiera att samma ZIP via Shortcut/StagingImport och vanlig browser-upload ger ekvivalent innehåll, path-urval **och Git file modes** mot samma base SHA.
+- E2E-verifiera även att den publicerade signerade Shortcut-artefakten kan installeras på iOS, att en aktuell credential accepterar upload och att en revokad/gammal Shortcut ger det dokumenterade uppdateringsfelet utan GitHub- eller användardataläckage.
+- Uppdatera operations, threat model, API-kontrakt, releasechecklista och Shortcut-installationsguide, inklusive manuell signerad Shortcut-release och credentialrotation/revoke.
+
+**Kvalitetsgrind för fas 9:** en statiskt publicerad och signerad referens-Shortcut kan installeras på iOS och använda en deployment-scoped, lågprivilegierad upload credential som kan revokas/roteras utan GitHub-credentialrotation; gammal Shortcut ger ett tydligt uppdateringsfel och dynamisk server-/GitHub Actions-signering krävs inte. användaren kan före delivery se och ändra commitmeddelandet i den gemensamma review/approval-vägen; det slutliga meddelandet är restart-säkert, approval-bundet och idempotent vid retry. En ZIP kan skickas från iOS till en kortlivad, icke-GitHub-auktoriserad stagingyta, claimas av exakt en autentiserad användare och promoveras utan reupload till samma vanliga importpipeline. Oclaimade uploads kan inte listas/läsas, tokens lagras inte i klartext, abuse begränsas och staging ger aldrig repositoryåtkomst i sig. Git file modes bevaras deterministiskt utan filename-baserad gissning: känd ZIP-metadata används, befintliga paths faller tillbaka till basrepositoryts mode, nya paths utan mode-metadata blir `100644`, och varje godkänd modeförändring ingår i review/approval/staged-diff-verifieringen före commit.
+
+# Framtida backlog - AI- och integrationsyta
+
+Det tidigare steg 8.4 flyttas uttryckligen utanför den aktiva fasplanen. Det ska omprövas först efter verklig användning av Actions- och Shortcut-flödena.
+
+- Litet read-only/status-API för externa assistenter/integrationer.
+- Eventuell Custom GPT Action eller MCP-adapter för små styr- och statusanrop.
+- Export av aktuell GitHub-branch som AI-anpassad ZIP.
+- Eventuell avancerad trevägsanalys/provenance för att upptäcka ZIP som skapats från äldre repositoryläge utan att kräva zip-github-specifik metadata i vanliga ZIP-filer.
 
 # Rekommenderad promptmall för varje steg
 
@@ -502,6 +605,7 @@ Rapportera kort vad som ändrats, vilka tester som körts och om kvalitetsgrinde
 - **Lämpliga som en prompt:** de numrerade stegen ovan.
 - **Vanligen för stora som en prompt:** fas 2, 3, 4, 5 och 7 i sin helhet.
 - **Kan ibland rymmas i en prompt, men bör ändå delas:** fas 0, 1 och 6.
-- **Ska inte kombineras med MVP-arbetet:** fas 8.
+- **Ska inte kombineras med MVP-arbetet:** fas 8 och 9.
+- **Framtida backlog:** AI-/assistantintegrationer genomförs först när ett konkret behov har validerats efter fas 8–9.
 
 Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller flera steg per fas, och en kvalitetsgrind efter varje fas**.

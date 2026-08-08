@@ -17,5 +17,6 @@ public record ImportComparisonResponse(
             Long archiveSizeBytes,
             String archiveSha256,
             Long repositorySizeBytes,
-            String repositorySha256) { }
+            String repositorySha256,
+            String archiveMode, String repositoryMode, String effectiveMode, boolean modeChanged) { }
 }

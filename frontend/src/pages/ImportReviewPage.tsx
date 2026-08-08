@@ -29,6 +29,7 @@ export default function ImportReviewPage() {
   const [overridePaths, setOverridePaths] = useState<Set<string>>(new Set());
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [commitMessage, setCommitMessage] = useState(() => importId ? `Apply approved ZIP import ${importId}` : '');
 
   useEffect(() => {
     if (!importId) {
@@ -60,7 +61,12 @@ export default function ImportReviewPage() {
         } else {
           setSelectedPaths(defaultSelectedPaths(loadedPlan.entries));
         }
-        if (existingApproval) setApproval(existingApproval);
+        if (existingApproval) {
+          setApproval(existingApproval);
+          setCommitMessage(existingApproval.commitMessage);
+        } else if (importId) {
+          setCommitMessage(`Apply approved ZIP import ${importId}`);
+        }
       } catch (reason) {
         if (active) setError(reason instanceof Error ? reason.message : 'Importplanen kunde inte hämtas.');
       } finally {
@@ -88,7 +94,7 @@ export default function ImportReviewPage() {
       }
       let recordedApproval = approval;
       if (!recordedApproval) {
-        recordedApproval = await approveImportPlan(importId, plan.planDigestSha256, digest);
+        recordedApproval = await approveImportPlan(importId, plan.planDigestSha256, digest, commitMessage);
         setApproval(recordedApproval);
       }
       setApproving(false);
@@ -158,13 +164,15 @@ export default function ImportReviewPage() {
         selectedPaths={selectedPaths} setSelectedPaths={setSelectedPaths}
         overridePaths={overridePaths} setOverridePaths={setOverridePaths} selectionLocked={Boolean(selectionDigest)}
         cancelConfirm={cancelConfirm} setCancelConfirm={setCancelConfirm} cancelling={cancelling}
-        confirmCancelImport={confirmCancelImport} />}
+        confirmCancelImport={confirmCancelImport}
+        commitMessage={commitMessage} setCommitMessage={setCommitMessage} />}
     </section>
   );
 }
 
 function ReviewContent({ plan, filter, setFilter, entries, approving, approval, approveAndDeliver, delivering, retryApprovedDelivery,
-  selectedPaths, setSelectedPaths, overridePaths, setOverridePaths, selectionLocked, cancelConfirm, setCancelConfirm, cancelling, confirmCancelImport }: {
+  selectedPaths, setSelectedPaths, overridePaths, setOverridePaths, selectionLocked, cancelConfirm, setCancelConfirm, cancelling, confirmCancelImport,
+  commitMessage, setCommitMessage }: {
   plan: ImportPlanResponse;
   filter: ReviewFilter;
   setFilter: (filter: ReviewFilter) => void;
@@ -183,6 +191,8 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
   setCancelConfirm: (value: boolean) => void;
   cancelling: boolean;
   confirmCancelImport: () => void;
+  commitMessage: string;
+  setCommitMessage: (value: string) => void;
 }) {
   return (
     <>
@@ -243,11 +253,26 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
       )}
 
 
+      <section className="commit-message-editor" aria-labelledby="commit-message-heading">
+        <h2 id="commit-message-heading">Commitmeddelande</h2>
+        <p>Det här meddelandet används för committen på Work-branchen. Du kan ersätta förslaget helt innan du godkänner.</p>
+        <label htmlFor="commit-message">Meddelande</label>
+        <textarea id="commit-message" rows={3} maxLength={500} value={commitMessage}
+          disabled={Boolean(approval) || approving || delivering}
+          onChange={(event) => setCommitMessage(event.target.value)} />
+        <p className="field-hint">{commitMessage.length}/500 tecken. Tomt meddelande kan inte godkännas.</p>
+      </section>
+
       <div className="review-actions">
         {approval ? (
           <div className="approval-confirmation" role="status">
             <strong>Förändringarna är godkända</strong>
-            <p>Urvalet är låst och godkänt. Föregående commit/push slutfördes inte, så du kan säkert försöka leveransen igen.</p>
+            <p>Urval och commitmeddelande är låsta. Föregående commit/push slutfördes inte, så du kan säkert försöka leveransen igen.</p>
+            <dl className="approval-summary">
+              <div><dt>Commitmeddelande</dt><dd><code>{approval.commitMessage}</code></dd></div>
+              <div><dt>Base ref</dt><dd><code>{plan.baseCommitSha}</code></dd></div>
+              <div><dt>Valda filer</dt><dd>{selectedPaths.size}</dd></div>
+            </dl>
             <button className="button" type="button" disabled={delivering} onClick={retryApprovedDelivery}>
               {delivering ? 'Försöker skapa commit igen…' : 'Försök skapa commit igen'}
             </button>
@@ -255,11 +280,16 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
         ) : (
           <>
             <p>{selectionLocked
-              ? 'Urvalet är låst. Samma urval används när godkännandet och committen försöks igen.'
+              ? 'Urvalet är låst. Du kan fortfarande justera commitmeddelandet innan det slutliga godkännandet.'
               : selectedPaths.size > 0
                 ? 'Ett klick låser urvalet, registrerar godkännandet och skapar sedan commit på arbetsbranchen.'
                 : 'Välj minst en förändring innan urvalet kan godkännas.'}</p>
-            <button className="button" type="button" disabled={selectedPaths.size === 0 || approving || delivering}
+            <dl className="approval-summary" aria-label="Slutlig commitbekräftelse">
+              <div><dt>Commitmeddelande</dt><dd><code>{commitMessage.trim() || '—'}</code></dd></div>
+              <div><dt>Base ref</dt><dd><code>{plan.baseCommitSha}</code></dd></div>
+              <div><dt>Valda filer</dt><dd>{selectedPaths.size}</dd></div>
+            </dl>
+            <button className="button" type="button" disabled={selectedPaths.size === 0 || commitMessage.trim().length === 0 || approving || delivering}
               onClick={approveAndDeliver}>
               {approving ? 'Godkänner…' : delivering ? 'Skapar commit på arbetsbranchen…' : 'Godkänn valda förändringar'}
             </button>

@@ -2,6 +2,7 @@ package info.isaksson.erland.zipgithub.delivery;
 
 import info.isaksson.erland.zipgithub.github.GitHubInstallationTokenProvider;
 import info.isaksson.erland.zipgithub.workspace.AppliedImportWorkspace;
+import info.isaksson.erland.zipgithub.plan.CommitMessagePolicy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -34,14 +35,27 @@ public class GitDeliveryService {
     }
 
     public GitDeliveryResult deliver(long installationId, String baseBranch, String targetBranch, AppliedImportWorkspace workspace, GitCommitIdentity identity) {
+        return deliver(installationId, baseBranch, targetBranch, workspace, identity,
+                CommitMessagePolicy.defaultSuggestion(workspace.importId()));
+    }
+
+    public GitDeliveryResult deliver(long installationId, String baseBranch, String targetBranch, AppliedImportWorkspace workspace,
+                                     GitCommitIdentity identity, String commitMessage) {
         String token = tokens.createInstallationToken(installationId);
         URI remote = URI.create("https://github.com/" + workspace.repositoryFullName() + ".git");
-        return deliver(baseBranch, targetBranch, workspace, remote, token, identity);
+        return deliver(baseBranch, targetBranch, workspace, remote, token, identity, commitMessage);
     }
 
     GitDeliveryResult deliver(String baseBranch, String targetBranch, AppliedImportWorkspace workspace, URI remote, String token, GitCommitIdentity identity) {
+        return deliver(baseBranch, targetBranch, workspace, remote, token, identity,
+                CommitMessagePolicy.defaultSuggestion(workspace.importId()));
+    }
+
+    GitDeliveryResult deliver(String baseBranch, String targetBranch, AppliedImportWorkspace workspace, URI remote, String token,
+                              GitCommitIdentity identity, String commitMessage) {
         validate(baseBranch, targetBranch, workspace, remote);
         if (identity == null) throw new IllegalArgumentException("Git identity is required.");
+        commitMessage = CommitMessagePolicy.persistedOrLegacyFallback(commitMessage, workspace.importId());
         Path directory = workspace.workspacePath().toAbsolutePath().normalize();
         String branchName = targetBranch;
         try {
@@ -56,7 +70,8 @@ public class GitDeliveryService {
             runPlain(directory, "git", "checkout", "--quiet", "-b", branchName);
             runPlain(directory, "git", "add", "--all");
             verifyStagedPaths(directory, workspace.appliedPaths());
-            runCommit(directory, identity, "Apply approved ZIP import " + workspace.importId());
+            verifyStagedModes(directory, workspace.expectedFileModes());
+            runCommit(directory, identity, commitMessage);
             String commitSha = runPlain(directory, "git", "rev-parse", "HEAD^{commit}").trim();
             String parent = runPlain(directory, "git", "rev-parse", "HEAD^1^{commit}").trim();
             if (!parent.equalsIgnoreCase(workspace.baseCommitSha()))
@@ -85,6 +100,16 @@ public class GitDeliveryService {
         Set<String> expected = new HashSet<>(expectedPaths);
         if (!actual.equals(expected)) throw new GitDeliveryException("Staged Git changes do not match the approved workspace.");
         if (actual.isEmpty()) throw new GitDeliveryException("The approved workspace contains no committable changes.");
+    }
+
+    private static void verifyStagedModes(Path directory, java.util.Map<String,String> expectedModes) {
+        for (var entry : expectedModes.entrySet()) {
+            String output = runPlain(directory, "git", "ls-files", "--stage", "--", entry.getKey()).trim();
+            if (output.isBlank()) throw new GitDeliveryException("Approved file is missing from staged Git index: " + entry.getKey());
+            String actual = output.split("\\s+", 2)[0];
+            if (!entry.getValue().equals(actual))
+                throw new GitDeliveryException("Staged Git mode does not match approved plan for " + entry.getKey());
+        }
     }
 
     private static List<String> parseNul(String value) {

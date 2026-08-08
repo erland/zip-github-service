@@ -14,6 +14,12 @@ import info.isaksson.erland.zipgithub.api.dto.AppliedImportWorkspaceResponse;
 import info.isaksson.erland.zipgithub.api.dto.GitDeliveryResponse;
 import info.isaksson.erland.zipgithub.api.dto.PullRequestResponse;
 import info.isaksson.erland.zipgithub.api.dto.ImportCheckStatusResponse;
+import info.isaksson.erland.zipgithub.api.dto.ImportActionsStatusResponse;
+import info.isaksson.erland.zipgithub.api.dto.ImportActionsDetailsResponse;
+import info.isaksson.erland.zipgithub.api.dto.ImportActionsControlOptionsResponse;
+import info.isaksson.erland.zipgithub.api.dto.DispatchWorkflowRequest;
+import info.isaksson.erland.zipgithub.api.dto.RerunWorkflowRequest;
+import info.isaksson.erland.zipgithub.api.dto.ActionsControlOperationResponse;
 import info.isaksson.erland.zipgithub.api.error.ApiException;
 import info.isaksson.erland.zipgithub.application.ProjectApplicationService;
 import info.isaksson.erland.zipgithub.security.CurrentUserProvider;
@@ -35,6 +41,9 @@ import info.isaksson.erland.zipgithub.delivery.GitDeliveryException;
 import info.isaksson.erland.zipgithub.delivery.GitDeliveryService;
 import info.isaksson.erland.zipgithub.pullrequest.PullRequestService;
 import info.isaksson.erland.zipgithub.checks.ImportCheckStatusService;
+import info.isaksson.erland.zipgithub.actions.ImportActionsStatusService;
+import info.isaksson.erland.zipgithub.actions.ImportActionsDetailsService;
+import info.isaksson.erland.zipgithub.actions.ImportActionsControlService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -61,6 +70,9 @@ public class ImportResource {
     @Inject GitDeliveryService gitDelivery;
     @Inject PullRequestService pullRequests;
     @Inject ImportCheckStatusService checkStatuses;
+    @Inject ImportActionsStatusService actionsStatuses;
+    @Inject ImportActionsDetailsService actionsDetails;
+    @Inject ImportActionsControlService actionsControl;
 
     @GET @Path("/{importId}")
     public ImportResponse get(@PathParam("importId") UUID importId) {
@@ -107,13 +119,14 @@ public class ImportResource {
         var sources = service.comparisonSources(ownerUserId, importId);
         try {
             var archive = archiveInventories.createInventory(sources.upload().storagePath());
-            var comparison = comparisons.compare(archive, sources.snapshot());
+            var comparison = comparisons.compare(archive, sources.snapshot(), sources.upload().fileModes());
             return new ImportComparisonResponse(comparison.importId(), comparison.baseCommitSha(),
                     comparison.count(ImportFileStatus.ADDED), comparison.count(ImportFileStatus.MODIFIED),
                     comparison.count(ImportFileStatus.UNCHANGED), comparison.count(ImportFileStatus.WOULD_DELETE),
                     comparison.entries().stream().map(entry -> new ImportComparisonResponse.Entry(
                             entry.path(), entry.status().name(), entry.archiveSizeBytes(), entry.archiveSha256(),
-                            entry.repositorySizeBytes(), entry.repositorySha256())).toList());
+                            entry.repositorySizeBytes(), entry.repositorySha256(), entry.archiveMode(), entry.repositoryMode(),
+                            entry.effectiveMode(), entry.modeChanged())).toList());
         } catch (IOException | RuntimeException e) {
             if (e instanceof ApiException apiException) throw apiException;
             throw ApiException.badRequest("IMPORT_COMPARISON_FAILED", e.getMessage());
@@ -127,7 +140,7 @@ public class ImportResource {
         var sources = service.comparisonSources(ownerUserId, importId);
         try {
             var archive = archiveInventories.createInventory(sources.upload().storagePath());
-            var comparison = comparisons.compare(archive, sources.snapshot());
+            var comparison = comparisons.compare(archive, sources.snapshot(), sources.upload().fileModes());
             var result = importPolicy.evaluate(archive, comparison);
             return new ImportPolicyResponse(result.importId(), result.baseCommitSha(), result.policyVersion(), result.approvable(),
                     result.count(ImportFileStatus.ADDED), result.count(ImportFileStatus.MODIFIED),
@@ -175,9 +188,9 @@ public class ImportResource {
         var sources = service.comparisonSources(ownerUserId, importId);
         try {
             var archive = archiveInventories.createInventory(sources.upload().storagePath());
-            var comparison = comparisons.compare(archive, sources.snapshot());
+            var comparison = comparisons.compare(archive, sources.snapshot(), sources.upload().fileModes());
             var policy = importPolicy.evaluate(archive, comparison);
-            var created = importPlans.create(ownerUserId, sources.upload().sha256(), archive, policy, java.time.Instant.now());
+            var created = importPlans.create(ownerUserId, sources.upload().sha256(), archive, policy, comparison, java.time.Instant.now());
             return toPlanResponse(service.recordImportPlan(ownerUserId, importId, created));
         } catch (IOException | RuntimeException e) {
             if (e instanceof ApiException apiException) throw apiException;
@@ -225,9 +238,10 @@ public class ImportResource {
         UUID ownerUserId = currentUser.requireUserId();
         var approval = service.approveImportPlan(ownerUserId, importId,
                 request == null ? null : request.planDigestSha256(),
-                request == null ? null : request.selectionDigestSha256());
+                request == null ? null : request.selectionDigestSha256(),
+                request == null ? null : request.commitMessage());
         return new ImportPlanApprovalResponse(approval.importId(), approval.planId(),
-                approval.planDigestSha256(), approval.selectionDigestSha256(), "APPROVED", approval.approvedAt());
+                approval.planDigestSha256(), approval.selectionDigestSha256(), approval.commitMessage(), "APPROVED", approval.approvedAt());
     }
 
     @GET
@@ -237,7 +251,7 @@ public class ImportResource {
                 .orElseThrow(() -> ApiException.notFound("IMPORT_PLAN_APPROVAL_NOT_FOUND",
                         "No approval has been recorded for this import."));
         return new ImportPlanApprovalResponse(approval.importId(), approval.planId(),
-                approval.planDigestSha256(), approval.selectionDigestSha256(), "APPROVED", approval.approvedAt());
+                approval.planDigestSha256(), approval.selectionDigestSha256(), approval.commitMessage(), "APPROVED", approval.approvedAt());
     }
 
 
@@ -281,7 +295,7 @@ public class ImportResource {
         try {
             var identity = service.gitCommitIdentity(ownerUserId, importId);
             var delivered = gitDelivery.deliver(sources.githubInstallationId(), sources.snapshot().branch(),
-                    service.workBranchForImport(ownerUserId, importId), workspace, identity);
+                    service.workBranchForImport(ownerUserId, importId), workspace, identity, sources.approval().commitMessage());
             var stored = service.recordGitDelivery(ownerUserId, importId, delivered);
             importWorkspaces.delete(workspace);
             return new GitDeliveryResponse(stored.importId(), stored.repositoryFullName(), stored.baseBranch(),
@@ -346,6 +360,84 @@ public class ImportResource {
     }
 
     @GET
+    @Path("/{importId}/actions")
+    public ImportActionsStatusResponse getActions(@PathParam("importId") UUID importId) {
+        UUID ownerUserId = currentUser.requireUserId();
+        var sources = service.deliverySources(ownerUserId, importId);
+        var delivery = service.findGitDelivery(ownerUserId, importId)
+                .orElseThrow(() -> ApiException.conflict("GIT_DELIVERY_REQUIRED",
+                        "The import must be pushed before Actions status can be read."));
+        var status = actionsStatuses.read(importId, sources.githubInstallationId(),
+                delivery.repositoryFullName(), delivery.commitSha());
+        var workflows = status.workflows().stream().map(workflow -> new ImportActionsStatusResponse.WorkflowRunResponse(
+                workflow.id(), workflow.workflowId(), workflow.workflowPath(), workflow.headBranch(), workflow.headSha(),
+                workflow.name(), workflow.state(), workflow.terminal(), workflow.event(), workflow.htmlUrl(),
+                workflow.createdAt(), workflow.updatedAt(), workflow.jobs().stream().map(job -> new ImportActionsStatusResponse.JobResponse(
+                        job.id(), job.name(), job.state(), job.terminal(), job.htmlUrl(), job.startedAt(), job.completedAt())).toList())).toList();
+        var checks = status.checks().stream().map(check -> new ImportActionsStatusResponse.CheckRunResponse(
+                check.id(), check.name(), check.state(), check.terminal(), check.htmlUrl(), check.appName(),
+                check.startedAt(), check.completedAt())).toList();
+        return new ImportActionsStatusResponse(status.importId(), status.repositoryFullName(), status.commitSha(),
+                status.state(), status.terminal(), status.detailsUrl(), workflows, checks, status.checkedAt());
+    }
+
+    @GET
+    @Path("/{importId}/actions/details")
+    public ImportActionsDetailsResponse getActionDetails(@PathParam("importId") UUID importId) {
+        UUID ownerUserId = currentUser.requireUserId();
+        var sources = service.deliverySources(ownerUserId, importId);
+        var delivery = service.findGitDelivery(ownerUserId, importId)
+                .orElseThrow(() -> ApiException.conflict("GIT_DELIVERY_REQUIRED",
+                        "The import must be pushed before Actions details can be read."));
+        var details = actionsDetails.read(importId, sources.githubInstallationId(),
+                delivery.repositoryFullName(), delivery.commitSha());
+        var artifacts = details.artifacts().stream().map(artifact -> new ImportActionsDetailsResponse.ArtifactResponse(
+                artifact.id(), artifact.name(), artifact.sizeBytes(), artifact.expired(), artifact.createdAt(), artifact.expiresAt(),
+                artifact.workflowRunId(), artifact.workflowName(), artifact.githubUrl())).toList();
+        var failures = details.failures().stream().map(failure -> new ImportActionsDetailsResponse.FailureResponse(
+                failure.workflowRunId(), failure.workflowName(), failure.jobId(), failure.jobName(), failure.stepName(),
+                failure.tool(), failure.lines(), failure.githubUrl())).toList();
+        return new ImportActionsDetailsResponse(details.importId(), details.repositoryFullName(), details.commitSha(),
+                details.detailsUrl(), artifacts, failures, details.checkedAt());
+    }
+
+    @GET
+    @Path("/{importId}/actions/control")
+    public ImportActionsControlOptionsResponse getActionsControlOptions(@PathParam("importId") UUID importId) {
+        var options = actionsControl.options(currentUser.requireUserId(), importId);
+        return new ImportActionsControlOptionsResponse(options.importId(), options.repositoryFullName(), options.branchRef(),
+                options.commitSha(), options.currentWork(), options.disabledReason(), options.workflows().stream().map(workflow ->
+                new ImportActionsControlOptionsResponse.WorkflowOption(workflow.identifier(), workflow.workflowId(), workflow.name(),
+                        workflow.path(), workflow.htmlUrl(), workflow.dispatchAllowed(), workflow.rerunAllowed())).toList());
+    }
+
+    @POST
+    @Path("/{importId}/actions/dispatch")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ActionsControlOperationResponse dispatchWorkflow(@PathParam("importId") UUID importId, DispatchWorkflowRequest request) {
+        if (request == null) throw ApiException.badRequest("VALIDATION_ERROR", "Request body is required.");
+        var result = actionsControl.dispatch(currentUser.requireUserId(), importId, request.workflowIdentifier(), request.expectedRef(),
+                request.expectedCommitSha(), request.idempotencyKey(), request.confirmed());
+        return toActionsControlResponse(result);
+    }
+
+    @POST
+    @Path("/{importId}/actions/rerun-failed")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ActionsControlOperationResponse rerunFailedWorkflow(@PathParam("importId") UUID importId, RerunWorkflowRequest request) {
+        if (request == null) throw ApiException.badRequest("VALIDATION_ERROR", "Request body is required.");
+        var result = actionsControl.rerunFailed(currentUser.requireUserId(), importId, request.workflowRunId(), request.expectedRef(),
+                request.expectedCommitSha(), request.idempotencyKey(), request.confirmed());
+        return toActionsControlResponse(result);
+    }
+
+    private static ActionsControlOperationResponse toActionsControlResponse(ImportActionsControlService.OperationResult result) {
+        return new ActionsControlOperationResponse(result.operationId(), result.operation(), result.status(), result.replayed(),
+                result.workflowIdentifier(), result.workflowId(), result.workflowRunId(), result.branchRef(), result.targetCommitSha(),
+                result.githubUrl(), result.errorCode(), result.createdAt(), result.updatedAt());
+    }
+
+    @GET
     @Path("/{importId}/pull-request")
     public PullRequestResponse getPullRequest(@PathParam("importId") UUID importId) {
         var stored = service.findPullRequest(currentUser.requireUserId(), importId)
@@ -380,7 +472,7 @@ public class ImportResource {
                 unchanged, ignored, blocked, hardBlocked, overridableBlocked, warnings, plan.entries().stream().map(e -> new ImportPlanResponse.Entry(
                         e.path(), e.status(), e.comparisonStatus(), e.severity(), e.blockerType(), e.policyCode(), e.message(),
                         e.archiveSizeBytes(), e.archiveSha256(), e.repositorySizeBytes(), e.repositorySha256(),
-                        e.textCandidate())).toList(), plan.createdAt());
+                        e.archiveMode(), e.repositoryMode(), e.effectiveMode(), e.modeChanged(), e.textCandidate())).toList(), plan.createdAt());
     }
 
     @PUT

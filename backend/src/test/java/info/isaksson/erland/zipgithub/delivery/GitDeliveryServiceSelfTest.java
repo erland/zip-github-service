@@ -31,7 +31,8 @@ public final class GitDeliveryServiceSelfTest {
                 Clock.fixed(Instant.parse("2026-08-06T20:00:00Z"), ZoneOffset.UTC));
         GitCommitIdentity identity = new GitCommitIdentity("Other Author", "other@example.com", "Approver", "approver@example.com");
         String workBranch = "zip-github/work-" + UUID.randomUUID();
-        GitDeliveryResult result = service.deliver("main", workBranch, applied, remote.toUri(), "", identity);
+        String customMessage = "User selected commit message";
+        GitDeliveryResult result = service.deliver("main", workBranch, applied, remote.toUri(), "", identity, customMessage);
         if (!result.branchName().equals(workBranch)) throw new AssertionError();
         String pushed = run(root, "git", "--git-dir=" + remote, "rev-parse", "refs/heads/" + result.branchName()).trim();
         if (!pushed.equals(result.commitSha())) throw new AssertionError();
@@ -41,6 +42,8 @@ public final class GitDeliveryServiceSelfTest {
         String committer = run(root, "git", "--git-dir=" + remote, "show", "-s", "--format=%cn <%ce>", pushed).trim();
         if (!author.equals("Other Author <other@example.com>")) throw new AssertionError(author);
         if (!committer.equals("Approver <approver@example.com>")) throw new AssertionError(committer);
+        String message = run(root, "git", "--git-dir=" + remote, "show", "-s", "--format=%B", pushed).strip();
+        if (!message.equals(customMessage)) throw new AssertionError(message);
 
         Path workspace2 = root.resolve("workspace2");
         run(root, "git", "clone", remote.toUri().toString(), workspace2.toString());

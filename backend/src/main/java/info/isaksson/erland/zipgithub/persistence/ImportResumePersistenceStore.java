@@ -12,6 +12,7 @@ import info.isaksson.erland.zipgithub.plan.ImportPlanApproval;
 import info.isaksson.erland.zipgithub.selection.ApprovedSelection;
 import info.isaksson.erland.zipgithub.snapshot.RepositorySnapshot;
 import info.isaksson.erland.zipgithub.upload.StoredUpload;
+import info.isaksson.erland.zipgithub.upload.GitFileMode;
 import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -86,6 +87,20 @@ public class ImportResumePersistenceStore {
             s.setObject(1, importId); s.setObject(2, owner);
             try (ResultSet r = s.executeQuery()) { return r.next() ? Optional.of(map(owner, r)) : Optional.empty(); }
         } catch (SQLException e) { throw new IllegalStateException("Could not load resumable import.", e); }
+    }
+
+    public Optional<ResumeState> findBySourceReference(UUID owner, ImportSource source, String sourceReference) {
+        if (!enabled) return Optional.empty();
+        try (Connection c = dataSource.getConnection(); PreparedStatement s = c.prepareStatement("""
+                SELECT i.id, i.project_id, i.base_branch, i.status, i.source_type, i.source_reference, i.created_at,
+                       p.upload_json, p.snapshot_json, p.plan_json, p.selection_json, p.approval_json,
+                       p.git_identity_json, p.delivery_json
+                FROM import_session i JOIN import_resume_payload p ON p.import_session_id = i.id
+                WHERE i.owner_user_id = ? AND i.source_type = ? AND i.source_reference = ?
+                ORDER BY i.created_at ASC LIMIT 1""")) {
+            s.setObject(1, owner); s.setString(2, source.name()); s.setString(3, sourceReference);
+            try (ResultSet r = s.executeQuery()) { return r.next() ? Optional.of(map(owner, r)) : Optional.empty(); }
+        } catch (SQLException e) { throw new IllegalStateException("Could not find import by source reference.", e); }
     }
 
     public List<ResumeState> list(UUID owner, UUID projectId) {
@@ -170,8 +185,8 @@ public class ImportResumePersistenceStore {
                               ImmutableImportPlan plan, ApprovedSelection selection, ImportPlanApproval approval,
                               GitCommitIdentity identity, ImportAuditMetadata auditMetadata, GitDeliveryResult delivery) {}
     private record PersistedUpload(UUID id, UUID importId, UUID ownerUserId, String originalFilename, long sizeBytes,
-                                   String sha256, String storagePath, Instant createdAt, Instant retentionDeadline) {
-        static PersistedUpload from(StoredUpload u) { return new PersistedUpload(u.id(), u.importId(), u.ownerUserId(), u.originalFilename(), u.sizeBytes(), u.sha256(), u.storagePath().toString(), u.createdAt(), u.retentionDeadline()); }
-        StoredUpload toDomain() { return new StoredUpload(id, importId, ownerUserId, originalFilename, sizeBytes, sha256, Path.of(storagePath), createdAt, retentionDeadline); }
+                                   String sha256, String storagePath, Instant createdAt, Instant retentionDeadline, java.util.Map<String, GitFileMode> fileModes) {
+        static PersistedUpload from(StoredUpload u) { return new PersistedUpload(u.id(), u.importId(), u.ownerUserId(), u.originalFilename(), u.sizeBytes(), u.sha256(), u.storagePath().toString(), u.createdAt(), u.retentionDeadline(), u.fileModes()); }
+        StoredUpload toDomain() { return new StoredUpload(id, importId, ownerUserId, originalFilename, sizeBytes, sha256, Path.of(storagePath), createdAt, retentionDeadline, fileModes == null ? java.util.Map.of() : fileModes); }
     }
 }

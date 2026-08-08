@@ -58,6 +58,7 @@ class ImportResumeRecoveryTest {
         store.put(state("READY_FOR_REVIEW", upload(), plan(), selection(), approval(), null));
         service.clearInMemoryStateForTests();
         assertEquals(SELECTION_DIGEST, service.findImportPlanApproval(OWNER, IMPORT).orElseThrow().selectionDigestSha256());
+        assertEquals("Resume-safe message", service.findImportPlanApproval(OWNER, IMPORT).orElseThrow().commitMessage());
         assertEquals(SELECTION_DIGEST, service.getImportSelection(OWNER, IMPORT).selectionDigestSha256());
 
         // Restart after delivery: existing delivery is recoverable, so retry UI can avoid a duplicate commit.
@@ -117,7 +118,7 @@ class ImportResumeRecoveryTest {
     }
 
     private static ImportPlanApproval approval() {
-        return new ImportPlanApproval(IMPORT, PLAN, OWNER, PLAN_DIGEST, SELECTION_DIGEST, NOW.plusSeconds(10));
+        return new ImportPlanApproval(IMPORT, PLAN, OWNER, PLAN_DIGEST, SELECTION_DIGEST, "Resume-safe message", NOW.plusSeconds(10));
     }
 
     private static GitDeliveryResult delivery() {

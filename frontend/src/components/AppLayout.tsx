@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout, type AuthenticatedUser } from '../api/auth';
+import { captureClaimToken } from '../staging/claimToken';
 
 const navClassName = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'nav-link nav-link--active' : 'nav-link';
@@ -12,6 +13,13 @@ export default function AppLayout() {
   const [authState, setAuthState] = useState<'loading' | 'authenticated' | 'anonymous' | 'error'>('loading');
   const [authError, setAuthError] = useState<string | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    if (location.pathname !== '/staging/claim' || !location.hash) return;
+    if (captureClaimToken(location.hash, sessionStorage)) {
+      window.history.replaceState(window.history.state, '', `${location.pathname}${location.search}`);
+    }
+  }, [location.pathname, location.search, location.hash]);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,6 +85,7 @@ export default function AppLayout() {
           <div className="header-actions">
             <nav aria-label="Huvudnavigering" className="primary-nav">
               <NavLink className={navClassName} to="/projects">Projekt</NavLink>
+              <NavLink className={navClassName} to="/shortcut">Shortcut</NavLink>
               <NavLink className={navClassName} to="/about">Om tjänsten</NavLink>
             </nav>
             <div className="account-menu">

@@ -10,3 +10,8 @@ Step 5.3 turns a verified temporary workspace into exactly one remote Git branch
 - Push is non-forced and fails if the deterministic delivery branch already exists.
 - GitHub App credentials are supplied only through temporary `GIT_ASKPASS` state and are redacted from failures.
 - The temporary workspace is deleted after a successful push; failed delivery keeps it for retry work in step 5.5.
+
+
+## Step 9.5 — commit message source
+
+Git delivery no longer generates the normal interactive commit message itself. It receives the already normalized, approval-bound message from `ImportPlanApproval` and passes it as a direct argument to `git commit -m`. The legacy overload keeps the former deterministic value only for compatibility with old/internal callers.

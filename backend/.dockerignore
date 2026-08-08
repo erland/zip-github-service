@@ -1,4 +1,6 @@
-target/
+target/*
+!target/quarkus-app/
+!target/quarkus-app/**
 .git/
 .gitignore
 *.log

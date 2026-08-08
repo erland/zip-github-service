@@ -46,6 +46,7 @@ The service accepts an untrusted ZIP archive from an authenticated user, compare
 | ZIP traversal/symlink/special file | Host file overwrite or escape | Canonical relative paths, duplicate/case collision checks, symlink/special-file rejection, destination-root checks, CREATE_NEW/part-file writes | Platform-specific filesystem semantics require release testing |
 | ZIP bomb/resource exhaustion | Memory/disk/CPU denial of service | Compressed/uncompressed/file-count/single-file/path/ratio limits, streaming reads, retention cleanup | Many concurrent valid maximum-size uploads can still exhaust one node |
 | Workflow or Git metadata injection | Arbitrary CI execution or repository corruption | `.git/**` is hard blocked and can never be selected; `.github/**` is excluded by default and requires explicit per-path override; immutable selection and exact diff verification | A user who explicitly approves a workflow change can intentionally cause that workflow to run after GitHub receives the commit |
+| Arbitrary/stale Actions control | Trigger unexpected workflow execution or rerun old code | Separate default-deny dispatch/rerun allowlists, owner/repository/installation checks, exact current Work ref+SHA validation, run workflow/SHA/ref verification, explicit UI action, persisted audit and pre-side-effect idempotency claim | GitHub remains an external side-effect boundary; an ambiguous network failure is not automatically retried |
 | Plan/selection substitution after approval | Deliver content user did not approve | Canonical plan digest binds ZIP hash/base/policy; immutable selection digest binds selected/excluded paths and override acknowledgements; approval binds both digests; workspace diff must exactly equal selected paths | Cryptographic integrity depends on SHA-256 implementation and protected server state |
 | Base/work-branch race | Commit based on stale review | Reviewed branch HEAD is locked to exact SHA and rechecked before delivery; normal non-force push rejects concurrent movement | New upstream changes require a new import/plan rather than automatic merge |
 | Credential leakage through Git/errors/logs | Repository compromise | Short-lived installation tokens, GIT_ASKPASS, no token in URL, redaction, generic API errors, no token response fields | Process inspection on a compromised host remains out of scope |
@@ -67,6 +68,7 @@ The service accepts an untrusted ZIP archive from an authenticated user, compare
 - No active runtime mounts the Docker socket.
 - A user-owned resource is always resolved together with the current user identity.
 - GitHub credentials are never returned to the browser or embedded in Git remote URLs.
+- Actions writes are deny-all by default, operation-specific, current-Work scoped, audited and idempotency-claimed before GitHub is called.
 
 ## Residual risks accepted for MVP
 
@@ -88,3 +90,39 @@ Before 7.5 may be marked complete:
 - Cleanup after failed and successful archive/Git operations is verified.
 - Backup and restore are tested against a disposable PostgreSQL database.
 - Live test-repository flow is completed with non-production GitHub credentials.
+
+
+## Phase 9 staging-upload boundary (step 9.2)
+
+Threat: a signed Shortcut/deployment capability leaks and is used to consume staging capacity. Mitigations: capability grants staging-create only, is separate from all identity/GitHub secrets, can be revoked independently, staging-create has a dedicated hard rate bucket, uploads share existing byte limits, and possession grants no list/read/claim/Project/GitHub authority.
+
+Threat: claim bearer token leaks through persistence/logging. Mitigations: 256-bit random token, raw value returned once, URL fragment placement, hash-only database persistence, and no raw token in audit/log text. Browser handling/claim is completed in step 9.3.
+
+Threat: CSRF exemption broadens browser write authority. Mitigation: the exemption is exact to `POST api/staging-imports`; every other unsafe API route keeps same-origin CSRF enforcement, and staging-create itself requires the separate deployment capability.
+
+
+### Phase 9 authenticated claim
+
+Threat: raw claim token leaks through URL/server/OAuth state. Mitigations: token is carried in URL fragment only, copied into same-tab `sessionStorage`, fragment is removed, OAuth return state contains only the route, and the token is submitted only in the authenticated same-origin POST body.
+
+Threat: attacker learns claim existence/owner/state or races a victim. Mitigations: 256-bit bearer token, SHA-256 lookup, database row lock, one winning owner, same-owner idempotency and one neutral 410 response for wrong/expired/taken/terminal claims. Claim itself grants no Project or GitHub authority.
+
+## Phase 9.4 promotion and file-mode boundary
+
+A claimed StagingImport is still not repository authority. Promotion requires an authenticated owner and an owner-scoped Project and merely converts the already stored artifact into the ordinary Import pipeline. The stable `staging-import:<id>` source reference contains no secret and exists only to make promotion restart-safe/idempotent. A staging upload cannot select another user's Project or bypass `ACTIVE_IMPORT_EXISTS`.
+
+Executable state is treated as content-adjacent review state. Only trustworthy Unix metadata can request `100755`; missing metadata never triggers filename/extension inference. For existing files the exact base tree mode is preserved, while new unknown-mode files default to `100644`. Mode changes are plan-digest/selection/approval bound and verified in the staged index, preventing excluded paths from receiving executable changes.
+
+## Phase 9.6 staging retention/abuse additions
+
+- **Leaked upload credential fills disk:** mitigated by existing ZIP limits, per-capability/global request rate limiting, serialized live-object/live-byte staging quotas and short TTL cleanup. The credential still cannot claim, identify a user, choose a Project or access GitHub.
+- **Spoofed network identity bypasses limits:** forwarded-address limiting is disabled by default and may only be enabled behind a trusted ingress that sanitizes `X-Forwarded-For`.
+- **Cleanup deletes bytes during promotion:** promotion holds the same PostgreSQL staging row lock cleanup needs; cleanup uses `FOR UPDATE SKIP LOCKED`. A persisted ordinary Import from a crash window is reconciled to PROMOTED before deletion.
+- **Crash after terminal state but before unlink:** `artifact_deleted_at` remains null and cleanup retries the physical deletion.
+- **Credential compromise forces broad credential rotation:** staging credential is independently replaceable; old Shortcut fails after redeploy while existing claim tokens and GitHub/session credentials remain unchanged.
+
+## Phase 9.7 — signed Shortcut distribution
+
+The downloadable `.shortcut` is treated as a deploy-time secret-bearing artifact because it embeds the staging-create credential. It is never committed to source control, dynamically generated by the backend or logged. Distribution requires an authenticated zip-github session, but possession of the extracted credential still grants only staging-create and no identity, claim, Project or GitHub authority.
+
+The backend refuses to substitute an unsigned artifact when no signed release is configured. Credential compromise is handled by immediate deployment-credential revoke plus a newly Apple-signed Shortcut generation. Invalid/revoked credentials receive the generic `STAGING_SHORTCUT_OUTDATED` response; already-created staging rows retain their independent claim-token/TTL model.

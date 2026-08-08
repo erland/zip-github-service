@@ -26,7 +26,7 @@ const selection: ImportSelectionResponse = {
 };
 const approval = {
   importId: 'import-1', planId: 'plan-1', planDigestSha256: plan.planDigestSha256,
-  selectionDigestSha256: selection.selectionDigestSha256, status: 'APPROVED', approvedAt: '2026-08-06T20:30:00Z',
+  selectionDigestSha256: selection.selectionDigestSha256, commitMessage: 'Apply approved ZIP import import-1', status: 'APPROVED', approvedAt: '2026-08-06T20:30:00Z',
 };
 const workspace = { importId: 'import-1', repositoryFullName: 'erland/repo', baseCommitSha: plan.baseCommitSha,
   planDigestSha256: plan.planDigestSha256, selectionDigestSha256: selection.selectionDigestSha256,
@@ -215,6 +215,28 @@ describe('ImportReviewPage', () => {
     await user.click(screen.getByRole('button', { name: 'Försök skapa commit igen' }));
     expect(await screen.findByText('Importresultat')).toBeInTheDocument();
   });
+  it('lets the user replace the suggested commit message and submits it with approval', async () => {
+    const user = userEvent.setup();
+    const fetchMock = installHappyPath();
+    renderPage();
+    const field = await screen.findByRole('textbox', { name: 'Meddelande' });
+    expect(field).toHaveValue('Apply approved ZIP import import-1');
+    await user.clear(field);
+    await user.type(field, 'Preserve executable script modes');
+    await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));
+    await screen.findByText('Importresultat');
+    const approvalCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/plan/approval') && (init as RequestInit | undefined)?.method === 'POST');
+    expect(approvalCall).toBeTruthy();
+    expect(JSON.parse(String((approvalCall![1] as RequestInit).body))).toMatchObject({ commitMessage: 'Preserve executable script modes' });
+  });
+
+  it('does not allow approval with a blank commit message', async () => {
+    const user = userEvent.setup(); renderPage();
+    const field = await screen.findByRole('textbox', { name: 'Meddelande' });
+    await user.clear(field);
+    expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeDisabled();
+  });
+
   it('cancels an active review explicitly without creating selection, approval or delivery', async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {

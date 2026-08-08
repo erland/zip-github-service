@@ -1,3 +1,156 @@
+## 1.0.0-rc.54 - 2026-08-08
+
+### Fixed
+- Reworked the container-image CI job to package the backend and frontend artifacts already built and verified by their prerequisite jobs instead of running Maven and npm a second time inside Docker builds.
+- Added thin runtime-only Dockerfiles for CI image assembly, eliminating the image job's separate Maven Central dependency-resolution path that failed with HTTP 429.
+
+# Changelog
+
+## 1.0.0-rc.53 - 2026-08-08
+
+- Corrected the remaining backend CI regressions discovered in workflow run 31242966490 without changing the phase 9.7 BLOCKED state.
+- Updated approval recovery API coverage to send and verify the required approval-bound `commitMessage`.
+- Updated staging upload API tests to stream binary request bodies for `application/zip` instead of asking RestAssured to serialize text/byte arrays through an unknown content-type encoder.
+- Aligned the missing/revoked staging credential expectation with the phase-9.7 `403 STAGING_SHORTCUT_OUTDATED` contract.
+- Made terminal StagingImport claim attempts consistently fail through `DomainTransitionException`, while deadline expiry before persisted cleanup remains the separate time-expiry signal.
+- Phase 9.7 remains blocked only on the external Apple signing/iOS installation gate; phase 9.8 has not started.
+
+## 1.0.0-rc.52 - 2026-08-08
+
+- Corrected CI regressions discovered after r0099 without changing the phase 9.7 BLOCKED state.
+- Disambiguated the Hamcrest `endsWith` matcher in `StagingImportResourceTest` from Mockito's matcher of the same name.
+- Added explicit Testing Library cleanup in `ShortcutInstallPage.test.tsx` so the published-release render cannot leak a download link into the subsequent unavailable-release test.
+- Phase 9.7 remains blocked only on the external Apple signing/iOS installation gate; phase 9.8 has not started.
+
+## 1.0.0-rc.51 - 2026-08-08
+
+- Implemented the zip-github side of phase 9 step 9.7: authenticated static signed-Shortcut release metadata/download plus a mobile installation/update page.
+- Added explicit `STAGING_SHORTCUT_OUTDATED` handling for revoked/old Shortcut upload credentials and documented trusted-Mac signing/publication/rotation.
+- Signed `.shortcut` binaries are deliberately ignored by Git and mounted read-only as deployment artifacts because they embed the staging-create credential.
+- Step 9.7 remains **BLOCKED**, not DONE: this environment cannot produce or iOS-verify the required Apple-signed `anyone` release artifact because `shortcuts sign` requires an iCloud-signed-in Apple environment.
+- Step 9.8 remains PENDING and has not started.
+
+## 1.0.0-rc.50 - 2026-08-08
+
+- Completed phase 9 step 9.6 with deterministic staging retention, cleanup race protection, durable storage quotas and credential-rotation incident guidance.
+- Successful claim now moves an AVAILABLE upload onto a separate configurable claimed grace deadline; same-owner retry does not extend it indefinitely.
+- Added database-coordinated promotion/cleanup locking, crash-window reconciliation and restart-safe physical deletion markers; promoted artifacts remain owned by ordinary Import retention.
+- Added serialized staging object/byte capacity limits plus optional trusted-proxy network-source rate limiting alongside existing per-capability/global limits.
+- Deployment upload credential can be revoked/rotated by secret replacement + backend redeploy without database migration; existing staging claim/TTL state is unaffected.
+- Step 9.7 is next.
+
+## 1.0.0-rc.49 - 2026-08-08
+
+- Completed phase 9 step 9.5 with a user-editable commit message in the common browser/StagingImport review and approval path.
+- The generated `Apply approved ZIP import <id>` text is now only an editable suggestion; interactive approval requires a non-empty server-normalized message of at most 500 characters.
+- Commit message is persisted inside restart-safe approval state, is part of approval identity and is reused unchanged for delivery retry after refresh/logout/restart.
+- Git delivery now commits with the exact approval-bound message instead of regenerating a hidden message at delivery time.
+- Legacy/internal resume data without the new field uses the deterministic old message only as an explicit compatibility fallback.
+- Step 9.6 — staging retention, abuse protection and security regression — is next.
+
+## 1.0.0-rc.48 - 2026-08-08
+
+- Completed phase 9 step 9.4 with authenticated Project selection and restart-safe promotion of a claimed StagingImport into exactly one ordinary Import.
+- Promotion uses the existing stored-upload import path with `ImportSource.STAGING_IMPORT`, a stable non-secret staging source reference and no ZIP copy/re-stream.
+- Added a unique persistent staging source-reference index so restart/retry cannot create a second ordinary Import for the same staging object.
+- Added deterministic Git file-mode preservation across browser and StagingImport uploads: trustworthy ZIP `100644`/`100755` metadata wins, existing repository mode is the fallback, and new files without mode metadata default to `100644`.
+- Mode-only changes are reviewable `MODIFIED` entries, included in the immutable plan digest/approval, applied only to selected paths and verified in the staged Git index before commit.
+- The staging browser flow now lists only the authenticated user's active projects and continues into the existing ordinary import review; `ACTIVE_IMPORT_EXISTS` remains the single-active-import guard.
+- Step 9.5 — user-controlled commit message in the common approval/delivery path — is next.
+
+## 1.0.0-rc.47 - 2026-08-08
+
+- Completed phase 9 step 9.3 with authenticated, atomic browser claim of short-lived StagingImport uploads.
+- Added fragment-to-sessionStorage handling so raw claim tokens do not enter OAuth state, query parameters or normal server access logs.
+- Added neutral 410 behavior for unavailable claims and idempotent same-owner retry after lost responses.
+- Claim returns only owner-safe staging metadata and still creates no ordinary Import, Project selection or GitHub side effect.
+- Step 9.4 — project selection and promotion to ordinary Import — is next.
+
+## 1.0.0-rc.46 - 2026-08-08
+
+- Completed phase 9 step 9.2 with a capability-protected transport-only `POST /api/staging-imports` endpoint.
+- Added deny-all-by-default deployment staging credential validation, exact CSRF boundary and a dedicated staging upload rate bucket.
+- Added 256-bit one-time claim-token creation with hash-only persistence and fragment-based claim URL response; no anonymous list/read/download endpoint exists.
+- Reused the existing `ZipIngestionService` so staging creation shares browser upload byte limits, streaming storage, filename validation and SHA-256 behavior.
+- Step 9.3 — authenticated browser claim — is next; no claim or promotion API is included in this revision.
+
+## 1.0.0-rc.45 - 2026-08-08
+
+- Completed phase 9 step 9.1 with a durable `StagingImport` lifecycle and Flyway V10 persistence.
+- Added restart-safe `AVAILABLE`/`CLAIMED`/`PROMOTED`/`EXPIRED`/`CANCELLED` state, hashed claim-token storage and transactional claim/promotion primitives.
+- Extended the neutral stored-upload representation with explicit Git-relevant `100644`/`100755` per-file mode metadata without filename-based executable inference.
+- Documented ownership, locking and idempotency requirements for later claim/promotion steps; no anonymous upload/claim API is introduced in 9.1.
+- Step 9.2 — capability-protected staging upload — is next.
+
+## Planning revision r0092 - 2026-08-08
+
+- Locked phase 9 to a static pre-signed reference Shortcut for the initial release.
+- Defined the staging upload credential as deployment-scoped, low privilege and independently revocable, using a dedicated HTTP header.
+- Removed any phase-9 requirement for per-user dynamic Shortcut generation, current/previous credential overlap or automated GitHub-hosted signing.
+- Recorded the practical macOS Actions spike showing `shortcuts sign` requires an iCloud-signed-in environment.
+- Defined rotation as immediate revoke plus publication of a newly signed Shortcut; old installations receive an update-required error.
+- Application version remains `1.0.0-rc.44`; this revision changes planning only.
+
+## Planning revision r0091 - 2026-08-08
+
+- Added dedicated phase-9 step 9.5 for user-controlled commit messages in the common browser/StagingImport approval and delivery path.
+- The existing generated message may remain as an editable suggestion, while the final user-selected message must be validated, persisted, approval-bound and stable across restart/retry.
+- Renumbered staging retention, Shortcut documentation and final E2E/release work to steps 9.6–9.8 and extended final regression to commit-message parity/idempotency.
+- Application version remains 1.0.0-rc.44 because this revision changes planning/documentation only; step 9.1 remains NEXT.
+
+## Planning revision r0090 - 2026-08-08
+
+- Assigned Git file-mode/executable-bit preservation to phase 9 after CI exposed that ZIP→GitHub imports cannot safely rely on executable metadata being retained.
+- Step 9.1 now requires a neutral per-file representation for trustworthy ZIP mode metadata plus deterministic fallback rules.
+- Step 9.4 now requires review/approval/delivery of `100644`/`100755` mode changes and preservation of base-repository mode when ZIP metadata is absent.
+- Step 9.7 now includes explicit file-mode and browser-vs-Shortcut equivalence regression.
+- Application version remains 1.0.0-rc.44 because this revision changes planning/documentation only; step 9.1 remains NEXT.
+
+## 1.0.0-rc.44 - 2026-08-07
+
+- Corrected Quarkus startup when controlled-Actions workflow allowlists are intentionally empty: configuration is now injected as `Optional<String>` and still defaults to deny-all.
+- Corrected `scripts/verify-release.sh` to invoke its nested repository checks through `bash`, removing the remaining executable-bit dependency in the structure/security CI job.
+- No intended feature-scope change; phase 8 remains complete and step 9.1 remains next.
+
+## 1.0.0-rc.43 - 2026-08-07
+
+- Corrected CI shell entrypoints to invoke repository scripts and the Maven wrapper through `bash`, so ZIP-to-GitHub imports do not depend on Git executable-bit preservation.
+- Corrected the step-8.3 GitHub App Actions permission lookup to use the GitHub API base URL explicitly.
+- Corrected the controlled-Actions frontend regression to scope its Work-branch assertion to the controls section when the same branch is also shown in delivery metadata.
+- No intended runtime scope change; phase 8 remains complete and step 9.1 remains next.
+
+## 1.0.0-rc.42 - 2026-08-07
+
+- Completed step 8.3 with default-deny, operation-specific workflow dispatch/rerun allowlists.
+- Added exact current-Work ref/commit guards, workflow/run identity validation, persistent audit and idempotency claims before GitHub Actions writes.
+- Added mobile-friendly explicit dispatch and failed-job rerun controls without exposing arbitrary workflow inputs or GitHub credentials.
+- GitHub App Actions permission is now read/write when controlled writes are enabled; phase 8 is complete.
+- Step 9.1 — Define and persist the StagingImport lifecycle — is next; no phase-9 implementation is included in this revision.
+
+## 1.0.0-rc.41 - 2026-08-07
+
+- Completed step 8.2 with owner-scoped bounded GitHub Actions artifact metadata and condensed failed-job errors for the exact delivered commit.
+- Added safe GitHub run/job links without artifact proxying or permanent artifact/log storage.
+- Added 24 KiB failed-job log caps, maximum three excerpts, eight-line/180-character output bounds, terminal-sequence cleanup and common credential redaction.
+- Added conservative Maven/Gradle, npm/Vite, Pandoc and xcodebuild recognition; unknown log formats are not guessed.
+- Step 8.3 — Controlled workflow dispatch and rerun — is next; phase 9 and the future AI backlog remain untouched.
+
+## 1.0.0-rc.40 - 2026-08-07
+
+- Completed step 8.1 with owner-scoped, read-only GitHub Actions workflow-run, job and check status for the exact delivered Work commit.
+- Added bounded GitHub reads (10 workflow runs, 50 jobs per run, 50 checks), normalized status mapping, short server caching and exponential frontend polling that stops for terminal results.
+- Added a mobile-friendly Actions overview to the commit result while retaining permanent GitHub links and graceful `not_started`/`unavailable` states.
+- Documented the required GitHub App Actions read permission and the exact verification limits of this packaging environment.
+- Step 8.2 — Artifacts and condensed errors — is next; phase 9 and the future AI backlog remain untouched.
+
+## Planning revision r0084 - 2026-08-07
+
+- Moved former step 8.4 (AI/read-only API, Custom GPT/MCP and branch ZIP export) out of the active execution plan into a future backlog.
+- Expanded phase 8 steps 8.1–8.3 with explicit workflow/job, artifact/error-extraction and controlled dispatch/rerun quality requirements.
+- Added phase 9 steps 9.1–9.7 for capability-protected iOS Shortcut staging upload, authenticated claim, project promotion through the existing stored-upload path, retention/abuse protection, reference Shortcut guidance and E2E regression.
+- Added a self-contained phase 8+ continuation handoff for starting a new chat without reconstructing architecture, status or known constraints.
+- Application version remains 1.0.0-rc.39 because this revision changes planning/documentation only.
+
 ## 1.0.0-rc.39 - 2026-08-07
 
 - Completed step 7.24 with final cancel/Work-lifecycle regression coverage.

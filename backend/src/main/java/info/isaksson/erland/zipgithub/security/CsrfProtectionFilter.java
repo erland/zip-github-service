@@ -18,12 +18,17 @@ public class CsrfProtectionFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext request) {
-        if (!enabled || !request.getUriInfo().getPath().startsWith("api/") || isSafe(request.getMethod())) return;
+        String path = request.getUriInfo().getPath();
+        if (!enabled || !path.startsWith("api/") || isSafe(request.getMethod()) || isCapabilityUpload(path, request.getMethod())) return;
         String marker = request.getHeaderString(REQUEST_HEADER);
         String origin = request.getHeaderString("Origin");
         if (!"1".equals(marker) || !SameOriginPolicy.matches(frontendUrl, origin)) {
             throw ApiException.forbidden("CSRF_REJECTED", "The request did not pass the same-origin CSRF check.");
         }
+    }
+
+    private static boolean isCapabilityUpload(String path, String method) {
+        return "POST".equals(method) && "api/staging-imports".equals(path);
     }
 
     private static boolean isSafe(String method) {

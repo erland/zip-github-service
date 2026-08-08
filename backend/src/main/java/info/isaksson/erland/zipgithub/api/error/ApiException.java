@@ -16,6 +16,7 @@ public final class ApiException extends RuntimeException {
     public static ApiException notFound(String code, String message) { return new ApiException(404, code, message); }
     public static ApiException tooManyRequests(String code, String message) { return new ApiException(429, code, message); }
     public static ApiException conflict(String code, String message) { return new ApiException(409, code, message); }
+    public static ApiException gone(String code, String message) { return new ApiException(410, code, message); }
     public static ApiException badGateway(String code, String detail) { return new ApiException(502, code, detail); }
 
     public static ApiException payloadTooLarge(String code, String message) { return new ApiException(413, code, message); }

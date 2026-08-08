@@ -186,6 +186,7 @@ function FileTreeNode({ node, selectedPaths, onSelectedPathsChange, overridePath
           {entry.severity === 'WARNING' && <span className="file-status file-status--warning">Varning</span>}
           {entry.blockerType === 'HARD_BLOCKED' && <span className="file-status file-status--blocked">Hårt blockerad</span>}
           {entry.blockerType === 'OVERRIDABLE_BLOCKED' && <span className="file-status file-status--blocked">Kräver override</span>}
+          {entry.modeChanged && <span className="file-status file-status--warning">Mode {entry.repositoryMode} → {entry.effectiveMode}</span>}
         </div>
       </div>
       {overridable && onOverridePathsChange && (

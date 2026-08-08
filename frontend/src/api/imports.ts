@@ -38,6 +38,10 @@ export type ImportPlanEntry = {
   archiveSha256: string | null;
   repositorySizeBytes: number | null;
   repositorySha256: string | null;
+  archiveMode?: string | null;
+  repositoryMode?: string | null;
+  effectiveMode?: string | null;
+  modeChanged?: boolean;
   textCandidate: boolean;
 };
 
@@ -47,6 +51,7 @@ export type ImportPlanApprovalResponse = {
   planId: string;
   planDigestSha256: string;
   selectionDigestSha256: string;
+  commitMessage: string;
   status: 'APPROVED';
   approvedAt: string;
 };
@@ -127,11 +132,12 @@ export async function createImportSelection(importId: string, planDigestSha256: 
   });
 }
 
-export async function approveImportPlan(importId: string, planDigestSha256: string, selectionDigestSha256: string): Promise<ImportPlanApprovalResponse> {
+export async function approveImportPlan(importId: string, planDigestSha256: string, selectionDigestSha256: string,
+  commitMessage: string): Promise<ImportPlanApprovalResponse> {
   return requestJson(`/api/imports/${encodeURIComponent(importId)}/plan/approval`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ planDigestSha256, selectionDigestSha256 }),
+    body: JSON.stringify({ planDigestSha256, selectionDigestSha256, commitMessage }),
   });
 }
 
@@ -297,4 +303,152 @@ export async function getImport(importId: string): Promise<ImportResponse> {
 
 export async function cancelImport(importId: string): Promise<ImportResponse> {
   return requestJson(`/api/imports/${encodeURIComponent(importId)}/cancel`, { method: 'POST' });
+}
+
+export type ActionsItemState = 'not_started' | 'pending' | 'success' | 'failure' | 'cancelled' | 'unavailable';
+
+export interface ActionsJobResponse {
+  id: number;
+  name: string;
+  state: Exclude<ActionsItemState, 'not_started' | 'unavailable'>;
+  terminal: boolean;
+  htmlUrl: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
+export interface ActionsWorkflowRunResponse {
+  id: number;
+  workflowId: number;
+  workflowPath: string;
+  headBranch: string;
+  headSha: string;
+  name: string;
+  state: Exclude<ActionsItemState, 'not_started' | 'unavailable'>;
+  terminal: boolean;
+  event: string;
+  htmlUrl: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  jobs: ActionsJobResponse[];
+}
+
+export interface ActionsCheckRunResponse {
+  id: number;
+  name: string;
+  state: Exclude<ActionsItemState, 'not_started' | 'unavailable'>;
+  terminal: boolean;
+  htmlUrl: string | null;
+  appName: string;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
+export interface ImportActionsStatusResponse {
+  importId: string;
+  repositoryFullName: string;
+  commitSha: string;
+  state: ActionsItemState;
+  terminal: boolean;
+  detailsUrl: string;
+  workflows: ActionsWorkflowRunResponse[];
+  checks: ActionsCheckRunResponse[];
+  checkedAt: string;
+}
+
+export async function getImportActions(importId: string): Promise<ImportActionsStatusResponse> {
+  return requestJson(`/api/imports/${encodeURIComponent(importId)}/actions`, { credentials: 'include' });
+}
+
+export interface ActionsArtifactResponse {
+  id: number;
+  name: string;
+  sizeBytes: number;
+  expired: boolean;
+  createdAt: string | null;
+  expiresAt: string | null;
+  workflowRunId: number;
+  workflowName: string;
+  githubUrl: string;
+}
+
+export interface ActionsFailureResponse {
+  workflowRunId: number;
+  workflowName: string;
+  jobId: number;
+  jobName: string;
+  stepName: string;
+  tool: string;
+  lines: string[];
+  githubUrl: string;
+}
+
+export interface ImportActionsDetailsResponse {
+  importId: string;
+  repositoryFullName: string;
+  commitSha: string;
+  detailsUrl: string;
+  artifacts: ActionsArtifactResponse[];
+  failures: ActionsFailureResponse[];
+  checkedAt: string;
+}
+
+export async function getImportActionDetails(importId: string): Promise<ImportActionsDetailsResponse> {
+  return requestJson(`/api/imports/${encodeURIComponent(importId)}/actions/details`, { credentials: 'include' });
+}
+
+export interface ActionsControlWorkflowOption {
+  identifier: string;
+  workflowId: number;
+  name: string;
+  path: string;
+  htmlUrl: string | null;
+  dispatchAllowed: boolean;
+  rerunAllowed: boolean;
+}
+
+export interface ImportActionsControlOptionsResponse {
+  importId: string;
+  repositoryFullName: string;
+  branchRef: string;
+  commitSha: string;
+  currentWork: boolean;
+  disabledReason: string | null;
+  workflows: ActionsControlWorkflowOption[];
+}
+
+export interface ActionsControlOperationResponse {
+  operationId: string;
+  operation: 'WORKFLOW_DISPATCH' | 'RERUN_FAILED_JOBS';
+  status: 'STARTED' | 'SUCCEEDED' | 'FAILED';
+  replayed: boolean;
+  workflowIdentifier: string;
+  workflowId: number | null;
+  workflowRunId: number | null;
+  branchRef: string;
+  targetCommitSha: string;
+  githubUrl: string | null;
+  errorCode: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getImportActionsControlOptions(importId: string): Promise<ImportActionsControlOptionsResponse> {
+  return requestJson(`/api/imports/${encodeURIComponent(importId)}/actions/control`);
+}
+
+export async function dispatchImportWorkflow(importId: string, workflowIdentifier: string, expectedRef: string,
+  expectedCommitSha: string, idempotencyKey: string): Promise<ActionsControlOperationResponse> {
+  return requestJson(`/api/imports/${encodeURIComponent(importId)}/actions/dispatch`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ workflowIdentifier, expectedRef, expectedCommitSha, idempotencyKey, confirmed: true }),
+  });
+}
+
+export async function rerunImportWorkflowFailedJobs(importId: string, workflowRunId: number, expectedRef: string,
+  expectedCommitSha: string, idempotencyKey: string): Promise<ActionsControlOperationResponse> {
+  return requestJson(`/api/imports/${encodeURIComponent(importId)}/actions/rerun-failed`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ workflowRunId, expectedRef, expectedCommitSha, idempotencyKey, confirmed: true }),
+  });
 }

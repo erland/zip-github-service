@@ -11,6 +11,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.Signature;
@@ -22,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
-public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallationTokenProvider, GitHubPullRequestClient, GitHubCheckStatusClient, GitHubCommitHistoryClient {
+public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallationTokenProvider, GitHubPullRequestClient, GitHubCheckStatusClient, GitHubActionsClient, GitHubActionsDetailsClient, GitHubActionsControlClient, GitHubCommitHistoryClient {
     @ConfigProperty(name = "zipgithub.github.app-id") long appId;
     @ConfigProperty(name = "zipgithub.github.app-private-key") Optional<String> privateKeyPem;
     @Inject ObjectMapper mapper;
@@ -149,6 +150,225 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
         }
     }
 
+
+    @Override
+    public GitHubActionsStatus readCommitActions(String installationToken, String repositoryFullName, String commitSha) {
+        String detailsUrl = "https://github.com/" + repositoryFullName + "/commit/" + commitSha + "/checks";
+        try {
+            String encodedSha = java.net.URLEncoder.encode(commitSha, StandardCharsets.UTF_8);
+            JsonNode runsRoot = getJson("https://api.github.com/repos/" + repositoryFullName
+                    + "/actions/runs?head_sha=" + encodedSha + "&per_page=10", installationToken);
+            List<GitHubActionsClient.WorkflowRun> workflows = new ArrayList<>();
+            List<GitHubActionsStatusMapper.State> aggregateStates = new ArrayList<>();
+            for (JsonNode run : runsRoot.path("workflow_runs")) {
+                if (!commitSha.equals(run.path("head_sha").asText())) continue;
+                long runId = run.path("id").asLong();
+                var runState = GitHubActionsStatusMapper.map(run.path("status").asText(), run.path("conclusion").asText(""));
+                aggregateStates.add(runState);
+                List<GitHubActionsClient.Job> jobs = new ArrayList<>();
+                JsonNode jobsRoot = getJson("https://api.github.com/repos/" + repositoryFullName
+                        + "/actions/runs/" + runId + "/jobs?per_page=50", installationToken);
+                for (JsonNode job : jobsRoot.path("jobs")) {
+                    var jobState = GitHubActionsStatusMapper.map(job.path("status").asText(), job.path("conclusion").asText(""));
+                    jobs.add(new GitHubActionsClient.Job(job.path("id").asLong(), job.path("name").asText("Unnamed job"),
+                            jobState.value(), jobState.terminal(), job.path("html_url").asText(null),
+                            parseInstant(job.path("started_at").asText(null)), parseInstant(job.path("completed_at").asText(null))));
+                }
+                workflows.add(new GitHubActionsClient.WorkflowRun(runId, run.path("workflow_id").asLong(), run.path("path").asText(""),
+                        run.path("head_branch").asText(""), run.path("head_sha").asText(""), run.path("name").asText("Unnamed workflow"),
+                        runState.value(), runState.terminal(), run.path("event").asText(""), run.path("html_url").asText(null),
+                        parseInstant(run.path("created_at").asText(null)), parseInstant(run.path("updated_at").asText(null)), List.copyOf(jobs)));
+            }
+
+            JsonNode checksRoot = getJson("https://api.github.com/repos/" + repositoryFullName
+                    + "/commits/" + commitSha + "/check-runs?per_page=50", installationToken);
+            List<GitHubActionsClient.CheckRun> checks = new ArrayList<>();
+            for (JsonNode check : checksRoot.path("check_runs")) {
+                var checkState = GitHubActionsStatusMapper.map(check.path("status").asText(), check.path("conclusion").asText(""));
+                aggregateStates.add(checkState);
+                checks.add(new GitHubActionsClient.CheckRun(check.path("id").asLong(), check.path("name").asText("Unnamed check"),
+                        checkState.value(), checkState.terminal(), check.path("html_url").asText(null),
+                        check.path("app").path("name").asText(""), parseInstant(check.path("started_at").asText(null)),
+                        parseInstant(check.path("completed_at").asText(null))));
+            }
+            int itemCount = workflows.size() + checks.size();
+            String state = GitHubActionsStatusMapper.aggregate(true, itemCount, aggregateStates);
+            boolean terminal = !workflows.isEmpty() && aggregateStates.stream().allMatch(GitHubActionsStatusMapper.State::terminal);
+            return new GitHubActionsStatus(state, terminal, detailsUrl, List.copyOf(workflows), List.copyOf(checks));
+        } catch (Exception e) {
+            return new GitHubActionsStatus("unavailable", false, detailsUrl, List.of(), List.of());
+        }
+    }
+
+    @Override
+    public GitHubActionsDetails readCommitActionDetails(String installationToken, String repositoryFullName, String commitSha) {
+        String detailsUrl = "https://github.com/" + repositoryFullName + "/commit/" + commitSha + "/checks";
+        final int maxRuns = 10;
+        final int maxArtifacts = 20;
+        final int maxFailures = 3;
+        try {
+            String encodedSha = java.net.URLEncoder.encode(commitSha, StandardCharsets.UTF_8);
+            JsonNode runsRoot = getJson("https://api.github.com/repos/" + repositoryFullName
+                    + "/actions/runs?head_sha=" + encodedSha + "&per_page=" + maxRuns, installationToken);
+            List<GitHubActionsDetailsClient.Artifact> artifacts = new ArrayList<>();
+            List<GitHubActionsDetailsClient.FailureExcerpt> failures = new ArrayList<>();
+
+            for (JsonNode run : runsRoot.path("workflow_runs")) {
+                if (!commitSha.equals(run.path("head_sha").asText())) continue;
+                long runId = run.path("id").asLong();
+                String workflowName = run.path("name").asText("Unnamed workflow");
+                String runUrl = run.path("html_url").asText("https://github.com/" + repositoryFullName + "/actions/runs/" + runId);
+
+                if (artifacts.size() < maxArtifacts) {
+                    try {
+                        JsonNode artifactRoot = getJson("https://api.github.com/repos/" + repositoryFullName
+                                + "/actions/runs/" + runId + "/artifacts?per_page=" + Math.min(100, maxArtifacts), installationToken);
+                        for (JsonNode artifact : artifactRoot.path("artifacts")) {
+                            if (artifacts.size() >= maxArtifacts) break;
+                            artifacts.add(new GitHubActionsDetailsClient.Artifact(
+                                    artifact.path("id").asLong(), artifact.path("name").asText("Unnamed artifact"),
+                                    artifact.path("size_in_bytes").asLong(), artifact.path("expired").asBoolean(false),
+                                    parseInstant(artifact.path("created_at").asText(null)), parseInstant(artifact.path("expires_at").asText(null)),
+                                    runId, workflowName, runUrl));
+                        }
+                    } catch (Exception ignored) {
+                        // A missing/disabled artifact endpoint must not hide the remaining Actions result.
+                    }
+                }
+
+                if (failures.size() >= maxFailures || !"failure".equals(run.path("conclusion").asText(""))) continue;
+                try {
+                    JsonNode jobsRoot = getJson("https://api.github.com/repos/" + repositoryFullName
+                            + "/actions/runs/" + runId + "/jobs?per_page=50", installationToken);
+                    for (JsonNode job : jobsRoot.path("jobs")) {
+                        if (failures.size() >= maxFailures) break;
+                        if (!"failure".equals(job.path("conclusion").asText(""))) continue;
+                        long jobId = job.path("id").asLong();
+                        String stepName = "Failed step";
+                        for (JsonNode step : job.path("steps")) {
+                            if ("failure".equals(step.path("conclusion").asText(""))) {
+                                stepName = step.path("name").asText(stepName);
+                                break;
+                            }
+                        }
+                        String log = downloadBoundedJobLog(installationToken, repositoryFullName, jobId, 24 * 1024);
+                        var condensed = ActionLogCondensor.condense(log);
+                        if (condensed.lines().isEmpty()) continue;
+                        failures.add(new GitHubActionsDetailsClient.FailureExcerpt(runId, workflowName, jobId,
+                                job.path("name").asText("Unnamed job"), stepName, condensed.tool(), condensed.lines(),
+                                job.path("html_url").asText(runUrl)));
+                    }
+                } catch (Exception ignored) {
+                    // Log summarization is optional and bounded; GitHub remains available through the run URL.
+                }
+            }
+            return new GitHubActionsDetails(detailsUrl, List.copyOf(artifacts), List.copyOf(failures));
+        } catch (Exception e) {
+            return new GitHubActionsDetails(detailsUrl, List.of(), List.of());
+        }
+    }
+
+    private String downloadBoundedJobLog(String installationToken, String repositoryFullName, long jobId, int maxBytes) throws Exception {
+        HttpRequest request = baseRequest(URI.create("https://api.github.com/repos/" + repositoryFullName
+                + "/actions/jobs/" + jobId + "/logs"))
+                .header("Authorization", "Bearer " + installationToken).GET().build();
+        HttpResponse<InputStream> response = http.send(request, HttpResponse.BodyHandlers.ofInputStream());
+        if (response.statusCode() == 302 || response.statusCode() == 301 || response.statusCode() == 307 || response.statusCode() == 308) {
+            response.body().close();
+            String location = response.headers().firstValue("Location")
+                    .orElseThrow(() -> new IllegalStateException("GitHub log redirect had no Location header"));
+            URI target = URI.create(location);
+            String host = target.getHost() == null ? "" : target.getHost().toLowerCase();
+            if (!"https".equalsIgnoreCase(target.getScheme())
+                    || !(host.equals("github.com") || host.equals("api.github.com") || host.endsWith(".githubusercontent.com") || host.endsWith(".blob.core.windows.net"))) {
+                throw new IllegalStateException("GitHub log redirect target was not trusted");
+            }
+            HttpRequest redirected = HttpRequest.newBuilder(target).header("User-Agent", "zip-github-service").GET().build();
+            response = http.send(redirected, HttpResponse.BodyHandlers.ofInputStream());
+        }
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            response.body().close();
+            throw new IllegalStateException("GitHub job log returned HTTP " + response.statusCode());
+        }
+        try (InputStream input = response.body()) {
+            byte[] bytes = input.readNBytes(maxBytes + 1);
+            int length = Math.min(bytes.length, maxBytes);
+            return new String(bytes, 0, length, StandardCharsets.UTF_8);
+        }
+    }
+
+
+    @Override
+    public boolean hasActionsWritePermission(long installationId) {
+        JsonNode json = getJson("https://api.github.com/app/installations/" + installationId, createAppJwt());
+        return "write".equalsIgnoreCase(json.path("permissions").path("actions").asText(""));
+    }
+
+    @Override
+    public GitHubActionsControlClient.Workflow workflow(String installationToken, String repositoryFullName, String workflowIdentifier) {
+        try {
+            String encoded = java.net.URLEncoder.encode(workflowApiIdentifier(workflowIdentifier), StandardCharsets.UTF_8).replace("+", "%20");
+            JsonNode json = getJson("https://api.github.com/repos/" + repositoryFullName + "/actions/workflows/" + encoded, installationToken);
+            return new GitHubActionsControlClient.Workflow(json.path("id").asLong(), json.path("name").asText("Unnamed workflow"),
+                    json.path("path").asText(""), json.path("state").asText(""), json.path("html_url").asText(null));
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not read workflow", e);
+        }
+    }
+
+    @Override
+    public GitHubActionsControlClient.WorkflowRun workflowRun(String installationToken, String repositoryFullName, long runId) {
+        try {
+            JsonNode json = getJson("https://api.github.com/repos/" + repositoryFullName + "/actions/runs/" + runId, installationToken);
+            return new GitHubActionsControlClient.WorkflowRun(json.path("id").asLong(), json.path("workflow_id").asLong(),
+                    json.path("path").asText(""), json.path("name").asText("Unnamed workflow"), json.path("head_sha").asText(""),
+                    json.path("head_branch").asText(""), json.path("status").asText(""), json.path("conclusion").asText(""),
+                    json.path("html_url").asText(null));
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not read workflow run", e);
+        }
+    }
+
+    @Override
+    public GitHubActionsControlClient.DispatchResult dispatch(String installationToken, String repositoryFullName,
+                                                               String workflowIdentifier, String ref) {
+        try {
+            String encoded = java.net.URLEncoder.encode(workflowApiIdentifier(workflowIdentifier), StandardCharsets.UTF_8).replace("+", "%20");
+            String payload = mapper.createObjectNode().put("ref", ref).toString();
+            HttpRequest request = baseRequest(URI.create("https://api.github.com/repos/" + repositoryFullName
+                    + "/actions/workflows/" + encoded + "/dispatches"))
+                    .header("Authorization", "Bearer " + installationToken)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8)).build();
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300)
+                throw new IllegalStateException("GitHub API returned HTTP " + response.statusCode());
+            if (response.body() == null || response.body().isBlank())
+                return new GitHubActionsControlClient.DispatchResult(null, "https://github.com/" + repositoryFullName + "/actions");
+            JsonNode json = mapper.readTree(response.body());
+            Long id = json.path("workflow_run_id").isNumber() ? json.path("workflow_run_id").asLong() : null;
+            return new GitHubActionsControlClient.DispatchResult(id, json.path("html_url").asText("https://github.com/" + repositoryFullName + "/actions"));
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not dispatch workflow", e);
+        }
+    }
+
+    @Override
+    public GitHubActionsControlClient.RerunResult rerunFailedJobs(String installationToken, String repositoryFullName, long runId) {
+        try {
+            HttpRequest request = baseRequest(URI.create("https://api.github.com/repos/" + repositoryFullName
+                    + "/actions/runs/" + runId + "/rerun-failed-jobs"))
+                    .header("Authorization", "Bearer " + installationToken)
+                    .POST(HttpRequest.BodyPublishers.noBody()).build();
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300)
+                throw new IllegalStateException("GitHub API returned HTTP " + response.statusCode());
+            return new GitHubActionsControlClient.RerunResult(runId, "https://github.com/" + repositoryFullName + "/actions/runs/" + runId);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not rerun failed workflow jobs", e);
+        }
+    }
+
     @Override
     public boolean branchExists(String userAccessToken, String repositoryFullName, String branch) {
         try {
@@ -199,6 +419,19 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
             throw new IllegalStateException(
                     "GitHub App credentials are not configured. Set GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY before requesting an installation token.");
         }
+    }
+
+    private static String workflowApiIdentifier(String identifier) {
+        String value = identifier == null ? "" : identifier.trim();
+        int at = value.indexOf('@');
+        if (at >= 0) value = value.substring(0, at);
+        if (value.matches("[0-9]+")) return value;
+        int slash = value.lastIndexOf('/');
+        return slash >= 0 ? value.substring(slash + 1) : value;
+    }
+
+    private Instant parseInstant(String value) {
+        return value == null || value.isBlank() ? null : Instant.parse(value);
     }
 
     private JsonNode getJson(String url, String token) {

@@ -8,6 +8,8 @@ import NotFoundPage from './pages/NotFoundPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import CreateProjectPage from './pages/CreateProjectPage';
 import ProjectListPage from './pages/ProjectListPage';
+import StagingClaimPage from './pages/StagingClaimPage';
+import ShortcutInstallPage from './pages/ShortcutInstallPage';
 import './styles/global.css';
 
 export default function App() {
@@ -22,6 +24,8 @@ export default function App() {
         <Route path="projects/:projectId/imports/:importId/review" element={<ImportReviewPage />} />
         <Route path="projects/:projectId/imports/:importId/result" element={<ImportResultPage />} />
         <Route path="about" element={<AboutPage />} />
+        <Route path="shortcut" element={<ShortcutInstallPage />} />
+        <Route path="staging/claim" element={<StagingClaimPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

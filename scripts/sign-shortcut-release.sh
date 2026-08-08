@@ -21,5 +21,5 @@ fi
 
 mkdir -p "$(dirname "$output")"
 shortcuts sign --mode anyone --input "$input" --output "$output"
-chmod 0600 "$output" || true
+chmod 0644 "$output" || true
 printf 'Signed Shortcut written to %s\n' "$output"

@@ -1,3 +1,7 @@
+> **Step 9.7 completion r0106 / 1.0.0-rc.58:** The deployed authenticated `/shortcut` download was verified on iPhone. The download now uses the user-facing filename `Skicka till zip-github.shortcut`, signing publishes mode `0644` for backend runtime readability, and step 9.7 is DONE. Step 9.8 is NEXT.
+
+> **Planning refinement r0105 / 1.0.0-rc.57:** Phase 9.7 now explicitly requires the authenticated Shortcut download to expose `Skicka till zip-github.shortcut` via `Content-Disposition` and requires deployment verification that the backend runtime user can read the signed bind-mounted artifact (avoiding the observed `0600` failure). The same checks are included in the final 9.10 E2E gate. No 9.8 implementation has started.
+
 > **Signed Shortcut integration r0103 / 1.0.0-rc.55:** The operator-provided Apple-signed reference Shortcut is now included in the deployment bundle at `shortcut/releases/zip-github.shortcut` (version 1 / g1, SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`). The file is gitignored and hard-blocked from ordinary Import delivery to prevent credential leakage. Step 9.7 is now blocked only on deploying this bundle, downloading the artifact through authenticated `/shortcut`, and confirming that exact served copy installs on iOS.
 
 # Continuation handoff — phase 8 and later
@@ -6,10 +10,10 @@
 
 
 Date: 8 August 2026  
-Repository revision: r0099  
-Application version: 1.0.0-rc.51  
-Last completed implementation step: 9.6  
-Current blocker: 9.7 — deploy the published signed Shortcut, download it through `/shortcut`, and verify that exact served copy installs on iOS; 9.8 remains PENDING
+Repository revision: r0106  
+Application version: 1.0.0-rc.58  
+Last completed implementation step: 9.7  
+Current position: 9.8 NEXT — Work lifecycle, project lifecycle and robust branch provisioning
 
 ## Why this file exists
 
@@ -211,7 +215,7 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 ## Release/packaging discipline
 
 - Application version is `1.0.0-rc.55`; r0103 includes the operator-provided signed Shortcut. Step 9.7 remains blocked only on the deployed `/shortcut` download + iOS installation verification gate.
-- Steps 9.1–9.6 are complete. Step 9.7 runtime/distribution support is implemented but remains BLOCKED until a real Apple-signed Shortcut is published and accepted on iOS; do not start 9.8 before that gate is completed.
+- Steps 9.1–9.7 are complete. The signed Shortcut has been published through the authenticated service route and imported on iPhone. Step 9.8 is NEXT.
 - Keep exactly one `NEXT` step in `docs/implementation-status.md`.
 - Every delivered ZIP must include one top-level `zip-github/` folder.
 - Every step report/final response must explicitly list files added, modified, moved and deleted, per `AGENTS.md`.
@@ -226,7 +230,7 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 
 The zip-github runtime side of signed Shortcut distribution is implemented and r0103 now carries the operator-provided signed `.shortcut` in the deployment bundle. The binary embeds the deployment staging credential, so it remains gitignored and is hard-blocked from ordinary Import delivery.
 
-9.7 is **BLOCKED**, not DONE, until a trusted Apple environment creates/exports the documented reference Shortcut, signs it for `anyone`, publishes it as `shortcut/releases/zip-github.shortcut` with matching version/generation metadata, and an iOS device accepts the downloaded file. The practical GitHub-hosted macOS test already proved ordinary hosted runners cannot perform this gate without an iCloud-signed-in environment. Do not start 9.8 before 9.7 is completed.
+9.7 is **DONE**. The operator-provided Apple-signed artifact is published as `shortcut/releases/zip-github.shortcut`; the authenticated `/shortcut` download was exercised and the downloaded copy imported on iPhone. The technical server filename is decoupled from the user-facing download filename, and the standard deployment mode is runtime-readable. Step 9.8 is NEXT.
 
 
 ## r0104 planning refinement

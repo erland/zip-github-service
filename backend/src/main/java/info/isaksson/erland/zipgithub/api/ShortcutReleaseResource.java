@@ -3,6 +3,7 @@ package info.isaksson.erland.zipgithub.api;
 import info.isaksson.erland.zipgithub.api.dto.ShortcutReleaseResponse;
 import info.isaksson.erland.zipgithub.security.CurrentUserProvider;
 import info.isaksson.erland.zipgithub.shortcut.ShortcutReleaseService;
+import info.isaksson.erland.zipgithub.shortcut.ShortcutDownloadHeaders;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -33,7 +34,7 @@ public class ShortcutReleaseResource {
         currentUser.requireUserId();
         java.nio.file.Path artifact = releases.requireArtifact();
         return Response.ok(artifact.toFile(), MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"zip-github.shortcut\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, ShortcutDownloadHeaders.contentDisposition())
                 .header("Cache-Control", "private, no-store")
                 .header("X-Content-Type-Options", "nosniff")
                 .build();

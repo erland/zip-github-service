@@ -58,4 +58,9 @@ The operator supplied an Apple-signed reference Shortcut and confirmed the Short
 
 Because the signed binary embeds the staging upload credential, the source-control ignore remains in place and the ordinary zip-github import policy now hard-blocks this exact release path with policy code `SIGNED_SHORTCUT_SECRET_ARTIFACT`. This permits the deployment ZIP to carry the release while preventing an accidental Git delivery when the same ZIP is reviewed through zip-github.
 
-The final 9.7 gate is operational: deploy r0103, sign in to `/shortcut`, download the served artifact, and confirm that iOS accepts that downloaded copy. Until that exact served-copy check is reported successful, 9.7 remains `BLOCKED` rather than `DONE`.
+The final 9.7 gate has been exercised operationally: the authenticated `/shortcut` route served the signed artifact and the downloaded copy was imported successfully on iPhone. The server keeps the technical artifact name `zip-github.shortcut`, while the HTTP download exposes `Skicka till zip-github.shortcut` so iOS gives the imported Shortcut the intended user-facing name.
+
+
+## Runtime permissions and download identity
+
+The signed deployment artifact should be readable by the backend runtime user in the read-only bind mount. `scripts/sign-shortcut-release.sh` therefore sets mode `0644`; deployment models using ACLs or different ownership may use an equivalent read-only policy. The authenticated download response uses `Content-Disposition: attachment; filename="Skicka till zip-github.shortcut"` while serving the unchanged signed bytes recorded by the release manifest.

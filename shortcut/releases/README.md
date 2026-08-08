@@ -17,3 +17,8 @@ The artifact is present in the downloadable deployment bundle so `docker-compose
 ## CI verification
 
 `release-manifest.txt` is source-tracked and records the exact expected signed artifact identity. Clean GitHub Actions checkouts intentionally do not contain `zip-github.shortcut`; CI therefore verifies the manifest, the git-ignore/import-policy protections, and (when the binary is present in a deployment bundle) verifies its exact size and SHA-256.
+
+
+## Runtime/read-download contract
+
+The technical deployment filename remains `zip-github.shortcut`. It must be readable by the backend runtime user; the signing helper uses mode `0644` for the standard bind-mount deployment. The authenticated HTTP endpoint exposes the user-facing download name `Skicka till zip-github.shortcut` through `Content-Disposition` without modifying the signed bytes.

@@ -173,4 +173,4 @@ Production version `1.0.0` may be created only when every external acceptance it
 - [x] Manual trusted-Mac export/sign/publish and credential rotation procedures are documented.
 - [x] A real reference Shortcut has been created in Apple Shortcuts with the documented flow and deployment credential; the operator verified its signed reference-client flow on iPhone.
 - [x] The reference Shortcut has been signed for `anyone` in Apple Shortcuts and published in the deployment bundle as `shortcut/releases/zip-github.shortcut` (SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`).
-- [ ] The published signed artifact has been downloaded from `/shortcut` and accepted for installation on iOS. This is now the only remaining external blocker before 9.7 can be marked DONE.
+- [x] The published signed artifact has been downloaded from `/shortcut` and accepted/imported on iOS. The served-copy gate is complete; the observed filename behavior is handled by the friendly `Content-Disposition` download name.

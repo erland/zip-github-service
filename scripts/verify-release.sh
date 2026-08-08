@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.56"
+expected_version="1.0.0-rc.58"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
+
+grep -q '## 1.0.0-rc.58 - 2026-08-08' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -21,9 +23,9 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0104`' docs/implementation-status.md
-grep -q 'Last completed step: `9.6`' docs/implementation-status.md
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 BLOCKED ON DEPLOYED SHORTCUT DOWNLOAD/INSTALL VERIFICATION`' docs/implementation-status.md
+grep -q 'Repository revision: `r0106`' docs/implementation-status.md
+grep -q 'Last completed step: `9.7`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 STEP 9.8 NEXT`' docs/implementation-status.md
 grep -q '| `7.9` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.10` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.11` .*\*\*DONE\*\*' docs/implementation-status.md
@@ -46,7 +48,7 @@ grep -q '| `9.2` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `9.3` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `9.5` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `9.6` .*\*\*DONE\*\*' docs/implementation-status.md
-grep -q '| `9.7` .*\*\*BLOCKED\*\*' docs/implementation-status.md
+grep -q '| `9.7` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q 'Fas 9 - Shortcut och kortlivad StagingImport' docs/implementation-steps.md
 grep -q 'Framtida backlog - AI- och integrationsyta' docs/implementation-steps.md
 test -s docs/phase8-plus-continuation-handoff.md
@@ -190,7 +192,7 @@ grep -Fq '| `9.3` | Fas 9 — Shortcut/StagingImport | Autentiserad claim från 
 grep -Fq '| `9.4` | Fas 9 — Shortcut/StagingImport | Projektval och promotion till vanlig Import | **DONE**' docs/implementation-status.md
 grep -Fq '| `9.5` | Fas 9 — gemensam commit UX | Användarstyrt commitmeddelande i approval/delivery | **DONE**' docs/implementation-status.md
 grep -Fq '| `9.6` | Fas 9 — Shortcut/StagingImport | Retention, abuse-skydd och säkerhetsregression | **DONE**' docs/implementation-status.md
-grep -Fq '| `9.8` | Fas 9 — Work lifecycle | Projektlivscykel och robust branch-provisionering | **PENDING**' docs/implementation-status.md
+grep -Fq '| `9.8` | Fas 9 — Work lifecycle | Projektlivscykel och robust branch-provisionering | **NEXT**' docs/implementation-status.md
 grep -q '^## Steg 9.5 - Låt användaren ange commitmeddelandet$' docs/implementation-steps.md
 grep -q '^## Steg 9.8 - Work lifecycle, projektlivscykel och robust branch-provisionering$' docs/implementation-steps.md
 grep -q '^## Steg 9.9 - GitHub Actions-status och fel direkt på Work-sidan$' docs/implementation-steps.md
@@ -256,7 +258,7 @@ grep -q 'lets the user replace the suggested commit message' frontend/src/pages/
 grep -Fq '| `9.6` | Fas 9 — Shortcut/StagingImport | Retention, abuse-skydd och säkerhetsregression | **DONE**' docs/implementation-status.md
 grep -q 'Resume-safe message' backend/src/test/java/info/isaksson/erland/zipgithub/application/ImportResumeRecoveryTest.java
 
-grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **BLOCKED**' docs/implementation-status.md
+grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **DONE**' docs/implementation-status.md
 
 
 # Phase 9 step 9.6
@@ -270,14 +272,17 @@ grep -q 'STAGING_CAPACITY_EXCEEDED' backend/src/main/java/info/isaksson/erland/z
 grep -q 'ZIP_GITHUB_STAGING_CLAIMED_TTL_MINUTES' .env.example docker-compose.yml
 grep -q 'ZIP_GITHUB_STAGING_MAX_LIVE_BYTES' .env.example docker-compose.yml
 grep -qi 'credential revoke and rotation' docs/staging-retention-and-abuse.md
-grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **BLOCKED**' docs/implementation-status.md
+grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **DONE**' docs/implementation-status.md
 
 printf 'Phase 9.6 release assertions verified for %s.\n' "$actual_version"
 
 
-# Phase 9 step 9.7 (signed artifact published; deployed download/install gate remains BLOCKED).
+# Phase 9 step 9.7 (signed artifact distribution completed and device-verified).
 grep -q 'Step 9.7 report' docs/step-9.7-report.md
 grep -q '@Path("/api/shortcut-release")' backend/src/main/java/info/isaksson/erland/zipgithub/api/ShortcutReleaseResource.java
+grep -q 'ShortcutDownloadHeaders.contentDisposition()' backend/src/main/java/info/isaksson/erland/zipgithub/api/ShortcutReleaseResource.java
+grep -Fq 'DOWNLOAD_FILENAME = "Skicka till zip-github.shortcut"' backend/src/main/java/info/isaksson/erland/zipgithub/shortcut/ShortcutDownloadHeaders.java
+grep -Fq 'chmod 0644 "$output"' scripts/sign-shortcut-release.sh
 grep -q 'class ShortcutReleaseService' backend/src/main/java/info/isaksson/erland/zipgithub/shortcut/ShortcutReleaseService.java
 grep -q 'SHORTCUT_RELEASE_UNAVAILABLE' backend/src/main/java/info/isaksson/erland/zipgithub/shortcut/ShortcutReleaseService.java
 grep -q 'Ladda ner aktuell Shortcut' frontend/src/pages/ShortcutInstallPage.tsx
@@ -293,14 +298,20 @@ grep -Fxq 'sha256=21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af5
 grep -q 'SIGNED_SHORTCUT_SECRET_ARTIFACT' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java
 grep -q 'ZIP_GITHUB_SHORTCUT_VERSION:-1' docker-compose.yml
 grep -q 'ZIP_GITHUB_SHORTCUT_GENERATION:-g1' docker-compose.yml
-grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **BLOCKED**' docs/implementation-status.md
-grep -Fq '| `9.8` | Fas 9 — Work lifecycle | Projektlivscykel och robust branch-provisionering | **PENDING**' docs/implementation-status.md
+grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **DONE**' docs/implementation-status.md
+grep -Fq '| `9.8` | Fas 9 — Work lifecycle | Projektlivscykel och robust branch-provisionering | **NEXT**' docs/implementation-status.md
 grep -Fq '| `9.9` | Fas 9 — Work/GitHub visibility | Actions-status och kopierbara fel på Work-sidan | **PENDING**' docs/implementation-status.md
 grep -Fq '| `9.10` | Fas 9 — regression/release | E2E-regression, drift och slutlig releasegrind | **PENDING**' docs/implementation-status.md
+grep -Fq 'initialt **`Skicka till zip-github.shortcut`**' docs/implementation-steps.md
+grep -Fq 'observerade `0600`-fallet' docs/implementation-steps.md
+grep -Fq 'downloaded from `/shortcut` and accepted/imported on iOS' docs/release-checklist.md
+grep -q 'ShortcutDownloadHeadersSelfTest OK' backend/src/test/java/info/isaksson/erland/zipgithub/shortcut/ShortcutDownloadHeadersSelfTest.java
 if [[ -f shortcut/releases/zip-github.shortcut ]]; then
   [[ "$(wc -c < shortcut/releases/zip-github.shortcut | tr -d '[:space:]')" == "23821" ]]
   [[ "$(sha256sum shortcut/releases/zip-github.shortcut | awk '{print $1}')" == "21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a" ]]
-  printf 'Phase 9.7 signed Shortcut bytes verified from deployment bundle.\n'
+  mode=$(stat -c '%a' shortcut/releases/zip-github.shortcut)
+  [[ "$mode" == "644" ]] || { printf 'Expected signed Shortcut mode 644 for runtime readability, found %s.\n' "$mode" >&2; exit 1; }
+  printf 'Phase 9.7 signed Shortcut bytes and runtime-readable mode verified from deployment bundle.\n'
 else
   ! git ls-files --error-unmatch shortcut/releases/zip-github.shortcut >/dev/null 2>&1
   printf 'Phase 9.7 signed Shortcut binary intentionally absent from clean source checkout; manifest verified.\n'

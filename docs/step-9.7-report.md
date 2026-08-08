@@ -24,7 +24,7 @@ The step definition explicitly requires a **static, pre-signed, installer-ready 
 
 No unsigned file has been substituted or misrepresented as a release artifact. To complete 9.7, an operator must create/export the documented reference Shortcut in Apple Shortcuts, sign it for `anyone` on a trusted iCloud-signed-in Mac, publish it as `shortcut/releases/zip-github.shortcut`, configure version/generation metadata, and verify iOS accepts the downloaded artifact.
 
-9.8 remains PENDING and is not started because 9.7 is a prerequisite.
+At the time of the initial report, 9.8 remained PENDING because 9.7 was a prerequisite. The r0106 completion appendix below supersedes that temporary blocker state.
 
 ## Verification performed
 
@@ -89,7 +89,7 @@ The external signing prerequisite is now resolved: the operator supplied and ind
 
 To keep the deployment bundle safe when it is itself processed by zip-github, `ImportPolicyService` now hard-blocks that exact credential-bearing path with `SIGNED_SHORTCUT_SECRET_ARTIFACT`. The file remains ignored by Git as defense in depth.
 
-Step 9.7 is still `BLOCKED` on one final acceptance item only: the deployed service must serve this exact artifact through authenticated `/shortcut`, and an iOS device must accept the copy downloaded through that service route. The user has verified the signed Shortcut itself, but the service-mediated download has not yet been exercised in this environment. 9.8 remains PENDING.
+This was the remaining acceptance item at r0103: the deployed service still had to serve the exact artifact through authenticated `/shortcut` and iOS had to accept the served copy. That operational gate was subsequently completed by the operator and is recorded in the r0106 completion appendix below.
 
 Repository/status/structure/security/source/release checks pass with the signed artifact present. A targeted Maven `ImportPolicyServiceTest` run could not bootstrap because this sandbox could not DNS-resolve Maven Central; CI should execute the test after this revision is imported.
 
@@ -122,3 +122,14 @@ None.
 ### r0103 files deleted
 
 None.
+
+
+## r0106 completion — friendly download identity and runtime readability
+
+The remaining 9.7 acceptance gate has now been completed. The operator deployed the signed release, downloaded it through the authenticated `/shortcut` page, and imported the downloaded copy on iPhone. That real-device test also established that iOS uses the downloaded filename as the imported Shortcut name.
+
+The service now exposes `Skicka till zip-github.shortcut` via `Content-Disposition` while retaining `shortcut/releases/zip-github.shortcut` as the technical server/deployment path. The response still streams the same signed artifact bytes and therefore preserves the manifest SHA-256.
+
+The signing helper now applies `0644` rather than `0600`, matching the deployment model where a separate backend runtime UID must read the bind-mounted file. Release verification checks the friendly header contract and, when the binary is present in the deployment bundle, requires a runtime-readable mode plus the exact signed size/hash.
+
+Step 9.7 is **DONE**. Step 9.8 is **NEXT**.

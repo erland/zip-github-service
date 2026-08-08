@@ -1,3 +1,19 @@
+## 1.0.0-rc.58 - 2026-08-08
+
+### Changed
+- Completed phase 9 step 9.7 after the deployed authenticated `/shortcut` path was exercised and the downloaded Apple-signed Shortcut was imported on iPhone.
+- The authenticated download now exposes `Skicka till zip-github.shortcut` through `Content-Disposition` while serving the exact signed bytes from the technical server path `zip-github.shortcut`.
+- `scripts/sign-shortcut-release.sh` now publishes signed releases as mode `0644` instead of `0600`, matching the read-only bind-mount deployment model where the backend runs as a separate runtime user.
+- Release verification now asserts the friendly download identity, runtime-readable deployment mode when the binary is present, and the signed artifact manifest/hash invariants.
+- Step 9.8 is NEXT; no 9.8 implementation is included in this revision.
+
+## 1.0.0-rc.57 - 2026-08-08
+
+### Planned
+- Refined phase 9.7 verification after real deployment testing: the authenticated Shortcut download must expose `Skicka till zip-github.shortcut` via `Content-Disposition` while the server may keep the technical filename `zip-github.shortcut`.
+- Added an explicit deployment/runtime readability gate for the signed Shortcut so signing/publication cannot leave the bind-mounted artifact unreadable by the backend (the observed `0600` failure); `0644` or equivalent readable ownership/ACL is the recommended simple deployment mode.
+- Added the same filename/hash/runtime-readability assertions to the final phase 9.10 Shortcut E2E release gate. No 9.8 implementation is included.
+
 ## 1.0.0-rc.56 - 2026-08-08
 
 ### Fixed

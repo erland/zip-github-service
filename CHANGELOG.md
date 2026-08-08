@@ -1,3 +1,12 @@
+## 1.0.0-rc.62 - 2026-08-08
+
+### Changed
+- Corrected three frontend CI regressions exposed after the completed 9.8/9.9 UI lifecycle changes; production behavior is unchanged.
+- Updated the app routing test to create a verified Work branch before navigating to ZIP upload instead of looking for the removed pre-9.8 `Starta arbete` link.
+- Scoped the Work commit SHA assertion to the commit-history section because the exact Work head is intentionally also shown by the revisitable Actions UI.
+- Fixed the clipboard test setup so the `navigator.clipboard.writeText` spy is installed after `userEvent.setup()` and therefore observes the actual copy action.
+- Phase 9 remains complete; this correction does not reopen any implementation step.
+
 ## 1.0.0-rc.61 - 2026-08-08
 
 ### Changed

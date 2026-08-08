@@ -48,15 +48,19 @@ describe('App routing and authentication', () => {
     expect(screen.queryByText(/tillfälliga exempeldata/i)).not.toBeInTheDocument();
   });
 
-  it('navigates from the real project list to project details and a new import', async () => {
+  it('navigates from the real project list through verified Work creation to a new import', async () => {
     const user = userEvent.setup();
-    vi.stubGlobal('fetch', vi.fn().mockImplementation((input: RequestInfo | URL) => {
+    let workCreated = false;
+    const work = { id: 'work-1', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-1', status: 'ACTIVE', headCommitSha: null, pullRequestNumber: null, pullRequestUrl: null, createdAt: '2026-08-08T15:00:00Z', updatedAt: '2026-08-08T15:00:00Z' };
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url === '/api/auth/me') return json(authenticatedUser);
       if (url === '/api/projects') return json([project]);
       if (url === '/api/projects/project-1') return json(project);
       if (url === '/api/projects/project-1/imports') return json([]);
-      if (url === '/api/projects/project-1/work') return Promise.resolve(new Response(null, { status: 204 }));
+      if (url === '/api/projects/project-1/work/branches') return json([]);
+      if (url === '/api/projects/project-1/work' && init?.method === 'POST') { workCreated = true; return json(work); }
+      if (url === '/api/projects/project-1/work') return workCreated ? json(work) : Promise.resolve(new Response(null, { status: 204 }));
       if (url === '/api/projects/project-1/work/commits') return json({ githubAvailable: true, commits: [] });
       return Promise.reject(new Error(`Unexpected fetch: ${url}`));
     }));
@@ -66,7 +70,8 @@ describe('App routing and authentication', () => {
     const projectHeading = await screen.findByRole('heading', { name: 'Bokprojekt' });
     expect(projectHeading).toHaveFocus();
 
-    await user.click(screen.getByRole('link', { name: 'Starta arbete' }));
+    await user.click(screen.getByRole('button', { name: 'Skapa ny Work-branch' }));
+    await user.click(await screen.findByRole('link', { name: 'Ladda upp nästa ZIP' }));
     expect(screen.getByRole('heading', { name: 'Ladda upp projekt-ZIP' })).toBeInTheDocument();
   });
 

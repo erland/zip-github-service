@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0109`
+- Repository revision: `r0110`
 - Last completed step: `9.10`
 - Next step: `none` — implementation plan complete
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE`
@@ -101,6 +101,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
 | `r0109` | 2026-08-08 | `9.10` final phase-9 E2E/release gate | Cross-step phase-9 release script, signed Shortcut manifest/hash/readability checks, operations/security/API/release documentation audit; active implementation plan complete | `none` |
+| `r0110` | 2026-08-08 | Frontend CI correction after phase 9 completion | Updated stale routing/SHA/clipboard frontend tests to the 9.8/9.9 UI contract; no production behavior or phase state changed | `none` |
 | `r0001` | 2026-08-06 | Documentation package created | Documentation conversion/package only | `0.1` |
 | `r0002` | 2026-08-06 | `0.1` Legacy project unpacked and inventoried | Structural inspection; no builds or tests run by design | `0.2` |
 | `r0003` | 2026-08-06 | `0.2` Legacy baseline build/test paths verified | Shell syntax and ZIP integrity passed; Maven/Docker unavailable; npm proxy dependency 404 documented | `0.3` |

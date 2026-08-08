@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -34,7 +34,9 @@ describe('ProjectDetailPage work history', () => {
     expect(screen.getByRole('button', { name: 'Uppdatera status' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Kopiera fel' })).toBeInTheDocument();
     expect(screen.getByText('Update game board')).toBeInTheDocument();
-    expect(screen.getByText(/1234567890ab/)).toBeInTheDocument();
+    const history = screen.getByRole('heading', { name: 'Commits i arbetet' }).closest('section');
+    expect(history).not.toBeNull();
+    expect(within(history as HTMLElement).getByText(/1234567890ab/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Öppna commit' })).toHaveAttribute('href', 'https://github.com/owner/repo/commit/1234567890abcdef');
     expect(screen.getByRole('heading', { name: 'draft.zip' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Fortsätt granska' })).toHaveAttribute('href', '/projects/project-1/imports/import-review/review');
@@ -49,8 +51,8 @@ describe('ProjectDetailPage work history', () => {
 
   it('copies commit-correct condensed Actions failures from the revisitable Work view', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
     const user = userEvent.setup();
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
     await user.click(await screen.findByRole('button', { name: 'Kopiera fel' }));
     expect(writeText).toHaveBeenCalledTimes(1);

@@ -1,3 +1,9 @@
+## 1.0.0-rc.54 - 2026-08-08
+
+### Fixed
+- Reworked the container-image CI job to package the backend and frontend artifacts already built and verified by their prerequisite jobs instead of running Maven and npm a second time inside Docker builds.
+- Added thin runtime-only Dockerfiles for CI image assembly, eliminating the image job's separate Maven Central dependency-resolution path that failed with HTTP 429.
+
 # Changelog
 
 ## 1.0.0-rc.53 - 2026-08-08

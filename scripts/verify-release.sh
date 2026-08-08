@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.53"
+expected_version="1.0.0-rc.54"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
@@ -21,7 +21,7 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0101`' docs/implementation-status.md
+grep -q 'Repository revision: `r0102`' docs/implementation-status.md
 grep -q 'Last completed step: `9.6`' docs/implementation-status.md
 grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 BLOCKED ON SIGNED SHORTCUT ARTIFACT`' docs/implementation-status.md
 grep -q '| `7.9` .*\*\*DONE\*\*' docs/implementation-status.md
@@ -286,3 +286,13 @@ grep -q 'sign it for `anyone`' docs/step-9.7-report.md
 grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **BLOCKED**' docs/implementation-status.md
 grep -Fq '| `9.8` | Fas 9 — Shortcut/StagingImport | E2E-regression, drift och releasegrind | **PENDING**' docs/implementation-status.md
 printf 'Phase 9.7 blocked-release assertions verified for %s.\n' "$actual_version"
+
+# rc.54 container-image correction: images must package artifacts already verified by prerequisite jobs.
+grep -q 'name: backend-quarkus-app' .github/workflows/ci.yml
+grep -q 'uses: actions/download-artifact@v4' .github/workflows/ci.yml
+grep -q 'file: ./backend/Dockerfile.runtime' .github/workflows/ci.yml
+grep -q 'file: ./frontend/Dockerfile.runtime' .github/workflows/ci.yml
+grep -q 'COPY target/quarkus-app/' backend/Dockerfile.runtime
+grep -q 'COPY dist/' frontend/Dockerfile.runtime
+! grep -Eq '\b(mvn|npm ci|npm run build)\b' backend/Dockerfile.runtime frontend/Dockerfile.runtime
+printf 'rc.54 runtime-only container assembly assertions verified for %s.\n' "$actual_version"

@@ -1,5 +1,8 @@
 # Continuation handoff — phase 8 and later
 
+> **CI correction r0102 / 1.0.0-rc.54:** The container-image job now downloads the already verified `backend-quarkus-app` and `frontend-dist` artifacts from its prerequisite jobs and assembles runtime-only images. It no longer reruns Maven/npm inside Docker, avoiding the independent Maven Central path that returned HTTP 429. Phase 9 remains blocked at 9.7 only on the external Apple signing/iOS installation gate.
+
+
 Date: 8 August 2026  
 Repository revision: r0099  
 Application version: 1.0.0-rc.51  

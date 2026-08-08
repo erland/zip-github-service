@@ -1,3 +1,10 @@
+## 1.0.0-rc.63 - 2026-08-08
+
+### Changed
+- Corrected the final remaining frontend CI test ambiguity after the phase-9 Actions UI introduced multiple simultaneous live-status regions.
+- The degraded Work-history regression now asserts the exact GitHub-history fallback message instead of assuming it is the page's only `role="status"` element.
+- Production code and completed phase-9 behavior are unchanged.
+
 ## 1.0.0-rc.62 - 2026-08-08
 
 ### Changed

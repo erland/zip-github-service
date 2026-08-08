@@ -82,7 +82,7 @@ describe('ProjectDetailPage degraded Work history', () => {
 
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'Bokprojekt' })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('GitHub-historiken kunde inte läsas');
+    expect(screen.getByText('GitHub-historiken kunde inte läsas just nu. Senaste lokalt kända commit visas.')).toBeInTheDocument();
     expect(screen.getByText('Senaste kända Work-commit')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Fortsätt granska' })).toHaveAttribute('href', '/projects/project-1/imports/import-review/review');
   });

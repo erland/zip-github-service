@@ -1,3 +1,11 @@
+## 1.0.0-rc.55 - 2026-08-08
+
+### Changed
+- Integrated the user-created and iOS-verified Apple-signed reference Shortcut as the deployment release artifact at `shortcut/releases/zip-github.shortcut`.
+- Default Compose metadata now identifies the first Shortcut release as version `1`, generation `g1`; the published artifact is 23821 bytes with SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`.
+- Hard-blocked `shortcut/releases/zip-github.shortcut` in the ordinary import policy so the credential-bearing deployment artifact cannot accidentally be selected and committed to Git when this delivery ZIP is used as an import source.
+- The former Apple-signing blocker is resolved. Step 9.7 remains BLOCKED only until the deployed `/shortcut` download path has been exercised and the downloaded artifact accepted by iOS; step 9.8 has not started.
+
 ## 1.0.0-rc.54 - 2026-08-08
 
 ### Fixed

@@ -82,3 +82,43 @@ None.
 ## Files deleted
 
 None.
+
+## r0103 signed-artifact follow-up — 8 August 2026
+
+The external signing prerequisite is now resolved: the operator supplied and independently verified an Apple-signed reference Shortcut. The delivery bundle contains it at `shortcut/releases/zip-github.shortcut` (version `1`, generation `g1`, 23821 bytes, SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`).
+
+To keep the deployment bundle safe when it is itself processed by zip-github, `ImportPolicyService` now hard-blocks that exact credential-bearing path with `SIGNED_SHORTCUT_SECRET_ARTIFACT`. The file remains ignored by Git as defense in depth.
+
+Step 9.7 is still `BLOCKED` on one final acceptance item only: the deployed service must serve this exact artifact through authenticated `/shortcut`, and an iOS device must accept the copy downloaded through that service route. The user has verified the signed Shortcut itself, but the service-mediated download has not yet been exercised in this environment. 9.8 remains PENDING.
+
+Repository/status/structure/security/source/release checks pass with the signed artifact present. A targeted Maven `ImportPolicyServiceTest` run could not bootstrap because this sandbox could not DNS-resolve Maven Central; CI should execute the test after this revision is imported.
+
+### r0103 files added
+
+- `shortcut/releases/zip-github.shortcut`
+- `docs/rc55-signed-shortcut-integration.md`
+
+### r0103 files modified
+
+- `.env.example`
+- `CHANGELOG.md`
+- `VERSION`
+- `backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java`
+- `backend/src/test/java/info/isaksson/erland/zipgithub/policy/ImportPolicyServiceTest.java`
+- `docker-compose.yml`
+- `docs/implementation-status.md`
+- `docs/phase8-plus-continuation-handoff.md`
+- `docs/release-checklist.md`
+- `docs/signed-shortcut-release.md`
+- `docs/step-9.7-report.md`
+- `scripts/security-regression.sh`
+- `scripts/verify-release.sh`
+- `shortcut/releases/README.md`
+
+### r0103 files moved
+
+None.
+
+### r0103 files deleted
+
+None.

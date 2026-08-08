@@ -51,3 +51,11 @@ Rotation of this credential never requires GitHub OAuth, GitHub App or repositor
 `GET /api/shortcut-release` and `GET /api/shortcut-release/download` require the normal zip-github web session. Metadata exposes only version, generation, filename, size and SHA-256. The download endpoint is `private, no-store` and never exposes the staging credential separately from the signed binary.
 
 If no readable `.shortcut` is configured, metadata returns `available=false` and the UI explains that an administrator must publish the signed artifact. The backend does not substitute an unsigned or dynamically generated file.
+
+## Published reference artifact — r0103
+
+The operator supplied an Apple-signed reference Shortcut and confirmed the Shortcut itself on iPhone. The r0103 deployment bundle publishes it at `shortcut/releases/zip-github.shortcut` with default metadata version `1`, generation `g1`, size 23821 bytes and SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`.
+
+Because the signed binary embeds the staging upload credential, the source-control ignore remains in place and the ordinary zip-github import policy now hard-blocks this exact release path with policy code `SIGNED_SHORTCUT_SECRET_ARTIFACT`. This permits the deployment ZIP to carry the release while preventing an accidental Git delivery when the same ZIP is reviewed through zip-github.
+
+The final 9.7 gate is operational: deploy r0103, sign in to `/shortcut`, download the served artifact, and confirm that iOS accepts that downloaded copy. Until that exact served-copy check is reported successful, 9.7 remains `BLOCKED` rather than `DONE`.

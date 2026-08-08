@@ -171,6 +171,6 @@ Production version `1.0.0` may be created only when every external acceptance it
 - [x] Signed Shortcut bytes are deployment artifacts ignored by Git and mounted read-only in Compose.
 - [x] Old/revoked staging credentials return the explicit `STAGING_SHORTCUT_OUTDATED` update path.
 - [x] Manual trusted-Mac export/sign/publish and credential rotation procedures are documented.
-- [ ] A real reference Shortcut has been created in Apple Shortcuts with the documented flow and deployment credential.
-- [ ] The reference Shortcut has been signed for `anyone` from an iCloud-signed-in trusted Apple environment and published as `shortcut/releases/zip-github.shortcut`.
-- [ ] The published signed artifact has been downloaded from `/shortcut` and accepted for installation on iOS. This remains the external blocker before 9.7 can be marked DONE.
+- [x] A real reference Shortcut has been created in Apple Shortcuts with the documented flow and deployment credential; the operator verified its signed reference-client flow on iPhone.
+- [x] The reference Shortcut has been signed for `anyone` in Apple Shortcuts and published in the deployment bundle as `shortcut/releases/zip-github.shortcut` (SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`).
+- [ ] The published signed artifact has been downloaded from `/shortcut` and accepted for installation on iOS. This is now the only remaining external blocker before 9.7 can be marked DONE.

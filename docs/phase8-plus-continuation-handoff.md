@@ -1,3 +1,5 @@
+> **Signed Shortcut integration r0103 / 1.0.0-rc.55:** The operator-provided Apple-signed reference Shortcut is now included in the deployment bundle at `shortcut/releases/zip-github.shortcut` (version 1 / g1, SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`). The file is gitignored and hard-blocked from ordinary Import delivery to prevent credential leakage. Step 9.7 is now blocked only on deploying this bundle, downloading the artifact through authenticated `/shortcut`, and confirming that exact served copy installs on iOS.
+
 # Continuation handoff — phase 8 and later
 
 > **CI correction r0102 / 1.0.0-rc.54:** The container-image job now downloads the already verified `backend-quarkus-app` and `frontend-dist` artifacts from its prerequisite jobs and assembles runtime-only images. It no longer reruns Maven/npm inside Docker, avoiding the independent Maven Central path that returned HTTP 429. Phase 9 remains blocked at 9.7 only on the external Apple signing/iOS installation gate.
@@ -7,7 +9,7 @@ Date: 8 August 2026
 Repository revision: r0099  
 Application version: 1.0.0-rc.51  
 Last completed implementation step: 9.6  
-Current blocker: 9.7 — publish and iOS-verify the Apple-signed reference Shortcut; 9.8 remains PENDING
+Current blocker: 9.7 — deploy the published signed Shortcut, download it through `/shortcut`, and verify that exact served copy installs on iOS; 9.8 remains PENDING
 
 ## Why this file exists
 
@@ -208,7 +210,7 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 
 ## Release/packaging discipline
 
-- Application version is `1.0.0-rc.53`; r0101 is a backend CI-correction revision on top of the blocked 9.7 implementation. Step 9.7 remains blocked only on the external Apple signing/iOS installation gate.
+- Application version is `1.0.0-rc.55`; r0103 includes the operator-provided signed Shortcut. Step 9.7 remains blocked only on the deployed `/shortcut` download + iOS installation verification gate.
 - Steps 9.1–9.6 are complete. Step 9.7 runtime/distribution support is implemented but remains BLOCKED until a real Apple-signed Shortcut is published and accepted on iOS; do not start 9.8 before that gate is completed.
 - Keep exactly one `NEXT` step in `docs/implementation-status.md`.
 - Every delivered ZIP must include one top-level `zip-github/` folder.
@@ -222,6 +224,6 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 
 ## Phase 9.7 current blocker — r0101
 
-The zip-github runtime side of signed Shortcut distribution is implemented: authenticated `/shortcut`, `/api/shortcut-release` metadata/download, read-only deployment mount, explicit old/revoked credential error and trusted-Mac signing/rotation documentation. The source repository intentionally contains no `.shortcut` binary because the signed artifact embeds the deployment staging credential.
+The zip-github runtime side of signed Shortcut distribution is implemented and r0103 now carries the operator-provided signed `.shortcut` in the deployment bundle. The binary embeds the deployment staging credential, so it remains gitignored and is hard-blocked from ordinary Import delivery.
 
 9.7 is **BLOCKED**, not DONE, until a trusted Apple environment creates/exports the documented reference Shortcut, signs it for `anyone`, publishes it as `shortcut/releases/zip-github.shortcut` with matching version/generation metadata, and an iOS device accepts the downloaded file. The practical GitHub-hosted macOS test already proved ordinary hosted runners cannot perform this gate without an iCloud-signed-in environment. Do not start 9.8 before 9.7 is completed.

@@ -89,7 +89,12 @@ grep -q 'currentUser.requireUserId()' backend/src/main/java/info/isaksson/erland
 grep -q 'Cache-Control.*private, no-store' backend/src/main/java/info/isaksson/erland/zipgithub/api/ShortcutReleaseResource.java || fail 'signed Shortcut download cache control missing'
 grep -q 'STAGING_SHORTCUT_OUTDATED' backend/src/main/java/info/isaksson/erland/zipgithub/api/StagingImportResource.java || fail 'old/revoked Shortcut update error missing'
 grep -q '/shortcut/releases/\*.shortcut' .gitignore || fail 'secret-bearing signed Shortcut artifacts are not ignored'
-! find shortcut/releases -maxdepth 1 -type f -name '*.shortcut' -print -quit | grep -q . || fail 'a signed/secret-bearing Shortcut binary must not be committed in source'
+grep -q 'SIGNED_SHORTCUT_SECRET_ARTIFACT' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java || fail 'signed Shortcut deployment artifact is not hard-blocked from Git import'
+shortcut_count=$(find shortcut/releases -maxdepth 1 -type f -name '*.shortcut' | wc -l | tr -d '[:space:]')
+[[ "$shortcut_count" -le 1 ]] || fail 'multiple signed Shortcut binaries are present in the deployment bundle'
+if [[ "$shortcut_count" == "1" ]]; then
+  test -s shortcut/releases/zip-github.shortcut || fail 'unexpected or empty signed Shortcut deployment artifact'
+fi
 grep -q 'shortcuts sign --mode anyone' scripts/sign-shortcut-release.sh || fail 'trusted-Mac Shortcut signing helper missing'
 
 echo 'Security regression checks passed.'

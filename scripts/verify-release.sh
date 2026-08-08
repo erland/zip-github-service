@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.54"
+expected_version="1.0.0-rc.55"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
@@ -21,9 +21,9 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0102`' docs/implementation-status.md
+grep -q 'Repository revision: `r0103`' docs/implementation-status.md
 grep -q 'Last completed step: `9.6`' docs/implementation-status.md
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 BLOCKED ON SIGNED SHORTCUT ARTIFACT`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 BLOCKED ON DEPLOYED SHORTCUT DOWNLOAD/INSTALL VERIFICATION`' docs/implementation-status.md
 grep -q '| `7.9` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.10` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `7.11` .*\*\*DONE\*\*' docs/implementation-status.md
@@ -273,7 +273,7 @@ grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklie
 printf 'Phase 9.6 release assertions verified for %s.\n' "$actual_version"
 
 
-# Phase 9 step 9.7 (runtime side complete; external Apple signing gate remains BLOCKED).
+# Phase 9 step 9.7 (signed artifact published; deployed download/install gate remains BLOCKED).
 grep -q 'Step 9.7 report' docs/step-9.7-report.md
 grep -q '@Path("/api/shortcut-release")' backend/src/main/java/info/isaksson/erland/zipgithub/api/ShortcutReleaseResource.java
 grep -q 'class ShortcutReleaseService' backend/src/main/java/info/isaksson/erland/zipgithub/shortcut/ShortcutReleaseService.java
@@ -282,10 +282,15 @@ grep -q 'Ladda ner aktuell Shortcut' frontend/src/pages/ShortcutInstallPage.tsx
 grep -q 'STAGING_SHORTCUT_OUTDATED' backend/src/main/java/info/isaksson/erland/zipgithub/api/StagingImportResource.java
 grep -q 'zipgithub.shortcut.release-path' backend/src/main/resources/application.properties
 grep -q './shortcut/releases:/var/lib/zip-github/shortcut:ro' docker-compose.yml
-grep -q 'sign it for `anyone`' docs/step-9.7-report.md
+test -s shortcut/releases/zip-github.shortcut
+[[ "$(wc -c < shortcut/releases/zip-github.shortcut | tr -d '[:space:]')" == "23821" ]]
+[[ "$(sha256sum shortcut/releases/zip-github.shortcut | awk '{print $1}')" == "21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a" ]]
+grep -q 'SIGNED_SHORTCUT_SECRET_ARTIFACT' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java
+grep -q 'ZIP_GITHUB_SHORTCUT_VERSION:-1' docker-compose.yml
+grep -q 'ZIP_GITHUB_SHORTCUT_GENERATION:-g1' docker-compose.yml
 grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **BLOCKED**' docs/implementation-status.md
 grep -Fq '| `9.8` | Fas 9 — Shortcut/StagingImport | E2E-regression, drift och releasegrind | **PENDING**' docs/implementation-status.md
-printf 'Phase 9.7 blocked-release assertions verified for %s.\n' "$actual_version"
+printf 'Phase 9.7 signed-artifact publication assertions verified for %s.\n' "$actual_version"
 
 # rc.54 container-image correction: images must package artifacts already verified by prerequisite jobs.
 grep -q 'name: backend-quarkus-app' .github/workflows/ci.yml

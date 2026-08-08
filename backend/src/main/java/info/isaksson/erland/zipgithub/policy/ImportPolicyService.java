@@ -57,6 +57,10 @@ public class ImportPolicyService {
         if (lower.equals(".git") || lower.startsWith(".git/")) {
             return hardBlocked(entry, "GIT_METADATA_PROTECTED", "Git repository metadata may never be imported or selected.");
         }
+        if (lower.equals("shortcut/releases/zip-github.shortcut")) {
+            return hardBlocked(entry, "SIGNED_SHORTCUT_SECRET_ARTIFACT",
+                    "The signed deployment Shortcut embeds the staging upload credential and may never be committed to Git.");
+        }
         if ((lower.equals(".github") || lower.startsWith(".github/")) && isRepositoryChange(entry.status())) {
             return overridableBlocked(entry, "GITHUB_WORKFLOW_PROTECTED", "Changes under .github/** are excluded by default and require explicit override before inclusion.");
         }

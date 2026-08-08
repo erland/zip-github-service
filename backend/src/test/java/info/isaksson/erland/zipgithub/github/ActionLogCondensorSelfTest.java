@@ -18,6 +18,12 @@ public final class ActionLogCondensorSelfTest {
         require("npm/Vite".equals(vite.tool()), "Vite should be detected");
         require(!vite.lines().isEmpty(), "Vite excerpt expected");
 
+        var context = ActionLogCondensor.context("before-1\nbefore-2\n[ERROR] compile failed\nafter-1\n", 2, 1);
+        require(context.size() == 4, "Context should retain lines before and after the failure");
+        require(context.get(0).contains("before-1"), "Context should include pre-error lead-up");
+        var bounded = ActionLogCondensor.sanitizedLines("password=hunter2\nline-2", 10);
+        require(!bounded.getFirst().contains("hunter2"), "Full bounded job-log lines must be sanitized too");
+
         var unknown = ActionLogCondensor.condense("ordinary informational output only");
         require(unknown.lines().isEmpty(), "Unknown logs should not be exposed as guessed errors");
         System.out.println("ActionLogCondensorSelfTest passed");

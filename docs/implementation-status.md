@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0113`
-- Last completed step: `9.10`
+- Repository revision: `r0114`
+- Last completed step: `9.11`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — ACTIONS UX CORRECTION APPLIED`
 
 ## Step ledger
 
@@ -95,11 +95,13 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.8` | Fas 9 — Work lifecycle | Projektlivscykel och robust branch-provisionering | **DONE** | 2026-08-08 | `docs/step-9.8-report.md` |
 | `9.9` | Fas 9 — Work/GitHub visibility | Actions-status och kopierbara fel på Work-sidan | **DONE** | 2026-08-08 | `docs/step-9.9-report.md` |
 | `9.10` | Fas 9 — regression/release | E2E-regression, drift och slutlig releasegrind | **DONE** | 2026-08-08 | `docs/step-9.10-report.md` |
+| `9.11` | Fas 9 — Actions correction | Actions-visibilitet, gemensam Work/commit-vy och utökad feldiagnostik | **DONE** | 2026-08-08 | `docs/step-9.11-report.md` |
 
 ## Revision history
 
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
+| `r0114` | 2026-08-08 | `9.11` Actions visibility/diagnostics correction | Shared Work/result Actions UI, explicit permission diagnostics, resilient run/jobs/check handling and bounded contextual job logs | `none` |
 | `r0109` | 2026-08-08 | `9.10` final phase-9 E2E/release gate | Cross-step phase-9 release script, signed Shortcut manifest/hash/readability checks, operations/security/API/release documentation audit; active implementation plan complete | `none` |
 | `r0110` | 2026-08-08 | Frontend CI correction after phase 9 completion | Updated stale routing/SHA/clipboard frontend tests to the 9.8/9.9 UI contract; no production behavior or phase state changed | `none` |
 | `r0111` | 2026-08-08 | Final frontend CI test correction after phase 9 completion | Scoped the degraded Work-history fallback assertion to its exact message after Actions introduced a second legitimate live-status region; no production behavior changed | `none` |

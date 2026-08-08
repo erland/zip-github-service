@@ -1,3 +1,11 @@
+## 1.0.0-rc.66 - 2026-08-08
+
+- Added post-phase step 9.11 for the observed Work Actions visibility gap and unified Work/result Actions UX.
+- Workflow runs remain visible when secondary jobs/check endpoints fail; Actions HTTP 403 now carries an explicit `ACTIONS_PERMISSION_REQUIRED` diagnostic instead of looking like no workflow ran.
+- Work and commit/result views now render the same Actions component and Work reuses the same import-bound, allowlisted dispatch/rerun controls.
+- Failed jobs now expose a redacted condensed error, contextual lines around the failure, and an expandable bounded sanitized job log (128 KiB / 1600-line display cap), plus separate copy actions.
+- Phase 9 remains complete after the corrective 9.11 quality gate.
+
 ## 1.0.0-rc.65 - 2026-08-08
 
 - Fixed HTTP 413 for ZIP uploads above nginx's 1 MB default by giving the frontend proxy an explicit runtime-configurable `client_max_body_size`.

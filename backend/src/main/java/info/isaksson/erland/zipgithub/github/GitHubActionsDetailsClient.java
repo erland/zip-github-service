@@ -12,5 +12,6 @@ public interface GitHubActionsDetailsClient {
                     long workflowRunId, String workflowName, String githubUrl) {}
 
     record FailureExcerpt(long workflowRunId, String workflowName, long jobId, String jobName, String stepName,
-                          String tool, List<String> lines, String githubUrl) {}
+                          String tool, List<String> lines, List<String> contextLines, List<String> jobLogLines,
+                          boolean logTruncated, String githubUrl) {}
 }

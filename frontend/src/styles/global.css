@@ -381,3 +381,8 @@ code, pre, .repository-name, .review-file__path { overflow-wrap: anywhere; word-
 .commit-message-editor .field-hint { margin-bottom: 0; }
 .approval-summary { margin: 0.75rem 0; }
 .approval-summary div { display: grid; gap: 0.2rem; margin-bottom: 0.5rem; }
+.actions-heading-actions { align-items: center; display: flex; flex-wrap: wrap; gap: .6rem; justify-content: flex-end; }
+.actions-failure-list details { margin-top: .65rem; }
+.actions-failure-list summary { cursor: pointer; font-weight: 600; }
+.actions-failure-list h4 { margin: .75rem 0 .35rem; }
+@media (max-width: 640px) { .actions-heading-actions { align-items: stretch; flex-direction: column; width: 100%; } }

@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public record ImportActionsStatusResponse(UUID importId, String repositoryFullName, String commitSha, String state,
                                           boolean terminal, String detailsUrl, List<WorkflowRunResponse> workflows,
-                                          List<CheckRunResponse> checks, Instant checkedAt) {
+                                          List<CheckRunResponse> checks, String diagnosticCode, String diagnosticMessage, Instant checkedAt) {
     public record WorkflowRunResponse(long id, long workflowId, String workflowPath, String headBranch, String headSha,
                                       String name, String state, boolean terminal, String event, String htmlUrl,
                                       Instant createdAt, Instant updatedAt, List<JobResponse> jobs) {}

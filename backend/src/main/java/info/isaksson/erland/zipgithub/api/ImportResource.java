@@ -378,7 +378,7 @@ public class ImportResource {
                 check.id(), check.name(), check.state(), check.terminal(), check.htmlUrl(), check.appName(),
                 check.startedAt(), check.completedAt())).toList();
         return new ImportActionsStatusResponse(status.importId(), status.repositoryFullName(), status.commitSha(),
-                status.state(), status.terminal(), status.detailsUrl(), workflows, checks, status.checkedAt());
+                status.state(), status.terminal(), status.detailsUrl(), workflows, checks, status.diagnosticCode(), status.diagnosticMessage(), status.checkedAt());
     }
 
     @GET
@@ -396,7 +396,7 @@ public class ImportResource {
                 artifact.workflowRunId(), artifact.workflowName(), artifact.githubUrl())).toList();
         var failures = details.failures().stream().map(failure -> new ImportActionsDetailsResponse.FailureResponse(
                 failure.workflowRunId(), failure.workflowName(), failure.jobId(), failure.jobName(), failure.stepName(),
-                failure.tool(), failure.lines(), failure.githubUrl())).toList();
+                failure.tool(), failure.lines(), failure.contextLines(), failure.jobLogLines(), failure.logTruncated(), failure.githubUrl())).toList();
         return new ImportActionsDetailsResponse(details.importId(), details.repositoryFullName(), details.commitSha(),
                 details.detailsUrl(), artifacts, failures, details.checkedAt());
     }

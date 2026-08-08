@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public record ImportActionsStatus(UUID importId, String repositoryFullName, String commitSha, String state,
                                   boolean terminal, String detailsUrl, List<GitHubActionsClient.WorkflowRun> workflows,
-                                  List<GitHubActionsClient.CheckRun> checks, Instant checkedAt) {}
+                                  List<GitHubActionsClient.CheckRun> checks, String diagnosticCode, String diagnosticMessage,
+                                  Instant checkedAt) {}

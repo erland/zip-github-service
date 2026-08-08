@@ -202,7 +202,7 @@ Requires an exact approved plan and a verified applied workspace. Revalidates th
 
 ## Actions artifacts and condensed errors (step 8.2)
 
-`GET /api/imports/{importId}/actions/details` returns bounded read-only artifact metadata and condensed failed-job errors for the exact delivered commit. The endpoint is owner-scoped through the existing import/delivery lookup and uses a short-lived GitHub App installation token server-side.
+`GET /api/imports/{importId}/actions/details` returns bounded read-only artifact metadata plus sanitized failed-job diagnostics for the exact delivered commit: condensed lines, contextual lines around the failure, bounded job-log lines and a truncation flag. The endpoint is owner-scoped through the existing import/delivery lookup and uses a short-lived GitHub App installation token server-side.
 
 The response is deliberately limited: at most 20 artifact metadata entries across at most 10 matching workflow runs and at most three failed-job summaries. Artifact bytes and authenticated archive URLs are never returned or persisted; each artifact instead links to its owning GitHub workflow run. Each candidate failed-job log read is capped at 24 KiB before parsing. Summaries recognize Maven/Gradle, npm/Vite, Pandoc and xcodebuild only when robust patterns match, sanitize terminal/control sequences and common credential patterns, and identify workflow, job, failed step, detected tool and the GitHub job URL. Unknown log formats are not guessed.
 
@@ -382,7 +382,9 @@ Capability staging uploads using a missing/old/revoked `X-ZipGitHub-Upload-Crede
 ## Work Actions status (step 9.9)
 
 - `GET /api/projects/{projectId}/work/actions` returns the same bounded Actions status contract as the import result path, but is resolved from the authenticated project's active Work and exact `headCommitSha`.
-- `GET /api/projects/{projectId}/work/actions/details` returns the existing sanitized artifacts/failure-detail contract for the same exact Work-head commit.
+- `GET /api/projects/{projectId}/work/actions/details` returns the same shared sanitized artifacts/failure-detail contract for the exact Work-head commit.
+- `GET /api/projects/{projectId}/work` includes the owner-scoped `lastImportId` for an active Work with a delivered head so the frontend can reuse the same import-bound Actions control policy instead of introducing a separate dispatch/rerun authorization path.
+- Actions status responses may include `diagnosticCode`/`diagnosticMessage`; `ACTIONS_PERMISSION_REQUIRED` means GitHub returned an authorization failure for the Actions endpoint and must not be interpreted as `not_started`.
 - Both return a conflict when the active Work has no delivered commit yet. They never search by branch alone.
 
 

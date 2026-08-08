@@ -4,5 +4,5 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record WorkSessionResponse(UUID id, UUID projectId, String baseBranch, String branchName, String status,
-                                  String headCommitSha, Long pullRequestNumber, String pullRequestUrl,
+                                  String headCommitSha, UUID lastImportId, Long pullRequestNumber, String pullRequestUrl,
                                   Instant createdAt, Instant updatedAt) {}

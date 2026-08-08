@@ -50,7 +50,7 @@ Recommended MVP permissions:
 - Actions: Read and write
 - Metadata: Read-only (implicit/required)
 
-Steps 8.1–8.2 use Actions read access. Step 8.3 additionally performs only explicitly allowlisted `workflow_dispatch` and failed-job rerun operations, which require Actions write. Before each such write the backend reads the owner-scoped installation metadata with the App JWT and requires `permissions.actions` to be `write`; GitHub then independently enforces the same permission on the Actions endpoint. Existing installations may require owner approval when the App permission is upgraded. No generic arbitrary Actions write surface is exposed, and webhooks are not required by the current implementation.
+Steps 8.1–8.2 use Actions read access. Step 8.3 additionally performs only explicitly allowlisted `workflow_dispatch` and failed-job rerun operations, which require Actions write. **Important:** if Actions permission was added or upgraded after an installation already existed, GitHub may require the repository owner to approve the changed App permissions before installation tokens can call `/actions/runs`, `/jobs` or log endpoints. zip-github now reports this as `ACTIONS_PERMISSION_REQUIRED` instead of making it look like no workflow ran. Before each such write the backend reads the owner-scoped installation metadata with the App JWT and requires `permissions.actions` to be `write`; GitHub then independently enforces the same permission on the Actions endpoint. Existing installations may require owner approval when the App permission is upgraded. No generic arbitrary Actions write surface is exposed, and webhooks are not required by the current implementation.
 
 ## Installation
 

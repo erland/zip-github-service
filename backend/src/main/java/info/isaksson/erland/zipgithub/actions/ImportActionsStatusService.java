@@ -33,7 +33,7 @@ public class ImportActionsStatusService {
 
         var status = github.readCommitActions(tokens.createInstallationToken(installationId), repositoryFullName, commitSha);
         ImportActionsStatus result = new ImportActionsStatus(importId, repositoryFullName, commitSha, status.state(),
-                status.terminal(), status.detailsUrl(), status.workflows(), status.checks(), now);
+                status.terminal(), status.detailsUrl(), status.workflows(), status.checks(), status.diagnosticCode(), status.diagnosticMessage(), now);
         Duration ttl = status.terminal() ? TERMINAL_TTL : ACTIVE_TTL;
         cache.put(key, new CachedStatus(result, now.plus(ttl)));
         return result;

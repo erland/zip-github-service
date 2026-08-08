@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-rc.52 - 2026-08-08
+
+- Corrected CI regressions discovered after r0099 without changing the phase 9.7 BLOCKED state.
+- Disambiguated the Hamcrest `endsWith` matcher in `StagingImportResourceTest` from Mockito's matcher of the same name.
+- Added explicit Testing Library cleanup in `ShortcutInstallPage.test.tsx` so the published-release render cannot leak a download link into the subsequent unavailable-release test.
+- Phase 9.7 remains blocked only on the external Apple signing/iOS installation gate; phase 9.8 has not started.
+
 ## 1.0.0-rc.51 - 2026-08-08
 
 - Implemented the zip-github side of phase 9 step 9.7: authenticated static signed-Shortcut release metadata/download plus a mobile installation/update page.

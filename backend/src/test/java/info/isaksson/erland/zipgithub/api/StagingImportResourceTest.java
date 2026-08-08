@@ -44,7 +44,7 @@ class StagingImportResourceTest {
                 .when().post("/api/staging-imports")
                 .then().statusCode(201)
                 .body("stagingId", equalTo(id.toString()))
-                .body("claimUrl", endsWith("#token=opaque"))
+                .body("claimUrl", org.hamcrest.Matchers.endsWith("#token=opaque"))
                 .body("ownerUserId", nullValue())
                 .body("projectId", nullValue());
     }

@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import ActionsPanel from './ActionsPanel';
+import { ImportActionsStatusResponse } from '../api/imports';
 
 afterEach(cleanup);
 
@@ -27,4 +28,19 @@ it('shows condensed failure, surrounding context and an expandable bounded job l
   expect(screen.getByText('Visa sanerad jobblogg')).toBeInTheDocument();
   expect(screen.getByRole('button', { name:'Kopiera fel med sammanhang' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name:'Kopiera jobblogg' })).toBeInTheDocument();
+});
+
+
+it('falls back to the panel commit when a workflow payload has no headSha', () => {
+  const actions = {
+    importId: 'import-legacy', repositoryFullName: 'erland/example', commitSha: 'f'.repeat(40), state: 'success', terminal: true,
+    detailsUrl: 'https://github.com/erland/example/actions', checkedAt: '2026-08-08T18:00:00Z',
+    workflows: [{ id: 10, name: 'CI', state: 'success', terminal: true, event: 'push', htmlUrl: 'https://github.com/erland/example/actions/runs/10', jobs: [] }],
+    checks: [],
+  } as unknown as ImportActionsStatusResponse;
+
+  render(<ActionsPanel actions={actions} details={null} fallbackUrl="https://github.com/erland/example/actions" repositoryFullName="erland/example" branchName="zip-github/work-1" commitSha={'f'.repeat(40)} />);
+
+  expect(screen.getByText('CI')).toBeInTheDocument();
+  expect(screen.getAllByText('ffffffffffff').length).toBeGreaterThan(0);
 });

@@ -87,11 +87,15 @@ export default function ActionsPanel({
 
   return <section className="actions-overview" aria-labelledby="actions-heading">
     <div className="review-list-heading"><div><Heading id="actions-heading">GitHub Actions</Heading><p>Commit <code>{commitSha.slice(0, 12)}</code>. GitHub är källa för fullständig körningsinformation.</p></div><div className="actions-heading-actions"><StateBadge state={actions.state} />{onRefresh && <button className="button button--secondary" type="button" disabled={refreshing} onClick={onRefresh}>{refreshing ? 'Uppdaterar…' : 'Uppdatera status'}</button>}</div></div>
-    {actions.workflows.length > 0 && <ol className="actions-list">{actions.workflows.map(workflow => <li key={workflow.id} className="actions-run-card">
-      <div className="actions-item-heading"><div><strong>{workflow.name}</strong><p>{workflow.event || 'workflow'} · <code>{workflow.headSha.slice(0, 12)}</code> · <a href={workflow.htmlUrl || fallbackUrl} target="_blank" rel="noreferrer">Öppna körning på GitHub</a></p></div><StateBadge state={workflow.state} /></div>
-      {workflow.jobs.length > 0 && <ul className="actions-job-list">{workflow.jobs.map(job => <li key={job.id}><span>{job.htmlUrl ? <a href={job.htmlUrl} target="_blank" rel="noreferrer">{job.name}</a> : job.name}</span><StateBadge state={job.state} /></li>)}</ul>}
-    </li>)}</ol>}
-    {actions.checks.length > 0 && <div className="actions-checks"><h3>Checks</h3><ul className="actions-job-list">{actions.checks.map(check => <li key={check.id}><span>{check.htmlUrl ? <a href={check.htmlUrl} target="_blank" rel="noreferrer">{check.name}</a> : check.name}{check.appName ? ` · ${check.appName}` : ''}</span><StateBadge state={check.state} /></li>)}</ul></div>}
+    {(actions.workflows ?? []).length > 0 && <ol className="actions-list">{(actions.workflows ?? []).map(workflow => {
+      const workflowCommitSha = workflow.headSha || actions.commitSha || commitSha;
+      const jobs = workflow.jobs ?? [];
+      return <li key={workflow.id} className="actions-run-card">
+      <div className="actions-item-heading"><div><strong>{workflow.name}</strong><p>{workflow.event || 'workflow'} · <code>{workflowCommitSha.slice(0, 12)}</code> · <a href={workflow.htmlUrl || fallbackUrl} target="_blank" rel="noreferrer">Öppna körning på GitHub</a></p></div><StateBadge state={workflow.state} /></div>
+      {jobs.length > 0 && <ul className="actions-job-list">{jobs.map(job => <li key={job.id}><span>{job.htmlUrl ? <a href={job.htmlUrl} target="_blank" rel="noreferrer">{job.name}</a> : job.name}</span><StateBadge state={job.state} /></li>)}</ul>}
+    </li>;
+    })}</ol>}
+    {(actions.checks ?? []).length > 0 && <div className="actions-checks"><h3>Checks</h3><ul className="actions-job-list">{(actions.checks ?? []).map(check => <li key={check.id}><span>{check.htmlUrl ? <a href={check.htmlUrl} target="_blank" rel="noreferrer">{check.name}</a> : check.name}{check.appName ? ` · ${check.appName}` : ''}</span><StateBadge state={check.state} /></li>)}</ul></div>}
     {detailsUnavailable && <p className="status-message">Artifacts och feldiagnostik kunde inte läsas just nu. <a href={fallbackUrl} target="_blank" rel="noreferrer">Öppna Actions på GitHub</a>.</p>}
     {details && <ActionsDetails details={details} copyFailure={copyFailure} copyJobLog={copyJobLog} />}
     {controls}

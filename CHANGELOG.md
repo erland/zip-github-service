@@ -1,3 +1,10 @@
+## 1.0.0-rc.67 - 2026-08-08
+
+- Corrected the shared ActionsPanel runtime crash observed by GitHub Actions frontend CI when legacy/partial workflow payloads omitted `headSha`.
+- ActionsPanel now falls back from workflow `headSha` to the response commit SHA and finally the panel commit SHA, and tolerates missing workflow/check/job arrays during rolling upgrades.
+- Added a focused frontend regression proving a workflow without `headSha` still renders against the current commit.
+- No backend behavior, release scope, or completed implementation-step state changed.
+
 ## 1.0.0-rc.66 - 2026-08-08
 
 - Added post-phase step 9.11 for the observed Work Actions visibility gap and unified Work/result Actions UX.

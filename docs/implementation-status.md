@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0114`
+- Repository revision: `r0115`
 - Last completed step: `9.11`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — ACTIONS UX CORRECTION APPLIED`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — ACTIONS UX CI CORRECTION APPLIED`
 
 ## Step ledger
 
@@ -101,6 +101,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
+| `r0115` | 2026-08-08 | Frontend ActionsPanel CI correction after `9.11` | Prevented runtime crash for partial/legacy workflow payloads without `headSha`; no backend behavior or phase state changed | `none` |
 | `r0114` | 2026-08-08 | `9.11` Actions visibility/diagnostics correction | Shared Work/result Actions UI, explicit permission diagnostics, resilient run/jobs/check handling and bounded contextual job logs | `none` |
 | `r0109` | 2026-08-08 | `9.10` final phase-9 E2E/release gate | Cross-step phase-9 release script, signed Shortcut manifest/hash/readability checks, operations/security/API/release documentation audit; active implementation plan complete | `none` |
 | `r0110` | 2026-08-08 | Frontend CI correction after phase 9 completion | Updated stale routing/SHA/clipboard frontend tests to the 9.8/9.9 UI contract; no production behavior or phase state changed | `none` |

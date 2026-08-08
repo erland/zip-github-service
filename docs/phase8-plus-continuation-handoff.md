@@ -1,4 +1,4 @@
-> **Current handoff r0114 / 1.0.0-rc.66:** Phase 9 remains complete. Step 9.11 is a post-phase Actions correction: robust visibility/permission diagnostics, one shared Work/result Actions UI and bounded contextual failed-job logs.
+> **Current handoff r0115 / 1.0.0-rc.67:** Phase 9 remains complete. This revision is a frontend CI correction on top of step 9.11: the shared ActionsPanel now tolerates partial/legacy workflow payloads without `headSha` and falls back to the current commit SHA instead of crashing.
 
 > **Planning refinement r0105 / 1.0.0-rc.57:** Phase 9.7 now explicitly requires the authenticated Shortcut download to expose `Skicka till zip-github.shortcut` via `Content-Disposition` and requires deployment verification that the backend runtime user can read the signed bind-mounted artifact (avoiding the observed `0600` failure). The same checks are included in the final 9.10 E2E gate. No 9.8 implementation has started.
 
@@ -10,8 +10,8 @@
 
 
 Date: 8 August 2026  
-Repository revision: r0114  
-Application version: 1.0.0-rc.66  
+Repository revision: r0115  
+Application version: 1.0.0-rc.67  
 Last completed implementation step: 9.7  
 Current position: 9.8 NEXT — Work lifecycle, project lifecycle and robust branch provisioning
 
@@ -214,7 +214,7 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 
 ## Release/packaging discipline
 
-- Application version is `1.0.0-rc.66`; repository revision is r0114. Phase 9 is complete; r0114 adds the post-phase 9.11 Actions visibility/diagnostics correction while retaining the rc.65 200M upload fix.
+- Application version is `1.0.0-rc.67`; repository revision is r0115. Phase 9 is complete; r0115 is the frontend CI hardening correction for the shared ActionsPanel while retaining the rc.65 200M upload fix and rc.66 Actions UX/diagnostics work.
 - Steps 9.1–9.9 are complete. The signed Shortcut is device-verified, Work lifecycle uses verified GitHub branches, and Actions status/failures are revisitable from the active Work view. Step 9.10 is NEXT.
 - Keep exactly one `NEXT` step in `docs/implementation-status.md`.
 - Every delivered ZIP must include one top-level `zip-github/` folder.
@@ -226,7 +226,7 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 - Advanced three-way/provenance detection for ZIPs created from older repository state is backlog; ordinary ZIPs are not required to contain zip-github metadata.
 - Horizontal backend scaling remains unsupported until shared/persistent coordination is designed for all required runtime locks/state.
 
-## Phase 9 current position — r0114
+## Phase 9 current position — r0115
 
 The zip-github runtime side of signed Shortcut distribution is implemented and r0103 now carries the operator-provided signed `.shortcut` in the deployment bundle. The binary embeds the deployment staging credential, so it remains gitignored and is hard-blocked from ordinary Import delivery.
 

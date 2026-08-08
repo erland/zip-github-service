@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.66"
+expected_version="1.0.0-rc.67"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.66 - 2026-08-08' CHANGELOG.md
+grep -q '## 1.0.0-rc.67 - 2026-08-08' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,14 +23,15 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0114`' docs/implementation-status.md
+grep -q 'Repository revision: `r0115`' docs/implementation-status.md
 grep -q 'Last completed step: `9.11`' docs/implementation-status.md
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — ACTIONS UX CORRECTION APPLIED`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — ACTIONS UX CI CORRECTION APPLIED`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
 grep -q 'ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES=209715200' .env.example
 test -s docs/step-9.11-report.md
+test -s docs/rc67-frontend-actions-panel-ci-correction.md
 test -s frontend/src/components/ActionsPanel.tsx
 test -s frontend/src/components/ActionsControls.tsx
 test -s frontend/src/components/ActionsPanel.test.tsx
@@ -380,3 +381,6 @@ printf 'Phase 9.9 Work Actions assertions verified for %s.\n' "$actual_version"
 # Phase 9 final cross-step gate
 bash ./scripts/verify-phase9-release.sh
 printf 'Phase 9 final release assertions verified for %s.\n' "$actual_version"
+
+grep -q 'workflow.headSha || actions.commitSha || commitSha' frontend/src/components/ActionsPanel.tsx
+grep -q 'falls back to the panel commit when a workflow payload has no headSha' frontend/src/components/ActionsPanel.test.tsx

@@ -407,3 +407,11 @@ Import plan creation evaluates tracked `.gitignore` files from the exact locked 
 - `POST /api/repositories/{installationId}/{repositoryId}/work` verifies the repository through the user-scoped GitHub catalogue, lazily creates or reuses the internal owner-bound Project, then starts/reuses Work through the established Work lifecycle.
 - `POST /api/staging-imports/{stagingId}/promote` accepts either legacy `projectId` or repository identity (`githubInstallationId`, `githubRepositoryId`). Repository identity is resolved through the same lazy Project bootstrap before ordinary staging promotion.
 - Project APIs remain internal/compatibility building blocks after repository bootstrap; repository-first UX does not weaken owner checks, immutable plan/selection/approval binding or exact delivery.
+
+## Step 9.16 — PR-aware continued Work
+
+`GET /api/projects/{projectId}/work` refreshes a stored PR state when one exists. Open and closed-unmerged PRs remain the same active logical Work; a merged PR is terminal and the endpoint returns no active Work afterwards. The response includes `remoteHeadCommitSha` and `branchChangedExternally` in addition to zip-github's last delivered `headCommitSha`.
+
+`GET /api/imports/{importId}/external-branch-changes` is owner-scoped and available after the repository snapshot exists. It reports whether the review base differs from zip-github's last known Work head and, when GitHub compare is available, the bounded set of paths changed between those commits. It carries no credentials and does not mutate GitHub.
+
+Work Actions/details resolve the current remote Work HEAD before reading Actions. Delivery remains snapshot/SHA-bound and rejects branch movement after review.

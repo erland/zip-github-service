@@ -19,6 +19,7 @@ import info.isaksson.erland.zipgithub.persistence.WorkPersistenceStore;
 import info.isaksson.erland.zipgithub.persistence.ImportResumePersistenceStore;
 import info.isaksson.erland.zipgithub.github.GitHubBranchClient;
 import info.isaksson.erland.zipgithub.github.GitHubInstallationTokenProvider;
+import info.isaksson.erland.zipgithub.github.GitHubPullRequestClient;
 import info.isaksson.erland.zipgithub.pullrequest.PullRequestResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -50,6 +51,7 @@ public class ProjectApplicationService {
     @Inject ImportResumePersistenceStore persistentImports;
     @Inject GitHubInstallationTokenProvider installationTokens;
     @Inject GitHubBranchClient githubBranches;
+    @Inject GitHubPullRequestClient githubPullRequests;
 
     /** Clears the temporary in-memory store between Quarkus tests.
      *  This method must be removed when persistent repositories replace the prototype store.
@@ -162,7 +164,7 @@ public class ProjectApplicationService {
         requireOwnedProject(ownerUserId, projectId);
         if (persistentProjects.enabled()) return persistentWork.findActive(ownerUserId, projectId);
         WorkSession work = workByProject.get(projectId);
-        return work != null && work.ownerUserId().equals(ownerUserId) && "ACTIVE".equals(work.status()) ? Optional.of(work) : Optional.empty();
+        return work != null && work.ownerUserId().equals(ownerUserId) && Set.of("ACTIVE","PR_OPEN","PR_CLOSED").contains(work.status()) ? Optional.of(work) : Optional.empty();
     }
 
     public List<GitHubBranchClient.Branch> availableWorkBranches(UUID ownerUserId, UUID projectId) {
@@ -303,11 +305,58 @@ public class ProjectApplicationService {
         if (!work.branchName().equals(result.branchName()) || !work.headCommitSha().equals(result.commitSha()))
             throw ApiException.conflict("WORK_PULL_REQUEST_MISMATCH", "The pull request does not match the active work head.");
         if (persistentProjects.enabled()) return persistentWork.recordPullRequest(ownerUserId, projectId, result.pullRequestNumber(), result.pullRequestUrl());
-        WorkSession completed = new WorkSession(work.id(), work.projectId(), work.ownerUserId(), work.baseBranch(), work.branchName(),
-                "PULL_REQUEST_CREATED", work.headCommitSha(), work.baseCommitSha(), work.lastImportId(), work.lastPlanDigestSha256(),
+        WorkSession open = new WorkSession(work.id(), work.projectId(), work.ownerUserId(), work.baseBranch(), work.branchName(),
+                "PR_OPEN", work.headCommitSha(), work.baseCommitSha(), work.lastImportId(), work.lastPlanDigestSha256(),
                 result.pullRequestNumber(), result.pullRequestUrl(), work.createdAt(), Instant.now());
-        workByProject.put(projectId, completed);
-        return completed;
+        workByProject.put(projectId, open);
+        return open;
+    }
+
+    public Optional<WorkSession> syncWorkPullRequestState(UUID ownerUserId, UUID projectId) {
+        ProjectResponse project = requireOwnedProject(ownerUserId, projectId).response;
+        Optional<WorkSession> current = activeWork(ownerUserId, projectId);
+        if (current.isEmpty()) return Optional.empty();
+        WorkSession work = current.get();
+        if (work.pullRequestNumber() == null || githubPullRequests == null || installationTokens == null) return current;
+        try {
+            String token = installationTokens.createInstallationToken(project.githubInstallationId());
+            var pr = githubPullRequests.getPullRequest(token, project.repositoryFullName(), work.pullRequestNumber());
+            String next = pr.merged() ? "MERGED" : ("open".equalsIgnoreCase(pr.state()) ? "PR_OPEN" : "PR_CLOSED");
+            if (next.equals(work.status())) return current;
+            WorkSession updated;
+            if (persistentProjects.enabled()) {
+                updated = persistentWork.updatePullRequestState(ownerUserId, projectId, next);
+            } else {
+                updated = new WorkSession(work.id(), work.projectId(), work.ownerUserId(), work.baseBranch(), work.branchName(),
+                        next, work.headCommitSha(), work.baseCommitSha(), work.lastImportId(), work.lastPlanDigestSha256(),
+                        work.pullRequestNumber(), work.pullRequestUrl(), work.createdAt(), Instant.now());
+                workByProject.put(projectId, updated);
+            }
+            return "MERGED".equals(next) ? Optional.empty() : Optional.of(updated);
+        } catch (RuntimeException unavailable) {
+            return current;
+        }
+    }
+
+    public ExternalBranchChanges externalBranchChanges(UUID ownerUserId, UUID importId) {
+        OwnedImport owned = requireOwnedImport(ownerUserId, importId);
+        ProjectResponse project = requireOwnedProject(ownerUserId, owned.response.projectId()).response;
+        RepositorySnapshot snapshot = snapshotsByImport.get(importId);
+        if (snapshot == null) return new ExternalBranchChanges(false, null, null, Set.of());
+        Optional<WorkSession> workOpt = activeWork(ownerUserId, project.id());
+        if (workOpt.isEmpty()) return new ExternalBranchChanges(false, null, snapshot.baseCommitSha(), Set.of());
+        WorkSession work = workOpt.get();
+        String known = work.headCommitSha();
+        String current = snapshot.baseCommitSha();
+        if (known == null || known.isBlank() || current == null || known.equalsIgnoreCase(current))
+            return new ExternalBranchChanges(false, known, current, Set.of());
+        if (installationTokens == null || githubBranches == null) return new ExternalBranchChanges(true, known, current, Set.of());
+        try {
+            String token = installationTokens.createInstallationToken(project.githubInstallationId());
+            return new ExternalBranchChanges(true, known, current, githubBranches.changedPaths(token, project.repositoryFullName(), known, current));
+        } catch (RuntimeException unavailable) {
+            return new ExternalBranchChanges(true, known, current, Set.of());
+        }
     }
 
     public ImportResponse createImport(UUID ownerUserId, UUID projectId, CreateImportRequest request,
@@ -833,8 +882,8 @@ public class ProjectApplicationService {
         }
         WorkSession work = requireActiveWork(ownerUserId, projectId);
         workByProject.put(projectId, new WorkSession(work.id(), work.projectId(), work.ownerUserId(), work.baseBranch(), work.branchName(),
-                "ACTIVE", delivery.commitSha(), work.baseCommitSha() == null ? delivery.baseCommitSha() : work.baseCommitSha(),
-                importId, delivery.planDigestSha256(), null, null, work.createdAt(), Instant.now()));
+                work.status(), delivery.commitSha(), work.baseCommitSha() == null ? delivery.baseCommitSha() : work.baseCommitSha(),
+                importId, delivery.planDigestSha256(), work.pullRequestNumber(), work.pullRequestUrl(), work.createdAt(), Instant.now()));
     }
 
     public List<StoredUpload> expiredUploads(Instant now) {
@@ -941,6 +990,7 @@ public class ProjectApplicationService {
                                   RepositorySnapshot snapshot, ImmutableImportPlan plan, ApprovedSelection selection,
                                   ImportPlanApproval approval) {}
     public record ProjectWorkSource(long githubInstallationId, String repositoryFullName, WorkSession work) {}
+    public record ExternalBranchChanges(boolean branchChanged, String previousKnownHeadSha, String reviewBaseHeadSha, Set<String> changedPaths) {}
 
     private record StoredUploadPromotionKey(UUID ownerUserId, UUID projectId, String idempotencyKey) {}
     private record StoredUploadPromotion(UUID ownerUserId, UUID projectId, UUID importId, UUID artifactId,

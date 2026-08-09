@@ -73,3 +73,9 @@ A project has at most one `ACTIVE` work session. The work session owns a stable 
 ## Import source audit metadata
 
 Every normal import has an explicit non-secret `ImportSource`: `WEB_UPLOAD`, `STORED_UPLOAD` or the reserved future `STAGING_IMPORT`. An optional `sourceReference` may contain an internal correlation identifier such as `stored-upload:<artifact-uuid>`. Capability tokens, claim tokens, OAuth tokens and credentials must never be stored in source audit metadata. The source is diagnostic only and must not change comparison, policy, selection, plan digest or Git delivery semantics.
+
+## Work lifecycle refinement — step 9.16
+
+A pull request is not itself terminal Work. The relevant lifecycle is `ACTIVE -> PR_OPEN`; an open PR can receive additional ZIP imports/commits on the same Work branch. A PR closed without merge becomes `PR_CLOSED` and can be continued or abandoned. A merged PR becomes `MERGED` and terminates that Work. Historical `PULL_REQUEST_CREATED` rows migrate to `PR_OPEN` and are reconciled against GitHub on access.
+
+`headCommitSha` remains zip-github's last delivered Work commit. `remoteHeadCommitSha` is read from GitHub and may be newer when another actor changes the Work branch. This distinction is intentional provenance used for CI visibility and old-ZIP warnings.

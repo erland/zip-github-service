@@ -37,12 +37,13 @@ export function samePathSelection(left: ReadonlySet<string>, right: ReadonlySet<
   return true;
 }
 
-export function ReviewFileTree({ entries, selectedPaths, onSelectedPathsChange, overridePaths, onOverridePathsChange, locked = false }: {
+export function ReviewFileTree({ entries, selectedPaths, onSelectedPathsChange, overridePaths, onOverridePathsChange, externalChangedPaths = new Set(), locked = false }: {
   entries: ImportPlanEntry[];
   selectedPaths: ReadonlySet<string>;
   onSelectedPathsChange: (selectedPaths: Set<string>) => void;
   overridePaths?: ReadonlySet<string>;
   onOverridePathsChange?: (overridePaths: Set<string>) => void;
+  externalChangedPaths?: ReadonlySet<string>;
   locked?: boolean;
 }) {
   const nodes = useMemo(() => buildTree(entries), [entries]);
@@ -51,35 +52,37 @@ export function ReviewFileTree({ entries, selectedPaths, onSelectedPathsChange, 
       {nodes.map((node) => (
         <TreeNode key={`${node.kind}-${node.path}`} node={node} selectedPaths={selectedPaths}
           onSelectedPathsChange={onSelectedPathsChange} overridePaths={overridePaths ?? new Set()}
-          onOverridePathsChange={onOverridePathsChange} locked={locked} level={1} />
+          onOverridePathsChange={onOverridePathsChange} externalChangedPaths={externalChangedPaths} locked={locked} level={1} />
       ))}
     </ul>
   );
 }
 
-function TreeNode({ node, selectedPaths, onSelectedPathsChange, overridePaths, onOverridePathsChange, locked, level }: {
+function TreeNode({ node, selectedPaths, onSelectedPathsChange, overridePaths, onOverridePathsChange, externalChangedPaths, locked, level }: {
   node: ReviewTreeNode;
   selectedPaths: ReadonlySet<string>;
   onSelectedPathsChange: (selectedPaths: Set<string>) => void;
   overridePaths: ReadonlySet<string>;
   onOverridePathsChange?: (overridePaths: Set<string>) => void;
+  externalChangedPaths: ReadonlySet<string>;
   locked: boolean;
   level: number;
 }) {
   if (node.kind === 'file') {
     return <FileTreeNode node={node} selectedPaths={selectedPaths} onSelectedPathsChange={onSelectedPathsChange}
-      overridePaths={overridePaths} onOverridePathsChange={onOverridePathsChange} locked={locked} level={level} />;
+      overridePaths={overridePaths} onOverridePathsChange={onOverridePathsChange} externalChangedPaths={externalChangedPaths} locked={locked} level={level} />;
   }
   return <DirectoryTreeNode node={node} selectedPaths={selectedPaths} onSelectedPathsChange={onSelectedPathsChange}
-    overridePaths={overridePaths} onOverridePathsChange={onOverridePathsChange} locked={locked} level={level} />;
+    overridePaths={overridePaths} onOverridePathsChange={onOverridePathsChange} externalChangedPaths={externalChangedPaths} locked={locked} level={level} />;
 }
 
-function DirectoryTreeNode({ node, selectedPaths, onSelectedPathsChange, overridePaths, onOverridePathsChange, locked, level }: {
+function DirectoryTreeNode({ node, selectedPaths, onSelectedPathsChange, overridePaths, onOverridePathsChange, externalChangedPaths, locked, level }: {
   node: ReviewDirectoryNode;
   selectedPaths: ReadonlySet<string>;
   onSelectedPathsChange: (selectedPaths: Set<string>) => void;
   overridePaths: ReadonlySet<string>;
   onOverridePathsChange?: (overridePaths: Set<string>) => void;
+  externalChangedPaths: ReadonlySet<string>;
   locked: boolean;
   level: number;
 }) {
@@ -126,7 +129,7 @@ function DirectoryTreeNode({ node, selectedPaths, onSelectedPathsChange, overrid
           {node.children.map((child) => (
             <TreeNode key={`${child.kind}-${child.path}`} node={child} selectedPaths={selectedPaths}
               onSelectedPathsChange={onSelectedPathsChange} overridePaths={overridePaths}
-              onOverridePathsChange={onOverridePathsChange} locked={locked} level={level + 1} />
+              onOverridePathsChange={onOverridePathsChange} externalChangedPaths={externalChangedPaths} locked={locked} level={level + 1} />
           ))}
         </ul>
       )}
@@ -134,12 +137,13 @@ function DirectoryTreeNode({ node, selectedPaths, onSelectedPathsChange, overrid
   );
 }
 
-function FileTreeNode({ node, selectedPaths, onSelectedPathsChange, overridePaths, onOverridePathsChange, locked, level }: {
+function FileTreeNode({ node, selectedPaths, onSelectedPathsChange, overridePaths, onOverridePathsChange, externalChangedPaths, locked, level }: {
   node: ReviewFileNode;
   selectedPaths: ReadonlySet<string>;
   onSelectedPathsChange: (selectedPaths: Set<string>) => void;
   overridePaths: ReadonlySet<string>;
   onOverridePathsChange?: (overridePaths: Set<string>) => void;
+  externalChangedPaths: ReadonlySet<string>;
   locked: boolean;
   level: number;
 }) {
@@ -150,6 +154,7 @@ function FileTreeNode({ node, selectedPaths, onSelectedPathsChange, overridePath
   const selectable = ordinarySelectable || (overridable && overrideApproved);
   const checked = selectable && selectedPaths.has(entry.path);
   const disabledReason = selectionDisabledReason(entry, overrideApproved);
+  const externalChanged = externalChangedPaths.has(entry.path) && entry.status !== 'UNCHANGED' && entry.status !== 'IGNORED';
 
   function toggleFile() {
     if (locked || !selectable) return;
@@ -184,6 +189,7 @@ function FileTreeNode({ node, selectedPaths, onSelectedPathsChange, overridePath
         <div className="review-tree__badges">
           <span className={`file-status file-status--${statusClass(entry)}`}>{statusLabel(entry)}</span>
           {entry.severity === 'WARNING' && <span className="file-status file-status--warning">Varning</span>}
+          {externalChanged && <span className="file-status file-status--warning">Ändrad på GitHub</span>}
           {entry.blockerType === 'HARD_BLOCKED' && <span className="file-status file-status--blocked">Hårt blockerad</span>}
           {entry.blockerType === 'OVERRIDABLE_BLOCKED' && <span className="file-status file-status--blocked">Kräver override</span>}
           {entry.modeChanged && <span className="file-status file-status--warning">Mode {entry.repositoryMode} → {entry.effectiveMode}</span>}
@@ -195,8 +201,9 @@ function FileTreeNode({ node, selectedPaths, onSelectedPathsChange, overridePath
           <span>Jag förstår risken och vill ta med denna blockerade förändring</span>
         </label>
       )}
-      {(entry.message || disabledReason) && (
+      {(entry.message || disabledReason || externalChanged) && (
         <p className="review-tree__message" style={{ '--tree-level': level } as CSSProperties}>
+          {externalChanged && <>Den här sökvägen ändrades på Work-branchen efter zip-githubs senast kända commit. Den valda ZIP-versionen kommer att ersätta den externa ändringen. {entry.message || disabledReason ? ' ' : ''}</>}
           {entry.message ?? disabledReason}
         </p>
       )}

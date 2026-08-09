@@ -14,7 +14,7 @@ public class WorkPersistenceStore {
     @Inject AgroalDataSource dataSource;
 
     public Optional<WorkSession> findActive(UUID ownerUserId, UUID projectId) {
-        return find("SELECT * FROM work_session WHERE owner_user_id=? AND project_id=? AND status='ACTIVE'", ownerUserId, projectId);
+        return find("SELECT * FROM work_session WHERE owner_user_id=? AND project_id=? AND status IN ('ACTIVE','PR_OPEN','PR_CLOSED')", ownerUserId, projectId);
     }
 
     public WorkSession createProvisioning(UUID ownerUserId, UUID projectId, String baseBranch, String branchName, String baseCommitSha) {
@@ -31,7 +31,7 @@ public class WorkPersistenceStore {
     }
 
     public Optional<WorkSession> findOpen(UUID ownerUserId, UUID projectId) {
-        return find("SELECT * FROM work_session WHERE owner_user_id=? AND project_id=? AND status IN ('PROVISIONING','ACTIVE')", ownerUserId, projectId);
+        return find("SELECT * FROM work_session WHERE owner_user_id=? AND project_id=? AND status IN ('PROVISIONING','ACTIVE','PR_OPEN','PR_CLOSED')", ownerUserId, projectId);
     }
 
     public WorkSession activate(UUID ownerUserId, UUID projectId, String expectedBranch, String baseCommitSha) {
@@ -48,7 +48,7 @@ public class WorkPersistenceStore {
     public WorkSession abandon(UUID ownerUserId, UUID projectId) {
         try (Connection c = dataSource.getConnection(); PreparedStatement s = c.prepareStatement("""
                 UPDATE work_session SET status='ABANDONED', updated_at=?
-                WHERE owner_user_id=? AND project_id=? AND status IN ('PROVISIONING','ACTIVE')
+                WHERE owner_user_id=? AND project_id=? AND status IN ('PROVISIONING','ACTIVE','PR_OPEN','PR_CLOSED')
                 """)) {
             s.setTimestamp(1,Timestamp.from(Instant.now())); s.setObject(2,ownerUserId); s.setObject(3,projectId);
             if (s.executeUpdate()!=1) throw new IllegalStateException("No active work session could be abandoned.");
@@ -57,7 +57,7 @@ public class WorkPersistenceStore {
     }
 
     public boolean activeBranchInUse(UUID ownerUserId, UUID projectId, String branchName) {
-        try (Connection c=dataSource.getConnection(); PreparedStatement s=c.prepareStatement("SELECT 1 FROM work_session WHERE owner_user_id=? AND project_id=? AND status IN ('PROVISIONING','ACTIVE') AND branch_name=? LIMIT 1")) {
+        try (Connection c=dataSource.getConnection(); PreparedStatement s=c.prepareStatement("SELECT 1 FROM work_session WHERE owner_user_id=? AND project_id=? AND status IN ('PROVISIONING','ACTIVE','PR_OPEN','PR_CLOSED') AND branch_name=? LIMIT 1")) {
             s.setObject(1,ownerUserId); s.setObject(2,projectId); s.setString(3,branchName);
             try (ResultSet r=s.executeQuery()) { return r.next(); }
         } catch (SQLException e) { throw new IllegalStateException("Could not validate active work branch.", e); }
@@ -68,7 +68,7 @@ public class WorkPersistenceStore {
         try (Connection c = dataSource.getConnection(); PreparedStatement s = c.prepareStatement("""
                 UPDATE work_session SET head_commit_sha=?, base_commit_sha=COALESCE(base_commit_sha, ?),
                     last_import_id=?, last_plan_digest_sha256=?, updated_at=?
-                WHERE owner_user_id=? AND project_id=? AND status='ACTIVE'
+                WHERE owner_user_id=? AND project_id=? AND status IN ('ACTIVE','PR_OPEN','PR_CLOSED')
                 """)) {
             s.setString(1,commitSha); s.setString(2,baseCommitSha); s.setObject(3,importId); s.setString(4,planDigestSha256);
             s.setTimestamp(5,Timestamp.from(Instant.now())); s.setObject(6,ownerUserId); s.setObject(7,projectId);
@@ -79,12 +79,27 @@ public class WorkPersistenceStore {
 
     public WorkSession recordPullRequest(UUID ownerUserId, UUID projectId, long number, String url) {
         try (Connection c = dataSource.getConnection(); PreparedStatement s = c.prepareStatement("""
-                UPDATE work_session SET status='PULL_REQUEST_CREATED', pull_request_number=?, pull_request_url=?, updated_at=?
-                WHERE owner_user_id=? AND project_id=? AND status='ACTIVE' AND head_commit_sha IS NOT NULL
+                UPDATE work_session SET status='PR_OPEN', pull_request_number=?, pull_request_url=?, updated_at=?
+                WHERE owner_user_id=? AND project_id=? AND status IN ('ACTIVE','PR_CLOSED','PR_OPEN') AND head_commit_sha IS NOT NULL
                 """)) {
             s.setLong(1,number); s.setString(2,url); s.setTimestamp(3,Timestamp.from(Instant.now())); s.setObject(4,ownerUserId); s.setObject(5,projectId);
-            if (s.executeUpdate()!=1) throw new IllegalStateException("No committable active work session could be finalized.");
+            if (s.executeUpdate()!=1) throw new IllegalStateException("No committable work session could record the pull request.");
         } catch (SQLException e) { throw new IllegalStateException("Could not persist work pull request.", e); }
+        return findLatest(ownerUserId, projectId).orElseThrow();
+    }
+
+
+    public WorkSession updatePullRequestState(UUID ownerUserId, UUID projectId, String status) {
+        if (!java.util.Set.of("PR_OPEN", "PR_CLOSED", "MERGED").contains(status))
+            throw new IllegalArgumentException("Unsupported pull request work status: " + status);
+        try (Connection c = dataSource.getConnection(); PreparedStatement s = c.prepareStatement("""
+                UPDATE work_session SET status=?, updated_at=?
+                WHERE owner_user_id=? AND project_id=? AND pull_request_number IS NOT NULL
+                  AND status IN ('PR_OPEN','PR_CLOSED')
+                """)) {
+            s.setString(1,status); s.setTimestamp(2,Timestamp.from(Instant.now())); s.setObject(3,ownerUserId); s.setObject(4,projectId);
+            if (s.executeUpdate()!=1) throw new IllegalStateException("No pull-request Work session could be updated.");
+        } catch (SQLException e) { throw new IllegalStateException("Could not update Work pull request state.", e); }
         return findLatest(ownerUserId, projectId).orElseThrow();
     }
 

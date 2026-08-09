@@ -20,6 +20,7 @@ import info.isaksson.erland.zipgithub.api.dto.ImportActionsControlOptionsRespons
 import info.isaksson.erland.zipgithub.api.dto.DispatchWorkflowRequest;
 import info.isaksson.erland.zipgithub.api.dto.RerunWorkflowRequest;
 import info.isaksson.erland.zipgithub.api.dto.ActionsControlOperationResponse;
+import info.isaksson.erland.zipgithub.api.dto.ExternalBranchChangesResponse;
 import info.isaksson.erland.zipgithub.api.error.ApiException;
 import info.isaksson.erland.zipgithub.application.ProjectApplicationService;
 import info.isaksson.erland.zipgithub.security.CurrentUserProvider;
@@ -196,6 +197,14 @@ public class ImportResource {
             if (e instanceof ApiException apiException) throw apiException;
             throw ApiException.badRequest("IMPORT_PLAN_FAILED", e.getMessage());
         }
+    }
+
+    @GET
+    @Path("/{importId}/external-branch-changes")
+    public ExternalBranchChangesResponse getExternalBranchChanges(@PathParam("importId") UUID importId) {
+        var changes = service.externalBranchChanges(currentUser.requireUserId(), importId);
+        return new ExternalBranchChangesResponse(changes.branchChanged(), changes.previousKnownHeadSha(),
+                changes.reviewBaseHeadSha(), changes.changedPaths().stream().sorted().toList());
     }
 
     @GET

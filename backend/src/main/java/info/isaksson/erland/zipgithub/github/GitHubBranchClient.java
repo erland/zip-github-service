@@ -1,6 +1,7 @@
 package info.isaksson.erland.zipgithub.github;
 
 import java.util.List;
+import java.util.Set;
 
 /** Installation-token scoped branch lifecycle operations used by persistent Work sessions. */
 public interface GitHubBranchClient {
@@ -9,4 +10,5 @@ public interface GitHubBranchClient {
     String branchHeadSha(String installationToken, String repositoryFullName, String branchName);
     void createBranch(String installationToken, String repositoryFullName, String branchName, String fromCommitSha);
     void deleteBranch(String installationToken, String repositoryFullName, String branchName);
+    Set<String> changedPaths(String installationToken, String repositoryFullName, String baseCommitSha, String headCommitSha);
 }

@@ -6,6 +6,7 @@ import info.isaksson.erland.zipgithub.actions.ImportActionsStatusService;
 import info.isaksson.erland.zipgithub.application.ProjectApplicationService;
 import info.isaksson.erland.zipgithub.delivery.GitDeliveryResult;
 import info.isaksson.erland.zipgithub.github.GitHubCommitHistoryClient;
+import info.isaksson.erland.zipgithub.github.GitHubBranchClient;
 import info.isaksson.erland.zipgithub.github.GitHubInstallationTokenProvider;
 import info.isaksson.erland.zipgithub.pullrequest.PullRequestService;
 import info.isaksson.erland.zipgithub.security.CurrentUserProvider;
@@ -25,6 +26,7 @@ public class ProjectResource {
     @Inject PullRequestService pullRequests;
     @Inject GitHubInstallationTokenProvider installationTokens;
     @Inject GitHubCommitHistoryClient commitHistory;
+    @Inject GitHubBranchClient githubBranches;
     @Inject ImportActionsStatusService actionsStatuses;
     @Inject ImportActionsDetailsService actionsDetails;
 
@@ -64,13 +66,13 @@ public class ProjectResource {
     @POST @Path("/{projectId}/work")
     public WorkSessionResponse startWork(@PathParam("projectId") UUID projectId, StartWorkRequest request) {
         var item = service.startWork(currentUser.requireUserId(), projectId, request == null ? null : request.existingBranch());
-        return workResponse(item);
+        return workResponse(item, item.headCommitSha());
     }
 
     @POST @Path("/{projectId}/work/abandon")
     public WorkSessionResponse abandonWork(@PathParam("projectId") UUID projectId, AbandonWorkRequest request) {
         var item = service.abandonWork(currentUser.requireUserId(), projectId, request != null && request.shouldDeleteBranch());
-        return workResponse(item);
+        return workResponse(item, item.headCommitSha());
     }
 
     @DELETE @Path("/{projectId}")
@@ -81,10 +83,17 @@ public class ProjectResource {
 
     @GET @Path("/{projectId}/work")
     public Response getWork(@PathParam("projectId") UUID projectId) {
-        var work = service.activeWork(currentUser.requireUserId(), projectId);
+        UUID ownerUserId = currentUser.requireUserId();
+        var work = service.syncWorkPullRequestState(ownerUserId, projectId);
         if (work.isEmpty()) return Response.noContent().build();
         var item = work.get();
-        return Response.ok(workResponse(item)).build();
+        String remoteHead = item.headCommitSha();
+        try {
+            ProjectResponse project = service.getProject(ownerUserId, projectId);
+            String token = installationTokens.createInstallationToken(project.githubInstallationId());
+            remoteHead = githubBranches.branchHeadSha(token, project.repositoryFullName(), item.branchName());
+        } catch (RuntimeException ignored) { }
+        return Response.ok(workResponse(item, remoteHead)).build();
     }
 
 
@@ -115,8 +124,13 @@ public class ProjectResource {
         UUID ownerUserId = currentUser.requireUserId();
         var source = service.activeWorkSource(ownerUserId, projectId);
         var work = source.work();
+        String commitSha = work.headCommitSha();
+        try {
+            String token = installationTokens.createInstallationToken(source.githubInstallationId());
+            commitSha = githubBranches.branchHeadSha(token, source.repositoryFullName(), work.branchName());
+        } catch (RuntimeException ignored) { }
         var status = actionsStatuses.read(work.lastImportId(), source.githubInstallationId(),
-                source.repositoryFullName(), work.headCommitSha());
+                source.repositoryFullName(), commitSha);
         var workflows = status.workflows().stream().map(workflow -> new ImportActionsStatusResponse.WorkflowRunResponse(
                 workflow.id(), workflow.workflowId(), workflow.workflowPath(), workflow.headBranch(), workflow.headSha(),
                 workflow.name(), workflow.state(), workflow.terminal(), workflow.event(), workflow.htmlUrl(),
@@ -134,8 +148,13 @@ public class ProjectResource {
         UUID ownerUserId = currentUser.requireUserId();
         var source = service.activeWorkSource(ownerUserId, projectId);
         var work = source.work();
+        String commitSha = work.headCommitSha();
+        try {
+            String token = installationTokens.createInstallationToken(source.githubInstallationId());
+            commitSha = githubBranches.branchHeadSha(token, source.repositoryFullName(), work.branchName());
+        } catch (RuntimeException ignored) { }
         var details = actionsDetails.read(work.lastImportId(), source.githubInstallationId(),
-                source.repositoryFullName(), work.headCommitSha());
+                source.repositoryFullName(), commitSha);
         var artifacts = details.artifacts().stream().map(artifact -> new ImportActionsDetailsResponse.ArtifactResponse(
                 artifact.id(), artifact.name(), artifact.sizeBytes(), artifact.expired(), artifact.createdAt(), artifact.expiresAt(),
                 artifact.workflowRunId(), artifact.workflowName(), artifact.githubUrl())).toList();
@@ -173,8 +192,14 @@ public class ProjectResource {
         return Response.created(location).entity(created).build();
     }
     static WorkSessionResponse workResponse(info.isaksson.erland.zipgithub.application.WorkSession item) {
+        return workResponse(item, item.headCommitSha());
+    }
+
+    static WorkSessionResponse workResponse(info.isaksson.erland.zipgithub.application.WorkSession item, String remoteHeadCommitSha) {
+        boolean changed = item.headCommitSha() != null && remoteHeadCommitSha != null && !item.headCommitSha().equalsIgnoreCase(remoteHeadCommitSha);
         return new WorkSessionResponse(item.id(), item.projectId(), item.baseBranch(), item.branchName(),
-                item.status(), item.headCommitSha(), item.lastImportId(), item.pullRequestNumber(), item.pullRequestUrl(), item.createdAt(), item.updatedAt());
+                item.status(), item.headCommitSha(), remoteHeadCommitSha, changed, item.lastImportId(),
+                item.pullRequestNumber(), item.pullRequestUrl(), item.createdAt(), item.updatedAt());
     }
 
 }

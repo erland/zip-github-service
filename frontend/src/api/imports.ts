@@ -91,6 +91,18 @@ export type ImportPlanResponse = {
   createdAt: string;
 };
 
+
+export type ExternalBranchChangesResponse = {
+  branchChanged: boolean;
+  previousKnownHeadSha: string | null;
+  reviewBaseHeadSha: string | null;
+  changedPaths: string[];
+};
+
+export async function getExternalBranchChanges(importId: string): Promise<ExternalBranchChangesResponse> {
+  return requestJson(`/api/imports/${encodeURIComponent(importId)}/external-branch-changes`);
+}
+
 export async function createImport(projectId: string, author?: { name: string; email: string }): Promise<ImportResponse> {
   return requestJson(`/api/projects/${encodeURIComponent(projectId)}/imports`, {
     method: 'POST',

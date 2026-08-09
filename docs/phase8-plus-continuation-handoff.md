@@ -1,4 +1,4 @@
-> **Current handoff r0117 / 1.0.0-rc.69:** Phase 9 remains complete. This revision corrects frontend CI after step 9.12: gitignored informational rows no longer render disabled selection checkboxes, and E2E filter assertions follow the counted filter labels. No backend policy behavior changed.
+> **Current handoff r0120 / 1.0.0-rc.72:** Phase 9 remains complete. Step 9.13 makes repositories the primary user-facing concept: the start page lists/searches GitHub App repositories, manual Project creation is removed from normal UX, and the internal owner-bound Project is lazily created/reused only when Work or Shortcut promotion begins.
 
 > **Planning refinement r0105 / 1.0.0-rc.57:** Phase 9.7 now explicitly requires the authenticated Shortcut download to expose `Skicka till zip-github.shortcut` via `Content-Disposition` and requires deployment verification that the backend runtime user can read the signed bind-mounted artifact (avoiding the observed `0600` failure). The same checks are included in the final 9.10 E2E gate. No 9.8 implementation has started.
 
@@ -9,11 +9,15 @@
 > **CI correction r0102 / 1.0.0-rc.54:** The container-image job now downloads the already verified `backend-quarkus-app` and `frontend-dist` artifacts from its prerequisite jobs and assembles runtime-only images. It no longer reruns Maven/npm inside Docker, avoiding the independent Maven Central path that returned HTTP 429. Phase 9 remains blocked at 9.7 only on the external Apple signing/iOS installation gate.
 
 
-Date: 8 August 2026  
-Repository revision: r0117  
-Application version: 1.0.0-rc.69  
-Last completed implementation step: 9.7  
-Current position: 9.8 NEXT — Work lifecycle, project lifecycle and robust branch provisioning
+Date: 9 August 2026  
+> **rc.71 correction:** Frontend CI exposed a test-only race in the repository-first list regression. The test now waits for the asynchronous repository API result before asserting/filtering. No production behavior changed.
+
+> **rc.72 correction:** The next frontend CI run passed all 51 Vitest tests but `tsc -b` exposed a stale pre-9.13 staging API signature. `promoteStagingImport` now accepts and serializes either an existing Project target or a repository target for lazy bootstrap. Backend behavior is unchanged.
+
+Repository revision: r0120  
+Application version: 1.0.0-rc.72  
+Last completed implementation step: 9.13  
+Current position: implementation plan complete; no NEXT step remains
 
 ## Why this file exists
 
@@ -40,8 +44,9 @@ The service currently provides the full phase-7 flow:
 
 ```text
 GitHub App user login
-→ choose/configure Project
-→ one active Work per Project
+→ choose repository from GitHub App access
+→ lazy internal Project bootstrap when work begins
+→ one active Work per internal Project
 → upload ZIP
 → secure ingestion + inspection
 → exact repository snapshot/base SHA

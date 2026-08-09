@@ -171,7 +171,7 @@ public class ProjectResource {
         URI location = uriInfo.getBaseUriBuilder().path("api/imports").path(created.id().toString()).build();
         return Response.created(location).entity(created).build();
     }
-    private static WorkSessionResponse workResponse(info.isaksson.erland.zipgithub.application.WorkSession item) {
+    static WorkSessionResponse workResponse(info.isaksson.erland.zipgithub.application.WorkSession item) {
         return new WorkSessionResponse(item.id(), item.projectId(), item.baseBranch(), item.branchName(),
                 item.status(), item.headCommitSha(), item.lastImportId(), item.pullRequestNumber(), item.pullRequestUrl(), item.createdAt(), item.updatedAt());
     }

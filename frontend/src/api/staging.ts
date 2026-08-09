@@ -30,14 +30,18 @@ export async function getClaimedStagingImport(stagingId: string): Promise<Claime
   return requestJson(`/api/staging-imports/${encodeURIComponent(stagingId)}`);
 }
 
-export async function promoteStagingImport(stagingId: string, projectId: string): Promise<StagingPromotionResponse> {
+export type StagingPromotionTarget =
+  | { projectId: string }
+  | { githubInstallationId: number; githubRepositoryId: number };
+
+export async function promoteStagingImport(stagingId: string, target: StagingPromotionTarget): Promise<StagingPromotionResponse> {
   return requestJson(`/api/staging-imports/${encodeURIComponent(stagingId)}/promote`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Zip-GitHub-Request': '1',
     },
-    body: JSON.stringify({ projectId }),
+    body: JSON.stringify(target),
   });
 }
 

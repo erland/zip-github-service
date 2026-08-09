@@ -383,3 +383,12 @@ code, pre, .repository-name, .review-file__path { overflow-wrap: anywhere; word-
 .actions-failure-list summary { cursor: pointer; font-weight: 600; }
 .actions-failure-list h4 { margin: .75rem 0 .35rem; }
 @media (max-width: 640px) { .actions-heading-actions { align-items: stretch; flex-direction: column; width: 100%; } }
+
+.repository-search { display: grid; gap: .45rem; margin-top: 1.5rem; max-width: 34rem; }
+.repository-search span { font-weight: 700; }
+.repository-search input { border: 1px solid #c7cfdb; border-radius: .6rem; font: inherit; padding: .75rem .85rem; width: 100%; }
+.repository-list { display: grid; gap: .5rem; list-style: none; margin: 1rem 0 0; padding: 0; }
+.repository-list-link { align-items: center; border: 1px solid #dce1e8; border-radius: .7rem; color: #172033; display: flex; justify-content: space-between; padding: .9rem 1rem; text-decoration: none; }
+.repository-list-link:hover, .repository-list-link:focus-visible { border-color: #7e8ba0; background: #f7f9fc; }
+.repository-list-link span { color: #5d6878; font-size: .9rem; }
+.empty-filter-result { margin-top: 1.25rem; }

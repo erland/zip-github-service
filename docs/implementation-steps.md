@@ -664,3 +664,18 @@ Rapportera kort vad som ändrats, vilka tester som körts och om kvalitetsgrinde
 - **Framtida backlog:** AI-/assistantintegrationer genomförs först när ett konkret behov har validerats efter fas 8–9.
 
 Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller flera steg per fas, och en kvalitetsgrind efter varje fas**.
+
+## Steg 9.13 - Repository-first UX och lazy intern Project
+
+- Gör repositories som GitHub App-installationen ger användaren åtkomst till till den primära startsidan. Project ska fortsatt finnas som intern owner-bunden resurs för Work/import/audit men inte behöva skapas eller namnges manuellt av användaren.
+- Lägg ett owner-skyddat repository-API som slår ihop användarens synliga GitHub App-installationer/repositories med eventuell befintlig intern Project-identitet utan att skapa nya Projects vid listning.
+- Visa endast repositoryts korta namn i normallistan. Om flera synliga repositories har samma korta namn får `owner/repo` visas sekundärt för disambiguering; branch/status/övrig Project-metadata ska inte visas i listan.
+- Lägg enkel klient-side sökning/filter som matchar case-insensitive på både kort repositorynamn och `owner/repo` medan användaren skriver.
+- Ta bort den manuella "Skapa projekt"-vägen från normal routing/startsida. Gamla `/projects/new` ska säkert redirecta till repositorylistan i stället för att bli en trasig länk.
+- För ett repository utan Project ska Project skapas först när användaren faktiskt startar Work. `ensureProject` ska verifiera installation/repository/default branch via samma GitHub-katalog som tidigare, återanvända befintlig Project när den finns och generera ett internt kollisionssäkert namn utan att exponera namnhantering i UI.
+- Efter lazy creation ska befintliga Project/Work/import-API:er återanvändas så etablerade ägarskaps-, branch-, approval- och delivery-invarianter inte dupliceras.
+- Uppdatera Shortcut claim/promotion så användaren väljer repository i stället för Project. Befintlig Project återanvänds; annars får promotion skapa Project lazy innan den vanliga `StoredUpload`-promotionen fortsätter.
+- Uppdatera repository-/Work-vyer och navigationstexter så "Project" inte presenteras som det primära användarbegreppet, utan att ta bort den interna domänmodellen eller historiken.
+- Lägg regression som bevisar: repositorylistning skapar inga Projects; första Starta arbete skapar exakt en Project och Work; retry återanvänder samma Project; Shortcut-promotion kan välja ett repo utan tidigare Project; sökning filtrerar på kort namn/full name; befintliga repos med Project öppnar befintlig Work-vy.
+
+**Kvalitetsgrind för 9.13:** användaren börjar i en sökbar repositorylista som motsvarar GitHub App-åtkomsten och behöver aldrig ange ett projektnamn. Ingen Project skapas bara för att listan öppnas. Första verkliga Work/Shortcut-promotion skapar eller återanvänder exakt en owner-bunden Project och fortsätter därefter genom den befintliga säkra Work/import-pipelinen.

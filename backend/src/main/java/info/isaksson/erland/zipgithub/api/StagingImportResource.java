@@ -12,6 +12,7 @@ import info.isaksson.erland.zipgithub.staging.StagingUploadCredential;
 import info.isaksson.erland.zipgithub.staging.StagingUploadService;
 import info.isaksson.erland.zipgithub.staging.StagingCapacityExceededException;
 import info.isaksson.erland.zipgithub.staging.StagingPromotionService;
+import info.isaksson.erland.zipgithub.application.ProjectApplicationService;
 import info.isaksson.erland.zipgithub.upload.UploadTooLargeException;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -30,6 +31,7 @@ public class StagingImportResource {
     @Inject StagingUploadService uploads;
     @Inject StagingClaimService claims;
     @Inject StagingPromotionService promotions;
+    @Inject ProjectApplicationService projects;
     @Inject info.isaksson.erland.zipgithub.persistence.StagingImportPersistenceStore stagingStore;
     @Inject CurrentUserProvider currentUser;
 
@@ -60,10 +62,15 @@ public class StagingImportResource {
     @Path("/{stagingId}/promote")
     @Consumes(MediaType.APPLICATION_JSON)
     public StagingPromotionResponse promote(@PathParam("stagingId") java.util.UUID stagingId, StagingPromotionRequest request) {
-        if (request == null || request.projectId() == null)
-            throw ApiException.badRequest("VALIDATION_ERROR", "projectId is required.");
         var session = currentUser.requireSession();
-        var promoted = promotions.promote(stagingId, session.userId(), request.projectId(), session.gitName(), session.gitEmail());
+        java.util.UUID projectId = request == null ? null : request.projectId();
+        if (projectId == null) {
+            if (request == null || request.githubInstallationId() == null || request.githubRepositoryId() == null)
+                throw info.isaksson.erland.zipgithub.api.error.ApiException.badRequest("STAGING_REPOSITORY_REQUIRED", "Choose a repository before continuing.");
+            projectId = projects.ensureProjectForRepository(session.userId(), session.githubUserAccessToken(),
+                    request.githubInstallationId(), request.githubRepositoryId()).id();
+        }
+        var promoted = promotions.promote(stagingId, session.userId(), projectId, session.gitName(), session.gitEmail());
         return new StagingPromotionResponse(stagingId, promoted.projectId(), promoted.importId(), "PROMOTED", promoted.alreadyPromoted());
     }
 

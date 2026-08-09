@@ -1,3 +1,24 @@
+## 1.0.0-rc.72 - 2026-08-09
+
+- Corrected the rc.71 TypeScript build failure in the repository-first Shortcut promotion flow.
+- Frontend staging promotion now accepts either an existing `projectId` or a GitHub installation/repository target and serializes that target directly, matching the backend DTO introduced by step 9.13.
+- Added focused API regressions for both promotion target forms; no backend behavior changed.
+
+## 1.0.0-rc.71 - 2026-08-09
+
+- Corrected the rc.70 frontend CI race in the repository-list filtering regression.
+- The App test now waits for the asynchronously loaded repository link before exercising client-side filtering.
+- No production frontend or backend behavior changed; step 9.13 remains complete.
+
+## 1.0.0-rc.70 - 2026-08-09
+
+- Added step 9.13 repository-first UX: the authenticated start page now lists GitHub App repositories instead of user-created Projects.
+- Added client-side repository filtering on short name and `owner/repo`, with only repository names shown by default and full names used to disambiguate duplicates.
+- Removed manual Project creation from normal routing; `/projects/new` now returns to the repository list.
+- Added lazy `ensureProject` so opening/listing a repository creates no Project; the internal owner-bound Project is created/reused only when Work starts or Shortcut promotion needs it.
+- Updated Shortcut claim/promotion to select repositories and bootstrap the internal Project transparently before entering the existing import pipeline.
+- Kept all established Project/Work/import ownership, branch, approval and delivery invariants behind the repository-first UI.
+
 ## 1.0.0-rc.69 - 2026-08-08
 
 - Corrected the rc.68 frontend CI regressions after the review-filter UX change.

@@ -84,15 +84,15 @@ export default function ProjectDetailPage() {
     catch (reason) { setError(reason instanceof Error ? reason.message : 'Projektet kunde inte tas bort.'); setWorkBusy(false); }
   }
 
-  if (loading) return <section className="page-card"><p role="status">Hämtar projekt…</p></section>;
+  if (loading) return <section className="page-card"><p role="status">Hämtar repository…</p></section>;
   if (error && !project) return <section className="page-card"><h1>Projektet kunde inte öppnas</h1><p role="alert">{error}</p></section>;
   if (!project) return null;
 
   const repositoryUrl = `https://github.com/${project.repositoryFullName}/tree/${encodeURIComponent(project.defaultBranch)}`;
   const branchUrl = work ? `https://github.com/${project.repositoryFullName}/tree/${encodeURIComponent(work.branchName)}` : null;
   return <section className="page-card" aria-labelledby="project-heading">
-    <p><Link className="back-link" to="/projects">← Alla projekt</Link></p>
-    <div className="page-heading-row"><div><p className="eyebrow">Projekt</p><h1 id="project-heading">{project.name}</h1><p className="lead"><a href={repositoryUrl} target="_blank" rel="noreferrer">{project.repositoryFullName}</a></p></div>{!activeImport && work && <Link className="button" to={`/projects/${project.id}/imports/new`}>Ladda upp nästa ZIP</Link>}</div>
+    <p><Link className="back-link" to="/projects">← Repositories</Link></p>
+    <div className="page-heading-row"><div><p className="eyebrow">Repository</p><h1 id="project-heading">{project.repositoryFullName.split('/').at(-1) ?? project.repositoryFullName}</h1><p className="lead"><a href={repositoryUrl} target="_blank" rel="noreferrer">{project.repositoryFullName}</a></p></div>{!activeImport && work && <Link className="button" to={`/projects/${project.id}/imports/new`}>Ladda upp nästa ZIP</Link>}</div>
     {error && <p role="alert" className="status-message status-message--error">{error}</p>}
     {completedPullRequestUrl && <p className="status-message" role="status">Arbetets pull request är skapad. <a href={completedPullRequestUrl} target="_blank" rel="noreferrer">Öppna pull request</a></p>}
     <dl className="detail-grid"><div><dt>Repository</dt><dd>{project.repositoryFullName}</dd></div><div><dt>Standardbranch</dt><dd>{project.defaultBranch}</dd></div><div><dt>Åtkomst</dt><dd>{project.privateRepository?'Privat repository':'Publikt repository'}</dd></div><div><dt>Status</dt><dd>{project.active?'Aktivt':'Inaktivt'}</dd></div></dl>
@@ -114,7 +114,7 @@ export default function ProjectDetailPage() {
         <div className="result-primary-action"><button className="button" type="button" disabled={!work.headCommitSha || finishing || Boolean(activeImport)} onClick={finishWork}>{finishing?'Skapar pull request…':'Arbetet är klart – skapa pull request'}</button>{!abandonConfirm ? <button className="button button--secondary" type="button" disabled={Boolean(activeImport) || workBusy} onClick={()=>setAbandonConfirm(true)}>Avsluta utan PR</button> : <div><label className="checkbox-row"><input type="checkbox" checked={deleteWorkBranch} onChange={e=>setDeleteWorkBranch(e.target.checked)} /> Ta även bort Work-branchen från GitHub</label><button className="button" type="button" disabled={workBusy} onClick={()=>void abandonWork()}>{workBusy?'Avslutar…':'Bekräfta avslut'}</button><button className="button button--secondary" type="button" disabled={workBusy} onClick={()=>setAbandonConfirm(false)}>Behåll arbetet</button></div>}</div>
       </div>}
     </section>
-    <section aria-labelledby="project-actions-heading"><h2 id="project-actions-heading">Projektåtgärder</h2>{!archiveConfirm ? <button className="button button--secondary" type="button" disabled={Boolean(work)} onClick={()=>setArchiveConfirm(true)}>Ta bort projekt</button> : <div className="status-message"><p>Projektet tas bort från den normala listan men historiken behålls. GitHub-repositoryt påverkas inte.</p><button className="button" type="button" disabled={workBusy} onClick={()=>void removeProject()}>Ja, ta bort projektet</button><button className="button button--secondary" type="button" onClick={()=>setArchiveConfirm(false)}>Avbryt</button></div>}</section>
+    <section aria-labelledby="project-actions-heading"><h2 id="project-actions-heading">Repositoryåtgärder</h2>{!archiveConfirm ? <button className="button button--secondary" type="button" disabled={Boolean(work)} onClick={()=>setArchiveConfirm(true)}>Ta bort från zip-github</button> : <div className="status-message"><p>Repositoryts zip-github-koppling tas bort från den aktiva vyn men historiken behålls. GitHub-repositoryt påverkas inte.</p><button className="button" type="button" disabled={workBusy} onClick={()=>void removeProject()}>Ja, ta bort från zip-github</button><button className="button button--secondary" type="button" onClick={()=>setArchiveConfirm(false)}>Avbryt</button></div>}</section>
   </section>;
 }
 

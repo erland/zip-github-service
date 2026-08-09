@@ -28,7 +28,7 @@ beforeEach(() => {
 describe('ProjectDetailPage work history', () => {
   it('shows Git commits and only the active import in the primary project view', async () => {
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
-    expect(await screen.findByRole('heading', { name: 'Bokprojekt' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'repo' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Commits i arbetet' })).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'GitHub Actions' })).toBeInTheDocument();
     expect(await screen.findByText('Fel och jobbloggar')).toBeInTheDocument();
@@ -84,7 +84,7 @@ describe('ProjectDetailPage degraded Work history', () => {
     }));
 
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
-    expect(await screen.findByRole('heading', { name: 'Bokprojekt' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'repo' })).toBeInTheDocument();
     expect(screen.getByText('GitHub-historiken kunde inte läsas just nu. Senaste lokalt kända commit visas.')).toBeInTheDocument();
     expect(screen.getByText('Senaste kända Work-commit')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Fortsätt granska' })).toHaveAttribute('href', '/projects/project-1/imports/import-review/review');
@@ -105,7 +105,7 @@ describe('ProjectDetailPage state-based Work actions', () => {
     }));
 
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
-    expect(await screen.findByRole('heading', { name: 'Bokprojekt' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'repo' })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Ladda upp nästa ZIP' })).toHaveLength(1);
     expect(screen.queryByRole('link', { name: 'Fortsätt arbete' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Arbetet är klart – skapa pull request' })).toBeEnabled();

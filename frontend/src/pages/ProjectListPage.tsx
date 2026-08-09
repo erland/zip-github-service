@@ -1,60 +1,78 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getProjects, type ProjectResponse } from '../api/projects';
+import { getRepositories, type RepositoryEntry } from '../api/repositories';
 
 export default function ProjectListPage() {
-  const [projects, setProjects] = useState<ProjectResponse[]>([]);
+  const [repositories, setRepositories] = useState<RepositoryEntry[]>([]);
+  const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    getProjects()
-      .then((items) => { if (!cancelled) setProjects(items); })
-      .catch((reason: unknown) => { if (!cancelled) setError(reason instanceof Error ? reason.message : 'Projektlistan kunde inte hämtas.'); })
+    getRepositories()
+      .then((items) => { if (!cancelled) setRepositories(items); })
+      .catch((reason: unknown) => { if (!cancelled) setError(reason instanceof Error ? reason.message : 'Repositorylistan kunde inte hämtas.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
 
+  const duplicateNames = useMemo(() => {
+    const counts = new Map<string, number>();
+    repositories.forEach((repository) => counts.set(repository.repositoryName.toLowerCase(), (counts.get(repository.repositoryName.toLowerCase()) ?? 0) + 1));
+    return counts;
+  }, [repositories]);
+
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return repositories;
+    return repositories.filter((repository) => repository.repositoryName.toLowerCase().includes(normalized)
+      || repository.repositoryFullName.toLowerCase().includes(normalized));
+  }, [repositories, query]);
+
   return (
-    <section className="page-card" aria-labelledby="project-list-heading">
+    <section className="page-card" aria-labelledby="repository-list-heading">
       <div className="page-heading-row">
         <div>
-          <p className="eyebrow">Projektöversikt</p>
-          <h1 id="project-list-heading">Dina projekt</h1>
-          <p className="lead">Koppla ett GitHub-repository och importera sedan en ZIP för granskning och pull request.</p>
+          <p className="eyebrow">GitHub repositories</p>
+          <h1 id="repository-list-heading">Repositories</h1>
+          <p className="lead">Välj ett repository där zip-github GitHub App är installerad.</p>
         </div>
-        <Link className="button button--secondary" to="/projects/new">Skapa projekt</Link>
       </div>
 
-      {loading && <p role="status">Hämtar projekt…</p>}
+      {loading && <p role="status">Hämtar repositories…</p>}
       {error && <p className="status-message status-message--error" role="alert">{error}</p>}
 
-      {!loading && !error && projects.length === 0 && (
+      {!loading && !error && repositories.length === 0 && (
         <div className="empty-state">
-          <h2>Inga projekt ännu</h2>
-          <p>Skapa ditt första projekt genom att välja en GitHub App-installation och ett repository.</p>
-          <Link className="button" to="/projects/new">Skapa första projektet</Link>
+          <h2>Inga repositories tillgängliga</h2>
+          <p>Installera zip-github GitHub App på minst ett repository eller ge installationen åtkomst till fler repositories.</p>
+          <a className="button" href="https://github.com/settings/installations" target="_blank" rel="noreferrer">Hantera GitHub Apps</a>
         </div>
       )}
 
-      {!loading && !error && projects.length > 0 && (
-        <ul className="project-list">
-          {projects.map((project) => (
-            <li className="project-card" key={project.id}>
-              <div>
-                <h2><Link to={`/projects/${project.id}`}>{project.name}</Link></h2>
-                <p className="repository-name">{project.repositoryFullName}</p>
-              </div>
-              <dl className="project-meta">
-                <div><dt>Standardbranch</dt><dd>{project.defaultBranch}</dd></div>
-                <div><dt>Status</dt><dd>{project.active ? 'Aktivt' : 'Inaktivt'}</dd></div>
-              </dl>
-              <Link className="button" to={`/projects/${project.id}`}>Öppna projekt</Link>
-            </li>
-          ))}
-        </ul>
-      )}
+      {!loading && !error && repositories.length > 0 && <>
+        <label className="repository-search" htmlFor="repository-filter">
+          <span>Sök repositories</span>
+          <input id="repository-filter" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Skriv en del av namnet…" autoComplete="off" />
+        </label>
+        {filtered.length === 0 ? <p className="empty-filter-result">Inga repositories matchar “{query.trim()}”.</p> : (
+          <ul className="repository-list">
+            {filtered.map((repository) => {
+              const target = repository.projectId
+                ? `/projects/${repository.projectId}`
+                : `/repositories/${repository.githubInstallationId}/${repository.githubRepositoryId}`;
+              const duplicate = (duplicateNames.get(repository.repositoryName.toLowerCase()) ?? 0) > 1;
+              return <li key={`${repository.githubInstallationId}:${repository.githubRepositoryId}`}>
+                <Link className="repository-list-link" to={target}>
+                  <strong>{repository.repositoryName}</strong>
+                  {duplicate && <span>{repository.repositoryFullName}</span>}
+                </Link>
+              </li>;
+            })}
+          </ul>
+        )}
+      </>}
     </section>
   );
 }

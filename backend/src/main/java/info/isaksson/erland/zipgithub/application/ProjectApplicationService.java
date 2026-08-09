@@ -78,6 +78,47 @@ public class ProjectApplicationService {
                 .map(OwnedProject::response).sorted(Comparator.comparing(ProjectResponse::createdAt)).toList();
     }
 
+    public Optional<ProjectResponse> findProjectByRepository(UUID ownerUserId, long installationId, long repositoryId) {
+        if (persistentProjects.enabled()) return persistentProjects.findProjectByRepository(ownerUserId, installationId, repositoryId);
+        return projects.values().stream()
+                .filter(project -> project.ownerUserId.equals(ownerUserId))
+                .map(OwnedProject::response)
+                .filter(project -> project.githubInstallationId() == installationId && project.githubRepositoryId() == repositoryId)
+                .findFirst();
+    }
+
+    public synchronized ProjectResponse ensureProjectForRepository(UUID ownerUserId, String userAccessToken,
+                                                                    long installationId, long repositoryId) {
+        var existing = findProjectByRepository(ownerUserId, installationId, repositoryId);
+        if (existing.isPresent()) return existing.get();
+        var verified = githubConfiguration.verify(userAccessToken, installationId, repositoryId, null);
+        String repositoryName = verified.fullName().contains("/")
+                ? verified.fullName().substring(verified.fullName().indexOf('/') + 1) : verified.fullName();
+        String internalName = uniqueInternalRepositoryProjectName(ownerUserId, repositoryName, verified.fullName(), repositoryId);
+        Instant now = Instant.now();
+        ProjectResponse response = new ProjectResponse(UUID.randomUUID(), internalName, verified.installationId(), verified.repositoryId(),
+                verified.fullName(), verified.privateRepository(), verified.defaultBranch(), true, now, now);
+        if (persistentProjects.enabled()) {
+            persistentProjects.upsertInstallation(ownerUserId, verified.installationId(),
+                    verified.installationAccountLogin(), verified.repositorySelection());
+            persistentProjects.insertProject(ownerUserId, response);
+        }
+        projects.put(response.id(), new OwnedProject(ownerUserId, response));
+        return response;
+    }
+
+    private String uniqueInternalRepositoryProjectName(UUID ownerUserId, String repositoryName, String fullName, long repositoryId) {
+        if (!internalProjectNameExists(ownerUserId, repositoryName)) return repositoryName;
+        if (!internalProjectNameExists(ownerUserId, fullName)) return fullName;
+        return fullName + " [" + repositoryId + "]";
+    }
+
+    private boolean internalProjectNameExists(UUID ownerUserId, String name) {
+        if (persistentProjects.enabled()) return persistentProjects.projectNameExistsIncludingArchived(ownerUserId, name);
+        return projects.values().stream().filter(project -> project.ownerUserId.equals(ownerUserId))
+                .anyMatch(project -> project.response.name().equalsIgnoreCase(name));
+    }
+
     public ProjectResponse createProject(UUID ownerUserId, String userAccessToken, CreateProjectRequest request) {
         String name = requireText(request == null ? null : request.name(), "name");
         ensureUniqueName(ownerUserId, name, null);

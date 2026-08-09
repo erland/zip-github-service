@@ -400,3 +400,10 @@ Capability staging uploads using a missing/old/revoked `X-ZipGitHub-Upload-Crede
 ## Repository ignore semantics
 
 Import plan creation evaluates tracked `.gitignore` files from the exact locked repository snapshot. A ZIP path that is not already tracked and matches those rules is returned as `IGNORED` with policy code `GITIGNORE_IGNORED`, severity `WARNING`, blocker type `NONE`, and is not selectable for delivery. Existing tracked files remain comparable even when an ignore pattern matches them. `.git/**` is always hard-blocked independently of ignore rules.
+
+## Repository-first bootstrap (step 9.13)
+
+- `GET /api/repositories` returns the repositories visible through the authenticated user's GitHub App installations. Each item includes installation/repository identity, short/full repository name, default branch, privacy/html URL and nullable `projectId`. This endpoint is read-only and MUST NOT create Projects.
+- `POST /api/repositories/{installationId}/{repositoryId}/work` verifies the repository through the user-scoped GitHub catalogue, lazily creates or reuses the internal owner-bound Project, then starts/reuses Work through the established Work lifecycle.
+- `POST /api/staging-imports/{stagingId}/promote` accepts either legacy `projectId` or repository identity (`githubInstallationId`, `githubRepositoryId`). Repository identity is resolved through the same lazy Project bootstrap before ordinary staging promotion.
+- Project APIs remain internal/compatibility building blocks after repository bootstrap; repository-first UX does not weaken owner checks, immutable plan/selection/approval binding or exact delivery.

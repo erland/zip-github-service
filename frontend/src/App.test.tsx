@@ -6,10 +6,11 @@ import App from './App';
 
 const authenticatedUser = { id: 'user-1', githubUserId: 123, login: 'erland', avatarUrl: null, gitName: 'Erland', gitEmail: '123+erland@users.noreply.github.com' };
 const project = {
-  id: 'project-1', name: 'Bokprojekt', githubInstallationId: 10, githubRepositoryId: 20,
+  id: 'project-1', name: 'example-book-project', githubInstallationId: 10, githubRepositoryId: 20,
   repositoryFullName: 'erland/example-book-project', privateRepository: true, defaultBranch: 'main',
   active: true, createdAt: '2026-08-06T20:00:00Z', updatedAt: '2026-08-06T20:00:00Z',
 };
+const repository = { githubInstallationId: 10, githubRepositoryId: 20, repositoryFullName: 'erland/example-book-project', repositoryName: 'example-book-project', privateRepository: true, defaultBranch: 'main', htmlUrl: 'https://github.com/erland/example-book-project', projectId: 'project-1' };
 
 function json(value: unknown, status = 200) {
   return Promise.resolve(new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } }));
@@ -35,44 +36,43 @@ describe('App routing and authentication', () => {
     expect(screen.getByRole('link', { name: 'Logga in med GitHub' })).toHaveAttribute('href', '/api/auth/github/login?returnTo=%2Fprojects');
   });
 
-  it('loads the real project list for an authenticated user', async () => {
+  it('lists GitHub App repositories and filters them by partial name', async () => {
+    const user = userEvent.setup();
     vi.stubGlobal('fetch', vi.fn().mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url === '/api/auth/me') return json(authenticatedUser);
-      if (url === '/api/projects') return json([project]);
+      if (url === '/api/repositories') return json([repository, { ...repository, githubRepositoryId: 21, repositoryFullName: 'erland/other-repo', repositoryName: 'other-repo', projectId: null }]);
       return Promise.reject(new Error(`Unexpected fetch: ${url}`));
     }));
     renderAt('/');
-    expect(await screen.findByRole('heading', { name: 'Dina projekt' })).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Bokprojekt' })).toBeInTheDocument();
-    expect(screen.queryByText(/tillfälliga exempeldata/i)).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Repositories' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'example-book-project' })).toBeInTheDocument();
+    await user.type(screen.getByRole('searchbox', { name: 'Sök repositories' }), 'other');
+    expect(screen.getByRole('link', { name: 'other-repo' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'example-book-project' })).not.toBeInTheDocument();
   });
 
-  it('navigates from the real project list through verified Work creation to a new import', async () => {
+  it('creates the internal project lazily when work starts for a new repository', async () => {
     const user = userEvent.setup();
-    let workCreated = false;
-    const work = { id: 'work-1', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-1', status: 'ACTIVE', headCommitSha: null, pullRequestNumber: null, pullRequestUrl: null, createdAt: '2026-08-08T15:00:00Z', updatedAt: '2026-08-08T15:00:00Z' };
+    let created = false;
+    const newRepository = { ...repository, projectId: null };
+    const work = { id: 'work-1', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-1', status: 'ACTIVE', headCommitSha: null, lastImportId: null, pullRequestNumber: null, pullRequestUrl: null, createdAt: '2026-08-08T15:00:00Z', updatedAt: '2026-08-08T15:00:00Z' };
     vi.stubGlobal('fetch', vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url === '/api/auth/me') return json(authenticatedUser);
-      if (url === '/api/projects') return json([project]);
+      if (url === '/api/repositories') return json([created ? { ...newRepository, projectId: 'project-1' } : newRepository]);
+      if (url === '/api/repositories/10/20/work' && init?.method === 'POST') { created = true; return json({ project, work }); }
       if (url === '/api/projects/project-1') return json(project);
       if (url === '/api/projects/project-1/imports') return json([]);
-      if (url === '/api/projects/project-1/work/branches') return json([]);
-      if (url === '/api/projects/project-1/work' && init?.method === 'POST') { workCreated = true; return json(work); }
-      if (url === '/api/projects/project-1/work') return workCreated ? json(work) : Promise.resolve(new Response(null, { status: 204 }));
+      if (url === '/api/projects/project-1/work') return json(work);
       if (url === '/api/projects/project-1/work/commits') return json({ githubAvailable: true, commits: [] });
       return Promise.reject(new Error(`Unexpected fetch: ${url}`));
     }));
     renderAt('/projects');
-
-    await user.click(await screen.findByRole('link', { name: 'Öppna projekt' }));
-    const projectHeading = await screen.findByRole('heading', { name: 'Bokprojekt' });
-    expect(projectHeading).toHaveFocus();
-
-    await user.click(screen.getByRole('button', { name: 'Skapa ny Work-branch' }));
-    await user.click(await screen.findByRole('link', { name: 'Ladda upp nästa ZIP' }));
-    expect(screen.getByRole('heading', { name: 'Ladda upp projekt-ZIP' })).toBeInTheDocument();
+    await user.click(await screen.findByRole('link', { name: 'example-book-project' }));
+    expect(await screen.findByRole('heading', { name: 'example-book-project' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Starta arbete' }));
+    expect(await screen.findByText('zip-github/work-1')).toBeInTheDocument();
   });
 
   it('routes to the stored import result page', async () => {

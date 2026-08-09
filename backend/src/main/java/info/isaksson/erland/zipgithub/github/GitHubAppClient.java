@@ -166,13 +166,17 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
                 var runState = GitHubActionsStatusMapper.map(run.path("status").asText(), run.path("conclusion").asText(""));
                 aggregateStates.add(runState);
                 List<GitHubActionsClient.Job> jobs = new ArrayList<>();
-                JsonNode jobsRoot = getJson("https://api.github.com/repos/" + repositoryFullName
-                        + "/actions/runs/" + runId + "/jobs?per_page=50", installationToken);
-                for (JsonNode job : jobsRoot.path("jobs")) {
-                    var jobState = GitHubActionsStatusMapper.map(job.path("status").asText(), job.path("conclusion").asText(""));
-                    jobs.add(new GitHubActionsClient.Job(job.path("id").asLong(), job.path("name").asText("Unnamed job"),
-                            jobState.value(), jobState.terminal(), job.path("html_url").asText(null),
-                            parseInstant(job.path("started_at").asText(null)), parseInstant(job.path("completed_at").asText(null))));
+                try {
+                    JsonNode jobsRoot = getJson("https://api.github.com/repos/" + repositoryFullName
+                            + "/actions/runs/" + runId + "/jobs?per_page=50", installationToken);
+                    for (JsonNode job : jobsRoot.path("jobs")) {
+                        var jobState = GitHubActionsStatusMapper.map(job.path("status").asText(), job.path("conclusion").asText(""));
+                        jobs.add(new GitHubActionsClient.Job(job.path("id").asLong(), job.path("name").asText("Unnamed job"),
+                                jobState.value(), jobState.terminal(), job.path("html_url").asText(null),
+                                parseInstant(job.path("started_at").asText(null)), parseInstant(job.path("completed_at").asText(null))));
+                    }
+                } catch (RuntimeException ignored) {
+                    // The run itself is still useful and must remain visible if the jobs endpoint is temporarily unavailable.
                 }
                 workflows.add(new GitHubActionsClient.WorkflowRun(runId, run.path("workflow_id").asLong(), run.path("path").asText(""),
                         run.path("head_branch").asText(""), run.path("head_sha").asText(""), run.path("name").asText("Unnamed workflow"),
@@ -180,23 +184,31 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
                         parseInstant(run.path("created_at").asText(null)), parseInstant(run.path("updated_at").asText(null)), List.copyOf(jobs)));
             }
 
-            JsonNode checksRoot = getJson("https://api.github.com/repos/" + repositoryFullName
-                    + "/commits/" + commitSha + "/check-runs?per_page=50", installationToken);
             List<GitHubActionsClient.CheckRun> checks = new ArrayList<>();
-            for (JsonNode check : checksRoot.path("check_runs")) {
-                var checkState = GitHubActionsStatusMapper.map(check.path("status").asText(), check.path("conclusion").asText(""));
-                aggregateStates.add(checkState);
-                checks.add(new GitHubActionsClient.CheckRun(check.path("id").asLong(), check.path("name").asText("Unnamed check"),
-                        checkState.value(), checkState.terminal(), check.path("html_url").asText(null),
-                        check.path("app").path("name").asText(""), parseInstant(check.path("started_at").asText(null)),
-                        parseInstant(check.path("completed_at").asText(null))));
+            try {
+                JsonNode checksRoot = getJson("https://api.github.com/repos/" + repositoryFullName
+                        + "/commits/" + commitSha + "/check-runs?per_page=50", installationToken);
+                for (JsonNode check : checksRoot.path("check_runs")) {
+                    var checkState = GitHubActionsStatusMapper.map(check.path("status").asText(), check.path("conclusion").asText(""));
+                    aggregateStates.add(checkState);
+                    checks.add(new GitHubActionsClient.CheckRun(check.path("id").asLong(), check.path("name").asText("Unnamed check"),
+                            checkState.value(), checkState.terminal(), check.path("html_url").asText(null),
+                            check.path("app").path("name").asText(""), parseInstant(check.path("started_at").asText(null)),
+                            parseInstant(check.path("completed_at").asText(null))));
+                }
+            } catch (RuntimeException ignored) {
+                // Workflow runs are independently useful. A Checks permission/transient failure must not hide them.
             }
             int itemCount = workflows.size() + checks.size();
             String state = GitHubActionsStatusMapper.aggregate(true, itemCount, aggregateStates);
             boolean terminal = !workflows.isEmpty() && aggregateStates.stream().allMatch(GitHubActionsStatusMapper.State::terminal);
-            return new GitHubActionsStatus(state, terminal, detailsUrl, List.copyOf(workflows), List.copyOf(checks));
+            return new GitHubActionsStatus(state, terminal, detailsUrl, List.copyOf(workflows), List.copyOf(checks), null, null);
         } catch (Exception e) {
-            return new GitHubActionsStatus("unavailable", false, detailsUrl, List.of(), List.of());
+            String diagnosticCode = containsHttpStatus(e, 403) ? "ACTIONS_PERMISSION_REQUIRED" : "GITHUB_ACTIONS_UNAVAILABLE";
+            String diagnosticMessage = containsHttpStatus(e, 403)
+                    ? "GitHub App-installationen saknar behörighet att läsa Actions för repositoryt. Kontrollera Repository permissions -> Actions och godkänn eventuella nya App-behörigheter för installationen."
+                    : "GitHub Actions kunde inte läsas just nu. Försök uppdatera status eller öppna körningarna på GitHub.";
+            return new GitHubActionsStatus("unavailable", false, detailsUrl, List.of(), List.of(), diagnosticCode, diagnosticMessage);
         }
     }
 
@@ -251,12 +263,13 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
                                 break;
                             }
                         }
-                        String log = downloadBoundedJobLog(installationToken, repositoryFullName, jobId, 24 * 1024);
-                        var condensed = ActionLogCondensor.condense(log);
-                        if (condensed.lines().isEmpty()) continue;
+                        BoundedJobLog log = downloadBoundedJobLog(installationToken, repositoryFullName, jobId, 128 * 1024);
+                        var condensed = ActionLogCondensor.condense(log.text());
+                        var contextLines = ActionLogCondensor.context(log.text(), 40, 12);
+                        var jobLogLines = ActionLogCondensor.sanitizedLines(log.text(), 1600);
                         failures.add(new GitHubActionsDetailsClient.FailureExcerpt(runId, workflowName, jobId,
                                 job.path("name").asText("Unnamed job"), stepName, condensed.tool(), condensed.lines(),
-                                job.path("html_url").asText(runUrl)));
+                                contextLines, jobLogLines, log.truncated(), job.path("html_url").asText(runUrl)));
                     }
                 } catch (Exception ignored) {
                     // Log summarization is optional and bounded; GitHub remains available through the run URL.
@@ -268,7 +281,7 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
         }
     }
 
-    private String downloadBoundedJobLog(String installationToken, String repositoryFullName, long jobId, int maxBytes) throws Exception {
+    private BoundedJobLog downloadBoundedJobLog(String installationToken, String repositoryFullName, long jobId, int maxBytes) throws Exception {
         HttpRequest request = baseRequest(URI.create("https://api.github.com/repos/" + repositoryFullName
                 + "/actions/jobs/" + jobId + "/logs"))
                 .header("Authorization", "Bearer " + installationToken).GET().build();
@@ -293,9 +306,11 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
         try (InputStream input = response.body()) {
             byte[] bytes = input.readNBytes(maxBytes + 1);
             int length = Math.min(bytes.length, maxBytes);
-            return new String(bytes, 0, length, StandardCharsets.UTF_8);
+            return new BoundedJobLog(new String(bytes, 0, length, StandardCharsets.UTF_8), bytes.length > maxBytes);
         }
     }
+
+    private record BoundedJobLog(String text, boolean truncated) {}
 
 
     @Override
@@ -485,11 +500,21 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
         return slash >= 0 ? value.substring(slash + 1) : value;
     }
 
+    private static boolean containsHttpStatus(Throwable error, int status) {
+        Throwable current = error;
+        String needle = "HTTP " + status;
+        while (current != null) {
+            if (current.getMessage() != null && current.getMessage().contains(needle)) return true;
+            current = current.getCause();
+        }
+        return false;
+    }
+
     private Instant parseInstant(String value) {
         return value == null || value.isBlank() ? null : Instant.parse(value);
     }
 
-    private JsonNode getJson(String url, String token) {
+    protected JsonNode getJson(String url, String token) {
         try {
             HttpRequest request = baseRequest(URI.create(url)).header("Authorization", "Bearer " + token).GET().build();
             return sendJson(request);

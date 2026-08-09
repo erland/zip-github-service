@@ -84,7 +84,7 @@ export default function AppLayout() {
         {authState === 'authenticated' && user && (
           <div className="header-actions">
             <nav aria-label="Huvudnavigering" className="primary-nav">
-              <NavLink className={navClassName} to="/projects">Projekt</NavLink>
+              <NavLink className={navClassName} to="/projects">Repositories</NavLink>
               <NavLink className={navClassName} to="/shortcut">Shortcut</NavLink>
               <NavLink className={navClassName} to="/about">Om tjänsten</NavLink>
             </nav>

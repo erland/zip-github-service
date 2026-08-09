@@ -600,6 +600,32 @@ Fas 9 ska samtidigt täppa till metadataförlust som kan uppstå i ZIP→GitHub-
 
 **Kvalitetsgrind för fas 9:** en statiskt publicerad och signerad referens-Shortcut kan installeras på iOS och använda en deployment-scoped, lågprivilegierad upload credential som kan revokas/roteras utan GitHub-credentialrotation; gammal Shortcut ger ett tydligt uppdateringsfel och dynamisk server-/GitHub Actions-signering krävs inte. Work-branch måste existera och vara verifierad på GitHub innan Work blir aktivt, delivery måste vägra saknad/stale remote branch och användaren kan avsluta utan PR, återuppta via kvarvarande branch och arkivera projekt utan att audit förstörs. Actions-status och kondenserade fel är återbesökbara från Work-sidan. användaren kan före delivery se och ändra commitmeddelandet i den gemensamma review/approval-vägen; det slutliga meddelandet är restart-säkert, approval-bundet och idempotent vid retry. En ZIP kan skickas från iOS till en kortlivad, icke-GitHub-auktoriserad stagingyta, claimas av exakt en autentiserad användare och promoveras utan reupload till samma vanliga importpipeline. Oclaimade uploads kan inte listas/läsas, tokens lagras inte i klartext, abuse begränsas och staging ger aldrig repositoryåtkomst i sig. Git file modes bevaras deterministiskt utan filename-baserad gissning: känd ZIP-metadata används, befintliga paths faller tillbaka till basrepositoryts mode, nya paths utan mode-metadata blir `100644`, och varje godkänd modeförändring ingår i review/approval/staged-diff-verifieringen före commit.
 
+## Steg 9.11 - Actions-visibilitet, gemensam Work/commit-vy och utökad feldiagnostik
+
+- Gör Actions-hämtningen robust per delkälla: en workflow-run som matchar exakt Work/commit-SHA ska förbli synlig även om jobs/checks/artifacts/loggdetaljer tillfälligt inte kan läsas.
+- Skilj tydligt mellan `not_started` och verkligt GitHub API-/behörighetsfel. HTTP 403 från Actions-API ska presenteras som ett explicit GitHub App-permissionsproblem, inte som att committen saknar workflow-runs.
+- Dokumentera att GitHub App-installationen måste ha Repository permission **Actions: Read and write** för nuvarande produktfunktioner (read för status/loggar, write för explicit allowlistad dispatch/rerun), och att befintliga installationer kan behöva godkänna en senare permissionändring på GitHub.
+- Gör Work-vyn till den primära Actions-upplevelsen och återanvänd samma frontendkomponent i commit/resultatvyn så status, jobs, artifacts, fel, refresh och Actions-kontroller beter sig likadant.
+- Exponera Workens senaste import-id i den owner-skyddade Work-responsen så samma befintliga, importbundna dispatch/rerun-policy kan återanvändas utan en parallell kontrollpipeline.
+- För misslyckade jobs: behåll kondenserat fel men lägg dessutom ett sanerat sammanhang runt relevant felpunkt (mål cirka 40 rader före och 12 efter) och en expanderbar sanerad jobblogg.
+- Begränsa jobbloggen till högst 128 KiB per misslyckat job och högst 1600 visade rader; markera trunkering. Samma token/secret-redaction som tidigare ska gälla innan loggtext skickas till klienten eller kopieras.
+- Lägg separata åtgärder för **Kopiera fel med sammanhang** och **Kopiera jobblogg**, med repository, branch, commit, workflow, job och step i kopierad text.
+- Lägg regression för den observerade runnen `31258714926` / commit `f3689dfd3b5f011e2ba04d56e3a5f50b4bc97e69`, Actions-403, jobs-endpointfel samt gemensam Work/resultat-rendering.
+
+**Kvalitetsgrind för 9.11:** en exakt matchande push-run får inte döljas av sekundära GitHub API-fel; permissionsproblem är diagnostiserbara; Work- och commit/resultatvyn använder samma Actions-komponent och samma kontroller; felvisningen innehåller både säkert kondenserat fel, användbart föregående sammanhang och bounded/sanerad jobblogg.
+
+## Steg 9.12 - Repository `.gitignore` i importplan och tydligare review-filter
+
+- Läs de `.gitignore`-filer som är spårade i den låsta repository-snapshoten och använd deras regler när nya ZIP-paths klassificeras.
+- En path som inte redan är spårad och som matchar repositoryts `.gitignore` ska få status `IGNORED`, visas som en informations-/varningspost och aldrig ingå i default selection eller kunna väljas för commit. Ingen override eller särskild acknowledgement ska krävas.
+- Redan spårade Git-paths ska fortfarande jämföras normalt även om en `.gitignore`-regel matchar dem; `.gitignore` får inte göra en tracked modification osynlig.
+- `.git/**` ska fortsätta vara hårt blockerad oberoende av `.gitignore`. Övriga säkerhets-/policyregler ska inte innehålla projektspecifika filnamn för zip-githubs egen signerade Shortcut.
+- Ta bort den exakta `shortcut/releases/zip-github.shortcut`-specialregeln. Skyddet för den deploymentartefakten ska i stället följa repositoryts generella `/shortcut/releases/*.shortcut`-regel i `.gitignore`.
+- Förenkla review-UI:t så sammanfattningen högst upp är neutral information, inte en andra uppsättning kort/knappar som liknar filtren. Behåll ett enda tydligt filterområde nära fillistan och visa kategoriernas antal där.
+- Lägg regression för root/nested `.gitignore`, negation (`!`), tracked-file-semantik, signerad Shortcut som vanlig ignored path samt review-UI utan duplicerade knapp-liknande sammanfattningskontroller.
+
+**Kvalitetsgrind för 9.12:** en ny ZIP-fil som Git skulle ignorera får inte bli blockerande eller valbar; tracked paths försvinner inte på grund av ignore; `.git/**` förblir hard-blocked; ingen produktionspolicy specialbehandlar zip-githubs Shortcut-filnamn; review-sidan har endast ett klickbart filterområde.
+
 # Framtida backlog - AI- och integrationsyta
 
 Det tidigare steg 8.4 flyttas uttryckligen utanför den aktiva fasplanen. Det ska omprövas först efter verklig användning av Actions- och Shortcut-flödena.
@@ -638,3 +664,18 @@ Rapportera kort vad som ändrats, vilka tester som körts och om kvalitetsgrinde
 - **Framtida backlog:** AI-/assistantintegrationer genomförs först när ett konkret behov har validerats efter fas 8–9.
 
 Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller flera steg per fas, och en kvalitetsgrind efter varje fas**.
+
+## Steg 9.13 - Repository-first UX och lazy intern Project
+
+- Gör repositories som GitHub App-installationen ger användaren åtkomst till till den primära startsidan. Project ska fortsatt finnas som intern owner-bunden resurs för Work/import/audit men inte behöva skapas eller namnges manuellt av användaren.
+- Lägg ett owner-skyddat repository-API som slår ihop användarens synliga GitHub App-installationer/repositories med eventuell befintlig intern Project-identitet utan att skapa nya Projects vid listning.
+- Visa endast repositoryts korta namn i normallistan. Om flera synliga repositories har samma korta namn får `owner/repo` visas sekundärt för disambiguering; branch/status/övrig Project-metadata ska inte visas i listan.
+- Lägg enkel klient-side sökning/filter som matchar case-insensitive på både kort repositorynamn och `owner/repo` medan användaren skriver.
+- Ta bort den manuella "Skapa projekt"-vägen från normal routing/startsida. Gamla `/projects/new` ska säkert redirecta till repositorylistan i stället för att bli en trasig länk.
+- För ett repository utan Project ska Project skapas först när användaren faktiskt startar Work. `ensureProject` ska verifiera installation/repository/default branch via samma GitHub-katalog som tidigare, återanvända befintlig Project när den finns och generera ett internt kollisionssäkert namn utan att exponera namnhantering i UI.
+- Efter lazy creation ska befintliga Project/Work/import-API:er återanvändas så etablerade ägarskaps-, branch-, approval- och delivery-invarianter inte dupliceras.
+- Uppdatera Shortcut claim/promotion så användaren väljer repository i stället för Project. Befintlig Project återanvänds; annars får promotion skapa Project lazy innan den vanliga `StoredUpload`-promotionen fortsätter.
+- Uppdatera repository-/Work-vyer och navigationstexter så "Project" inte presenteras som det primära användarbegreppet, utan att ta bort den interna domänmodellen eller historiken.
+- Lägg regression som bevisar: repositorylistning skapar inga Projects; första Starta arbete skapar exakt en Project och Work; retry återanvänder samma Project; Shortcut-promotion kan välja ett repo utan tidigare Project; sökning filtrerar på kort namn/full name; befintliga repos med Project öppnar befintlig Work-vy.
+
+**Kvalitetsgrind för 9.13:** användaren börjar i en sökbar repositorylista som motsvarar GitHub App-åtkomsten och behöver aldrig ange ett projektnamn. Ingen Project skapas bara för att listan öppnas. Första verkliga Work/Shortcut-promotion skapar eller återanvänder exakt en owner-bunden Project och fortsätter därefter genom den befintliga säkra Work/import-pipelinen.

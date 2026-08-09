@@ -353,6 +353,8 @@ export interface ImportActionsStatusResponse {
   detailsUrl: string;
   workflows: ActionsWorkflowRunResponse[];
   checks: ActionsCheckRunResponse[];
+  diagnosticCode: string | null;
+  diagnosticMessage: string | null;
   checkedAt: string;
 }
 
@@ -380,6 +382,9 @@ export interface ActionsFailureResponse {
   stepName: string;
   tool: string;
   lines: string[];
+  contextLines: string[];
+  jobLogLines: string[];
+  logTruncated: boolean;
   githubUrl: string;
 }
 

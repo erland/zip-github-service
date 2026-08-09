@@ -126,7 +126,7 @@ public class ProjectResource {
                 check.id(), check.name(), check.state(), check.terminal(), check.htmlUrl(), check.appName(),
                 check.startedAt(), check.completedAt())).toList();
         return new ImportActionsStatusResponse(status.importId(), status.repositoryFullName(), status.commitSha(),
-                status.state(), status.terminal(), status.detailsUrl(), workflows, checks, status.checkedAt());
+                status.state(), status.terminal(), status.detailsUrl(), workflows, checks, status.diagnosticCode(), status.diagnosticMessage(), status.checkedAt());
     }
 
     @GET @Path("/{projectId}/work/actions/details")
@@ -141,7 +141,7 @@ public class ProjectResource {
                 artifact.workflowRunId(), artifact.workflowName(), artifact.githubUrl())).toList();
         var failures = details.failures().stream().map(failure -> new ImportActionsDetailsResponse.FailureResponse(
                 failure.workflowRunId(), failure.workflowName(), failure.jobId(), failure.jobName(), failure.stepName(),
-                failure.tool(), failure.lines(), failure.githubUrl())).toList();
+                failure.tool(), failure.lines(), failure.contextLines(), failure.jobLogLines(), failure.logTruncated(), failure.githubUrl())).toList();
         return new ImportActionsDetailsResponse(details.importId(), details.repositoryFullName(), details.commitSha(),
                 details.detailsUrl(), artifacts, failures, details.checkedAt());
     }
@@ -171,9 +171,9 @@ public class ProjectResource {
         URI location = uriInfo.getBaseUriBuilder().path("api/imports").path(created.id().toString()).build();
         return Response.created(location).entity(created).build();
     }
-    private static WorkSessionResponse workResponse(info.isaksson.erland.zipgithub.application.WorkSession item) {
+    static WorkSessionResponse workResponse(info.isaksson.erland.zipgithub.application.WorkSession item) {
         return new WorkSessionResponse(item.id(), item.projectId(), item.baseBranch(), item.branchName(),
-                item.status(), item.headCommitSha(), item.pullRequestNumber(), item.pullRequestUrl(), item.createdAt(), item.updatedAt());
+                item.status(), item.headCommitSha(), item.lastImportId(), item.pullRequestNumber(), item.pullRequestUrl(), item.createdAt(), item.updatedAt());
     }
 
 }

@@ -35,6 +35,7 @@ public class ImportComparisonService {
         archiveByPath.keySet().forEach(path -> allPaths.put(path, Boolean.TRUE));
         repositoryByPath.keySet().forEach(path -> allPaths.put(path, Boolean.TRUE));
 
+        GitIgnoreMatcher ignoreMatcher = new GitIgnoreMatcher(repository.gitIgnoreFiles());
         var result = new ArrayList<ImportComparisonEntry>();
         for (String path : allPaths.keySet()) {
             ArchiveInventoryEntry source = archiveByPath.get(path);
@@ -46,6 +47,7 @@ public class ImportComparisonService {
             boolean modeChanged = source != null && target != null && !effectiveMode.equals(repositoryMode);
             ImportFileStatus status;
             if (source == null) status = ImportFileStatus.WOULD_DELETE;
+            else if (target == null && ignoreMatcher.isIgnored(path)) status = ImportFileStatus.IGNORED;
             else if (target == null) status = ImportFileStatus.ADDED;
             else if (source.sha256().equalsIgnoreCase(target.sha256()) && !modeChanged) status = ImportFileStatus.UNCHANGED;
             else status = ImportFileStatus.MODIFIED;

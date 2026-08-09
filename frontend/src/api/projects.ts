@@ -64,6 +64,7 @@ export type WorkSessionResponse = {
   branchName: string;
   status: string;
   headCommitSha: string | null;
+  lastImportId: string | null;
   pullRequestNumber: number | null;
   pullRequestUrl: string | null;
   createdAt: string;

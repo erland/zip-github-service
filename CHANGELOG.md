@@ -1,3 +1,55 @@
+## 1.0.0-rc.70 - 2026-08-09
+
+- Added step 9.13 repository-first UX: the authenticated start page now lists GitHub App repositories instead of user-created Projects.
+- Added client-side repository filtering on short name and `owner/repo`, with only repository names shown by default and full names used to disambiguate duplicates.
+- Removed manual Project creation from normal routing; `/projects/new` now returns to the repository list.
+- Added lazy `ensureProject` so opening/listing a repository creates no Project; the internal owner-bound Project is created/reused only when Work starts or Shortcut promotion needs it.
+- Updated Shortcut claim/promotion to select repositories and bootstrap the internal Project transparently before entering the existing import pipeline.
+- Kept all established Project/Work/import ownership, branch, approval and delivery invariants behind the repository-first UI.
+
+## 1.0.0-rc.69 - 2026-08-08
+
+- Corrected the rc.68 frontend CI regressions after the review-filter UX change.
+- Gitignored `IGNORED` entries are now rendered as informational rows without a disabled selection checkbox, matching their non-selectable/no-acknowledgement contract.
+- Updated the simplified import-flow regression to match counted filter labels such as `Oförändrade (1)` and `Blockerade (1)`.
+- No backend policy or `.gitignore` matching behavior changed; step 9.12 remains complete.
+
+## 1.0.0-rc.68 - 2026-08-08
+
+- Added corrective step 9.12 so import planning evaluates the target repository's tracked `.gitignore` files before policy classification.
+- New ZIP paths ignored by Git are now informational warnings (`GITIGNORE_IGNORED`) rather than blockers; they are never selectable and require no override or acknowledgement.
+- Removed the project-specific `shortcut/releases/zip-github.shortcut` hard block. The signed Shortcut remains protected generically by the repository `.gitignore`; `.git/**` stays hard-blocked independently of ignore rules.
+- Preserved tracked-file semantics: an already tracked repository path is still compared normally even if a `.gitignore` rule matches it.
+- Simplified the review summary to one neutral statistics strip and kept one explicit filter-control row, with counts on the actual filter buttons.
+
+## 1.0.0-rc.67 - 2026-08-08
+
+- Corrected the shared ActionsPanel runtime crash observed by GitHub Actions frontend CI when legacy/partial workflow payloads omitted `headSha`.
+- ActionsPanel now falls back from workflow `headSha` to the response commit SHA and finally the panel commit SHA, and tolerates missing workflow/check/job arrays during rolling upgrades.
+- Added a focused frontend regression proving a workflow without `headSha` still renders against the current commit.
+- No backend behavior, release scope, or completed implementation-step state changed.
+
+## 1.0.0-rc.66 - 2026-08-08
+
+- Added post-phase step 9.11 for the observed Work Actions visibility gap and unified Work/result Actions UX.
+- Workflow runs remain visible when secondary jobs/check endpoints fail; Actions HTTP 403 now carries an explicit `ACTIONS_PERMISSION_REQUIRED` diagnostic instead of looking like no workflow ran.
+- Work and commit/result views now render the same Actions component and Work reuses the same import-bound, allowlisted dispatch/rerun controls.
+- Failed jobs now expose a redacted condensed error, contextual lines around the failure, and an expandable bounded sanitized job log (128 KiB / 1600-line display cap), plus separate copy actions.
+- Phase 9 remains complete after the corrective 9.11 quality gate.
+
+## 1.0.0-rc.65 - 2026-08-08
+
+- Fixed HTTP 413 for ZIP uploads above nginx's 1 MB default by giving the frontend proxy an explicit runtime-configurable `client_max_body_size`.
+- Added `ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE` with a `200M` container/Compose default and switched frontend nginx config to the official runtime template path.
+- Aligned the backend compressed-upload default and `.env.example` to 200 MiB (`209715200` bytes); backend streaming enforcement remains authoritative.
+- Phase 9 remains complete; this is a post-phase deployment correction.
+
+## 1.0.0-rc.64 - 2026-08-08
+
+- Fixed Work GitHub Actions visibility so a failure reading commit check-runs no longer discards successfully fetched workflow runs/jobs.
+- Added a regression based on run 31258714926 / commit f3689dfd3b5f011e2ba04d56e3a5f50b4bc97e69 that simulates unavailable Checks while requiring the push workflow to remain visible.
+- Phase 9 remains complete; this is a post-phase production correction.
+
 ## 1.0.0-rc.63 - 2026-08-08
 
 ### Changed

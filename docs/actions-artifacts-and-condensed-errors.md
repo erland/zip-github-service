@@ -1,12 +1,12 @@
 # Actions artifacts and condensed errors
 
-Step 8.2 adds a bounded read-only detail view for completed GitHub Actions results. GitHub remains the canonical source for artifact downloads and complete logs.
+Step 8.2 added bounded read-only Actions details. Step 9.11 extends that model with bounded, sanitized job-log context while GitHub remains the canonical source for complete original logs.
 
 ## Authorization and endpoint
 
 `GET /api/imports/{importId}/actions/details` uses the same owner-scoped import/delivery lookup as the step-8.1 Actions status endpoint. The backend obtains a short-lived installation token only after ownership and recorded delivery are verified.
 
-The browser never receives GitHub credentials, artifact archive URLs or raw job logs.
+The browser never receives GitHub credentials or artifact archive URLs. For failed jobs it may receive only a bounded, sanitized copy of the job log after server-side redaction; the original GitHub log is never proxied unbounded.
 
 ## Artifact handling
 
@@ -14,18 +14,19 @@ For the exact delivered commit the backend reads at most 10 workflow runs and ex
 
 zip-github does not download, proxy, persist or cache artifact archive bytes. GitHub's artifact archive endpoint returns a short-lived authenticated redirect; exposing that URL to the browser would either leak a transient capability or require a new proxy/download surface. Therefore the UI deliberately links to the owning GitHub run, where the authenticated user can inspect/download the artifact.
 
-## Condensed error extraction
+## Error extraction and bounded job-log context
 
-Only failed workflow jobs are candidates for log summarization. The implementation:
+Only failed workflow jobs are candidates for log diagnostics. The implementation:
 
-- reads at most three failed-job excerpts across the bounded workflow set;
-- reads at most 24 KiB from each job log;
+- considers at most three failed jobs across the bounded workflow set;
+- reads at most 128 KiB from each failed job log and records whether the log was truncated;
 - records the failed step name from GitHub job metadata when available;
-- recognizes only deliberately supported patterns: Maven/Gradle, npm/Vite, Pandoc and xcodebuild;
-- returns at most eight distinct excerpt lines, each capped at 180 characters;
-- returns no guessed excerpt when the log format cannot be recognized robustly.
+- retains the existing narrow condensed detector for Maven/Gradle, npm/Vite, Pandoc and xcodebuild (at most eight concise lines);
+- additionally returns a sanitized context window centered on the first recognized failure (normally up to 40 lines before and 12 after);
+- additionally returns a sanitized expandable job-log view capped at 1600 displayed lines;
+- never treats the bounded copy as the canonical/full log; the job/run link always points back to GitHub.
 
-The UI identifies workflow, job, failed step, detected tool and the source GitHub job URL. The full log is never returned by zip-github.
+The shared Work/result UI exposes **Kopiera fel med sammanhang** and **Kopiera jobblogg**. Copied text includes repository, branch, commit, workflow, job and step metadata and is generated only from the already sanitized bounded response.
 
 ## Sanitization
 
@@ -45,7 +46,7 @@ GitHub job-log download endpoints may return short-lived HTTPS redirects. zip-gi
 
 ## Caching and failure behavior
 
-The owner-scoped details service caches the bounded metadata/excerpts in memory for five minutes. No artifact or raw-log bytes are persisted. If artifact/log detail retrieval is unavailable, the normal commit result and step-8.1 Actions status remain available and the UI links back to GitHub.
+The owner-scoped details service caches the bounded metadata/excerpts in memory for five minutes. No artifact or job-log bytes are persisted; only request-local bounded/sanitized data is returned and the existing details response may be cached in memory for five minutes. If artifact/log detail retrieval is unavailable, the normal commit result and step-8.1 Actions status remain available and the UI links back to GitHub.
 
 ## Out of scope
 

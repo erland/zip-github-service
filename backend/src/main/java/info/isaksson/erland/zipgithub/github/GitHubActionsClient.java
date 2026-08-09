@@ -7,7 +7,8 @@ public interface GitHubActionsClient {
     GitHubActionsStatus readCommitActions(String installationToken, String repositoryFullName, String commitSha);
 
     record GitHubActionsStatus(String state, boolean terminal, String detailsUrl,
-                               List<WorkflowRun> workflows, List<CheckRun> checks) {}
+                               List<WorkflowRun> workflows, List<CheckRun> checks,
+                               String diagnosticCode, String diagnosticMessage) {}
 
     record WorkflowRun(long id, long workflowId, String workflowPath, String headBranch, String headSha,
                        String name, String state, boolean terminal, String event, String htmlUrl,

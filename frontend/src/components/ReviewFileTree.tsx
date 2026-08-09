@@ -178,8 +178,8 @@ function FileTreeNode({ node, selectedPaths, onSelectedPathsChange, overridePath
     <li className={`review-tree__item review-tree__item--file review-tree__item--${entry.status.toLowerCase()}`}>
       <div className="review-tree__row review-tree__row--file" style={{ '--tree-level': level } as CSSProperties}>
         <span className="review-tree__toggle-spacer" aria-hidden="true" />
-        <input type="checkbox" checked={checked} disabled={locked || !selectable}
-          aria-label={`${checked ? 'Exkludera' : 'Inkludera'} ${entry.path}`} onChange={toggleFile} />
+        {entry.status !== 'IGNORED' && <input type="checkbox" checked={checked} disabled={locked || !selectable}
+          aria-label={`${checked ? 'Exkludera' : 'Inkludera'} ${entry.path}`} onChange={toggleFile} />}
         <code className="review-tree__file-name" title={entry.path}>{node.name}</code>
         <div className="review-tree__badges">
           <span className={`file-status file-status--${statusClass(entry)}`}>{statusLabel(entry)}</span>

@@ -9,5 +9,6 @@ public record ImportActionsDetailsResponse(UUID importId, String repositoryFullN
     public record ArtifactResponse(long id, String name, long sizeBytes, boolean expired, Instant createdAt,
                                    Instant expiresAt, long workflowRunId, String workflowName, String githubUrl) {}
     public record FailureResponse(long workflowRunId, String workflowName, long jobId, String jobName, String stepName,
-                                  String tool, List<String> lines, String githubUrl) {}
+                                  String tool, List<String> lines, List<String> contextLines, List<String> jobLogLines,
+                                  boolean logTruncated, String githubUrl) {}
 }

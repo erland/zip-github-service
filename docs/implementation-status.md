@@ -1,7 +1,7 @@
 # Implementation status — zip-github
 
 Version 1.0  
-Updated: 8 August 2026
+Updated: 9 August 2026
 
 ## Purpose
 
@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0111`
-- Last completed step: `9.10`
+- Repository revision: `r0118`
+- Last completed step: `9.13`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — REPOSITORY-FIRST UX APPLIED`
 
 ## Step ledger
 
@@ -95,14 +95,24 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.8` | Fas 9 — Work lifecycle | Projektlivscykel och robust branch-provisionering | **DONE** | 2026-08-08 | `docs/step-9.8-report.md` |
 | `9.9` | Fas 9 — Work/GitHub visibility | Actions-status och kopierbara fel på Work-sidan | **DONE** | 2026-08-08 | `docs/step-9.9-report.md` |
 | `9.10` | Fas 9 — regression/release | E2E-regression, drift och slutlig releasegrind | **DONE** | 2026-08-08 | `docs/step-9.10-report.md` |
+| `9.11` | Fas 9 — Actions correction | Actions-visibilitet, gemensam Work/commit-vy och utökad feldiagnostik | **DONE** | 2026-08-08 | `docs/step-9.11-report.md` |
+| `9.12` | Fas 9 — Import/review correction | Repository `.gitignore` i importplan och tydligare review-filter | **DONE** | 2026-08-08 | `docs/step-9.12-report.md` |
+| `9.13` | Fas 9 — Repository-first UX | Repositorylista, sökning och lazy intern Project | **DONE** | 2026-08-09 | `docs/step-9.13-report.md` |
 
 ## Revision history
 
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
+| `r0116` | 2026-08-08 | `9.12` gitignore/review UX correction | Repository `.gitignore` now classifies untracked ZIP paths as non-selectable warnings, removes Shortcut filename special-casing and simplifies duplicated review summary/filter affordances | `none` |
+| `r0117` | 2026-08-08 | Frontend review CI correction after `9.12` | Removed disabled checkbox affordance from ignored rows and aligned E2E filter assertions with counted labels; no backend behavior changed | `none` |
+| `r0118` | 2026-08-09 | `9.13` repository-first UX | Repository list/search replaces manual Project creation; Project is lazily created/reused when Work or Shortcut promotion actually begins | `none` |
+| `r0115` | 2026-08-08 | Frontend ActionsPanel CI correction after `9.11` | Prevented runtime crash for partial/legacy workflow payloads without `headSha`; no backend behavior or phase state changed | `none` |
+| `r0114` | 2026-08-08 | `9.11` Actions visibility/diagnostics correction | Shared Work/result Actions UI, explicit permission diagnostics, resilient run/jobs/check handling and bounded contextual job logs | `none` |
 | `r0109` | 2026-08-08 | `9.10` final phase-9 E2E/release gate | Cross-step phase-9 release script, signed Shortcut manifest/hash/readability checks, operations/security/API/release documentation audit; active implementation plan complete | `none` |
 | `r0110` | 2026-08-08 | Frontend CI correction after phase 9 completion | Updated stale routing/SHA/clipboard frontend tests to the 9.8/9.9 UI contract; no production behavior or phase state changed | `none` |
 | `r0111` | 2026-08-08 | Final frontend CI test correction after phase 9 completion | Scoped the degraded Work-history fallback assertion to its exact message after Actions introduced a second legitimate live-status region; no production behavior changed | `none` |
+| `r0113` | 2026-08-08 | Container upload-limit production correction | Added explicit runtime-configurable frontend nginx body-size limit and aligned deployment/backend defaults to 200 MiB so nginx no longer rejects >1 MB ZIPs before Quarkus | `none` |
+| `r0112` | 2026-08-08 | Work Actions visibility production correction | Isolated workflow-run retrieval from optional check-run retrieval so Checks permission/transient failures cannot hide matching Actions runs; added concrete regression for got-test-repo run 31258714926 | `none` |
 | `r0001` | 2026-08-06 | Documentation package created | Documentation conversion/package only | `0.1` |
 | `r0002` | 2026-08-06 | `0.1` Legacy project unpacked and inventoried | Structural inspection; no builds or tests run by design | `0.2` |
 | `r0003` | 2026-08-06 | `0.2` Legacy baseline build/test paths verified | Shell syntax and ZIP integrity passed; Maven/Docker unavailable; npm proxy dependency 404 documented | `0.3` |

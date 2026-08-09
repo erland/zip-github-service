@@ -14,12 +14,13 @@ beforeEach(() => {
       { id: 'import-review', projectId: 'project-1', baseBranch: 'main', status: 'READY_FOR_REVIEW', createdAt: '2026-08-06T21:00:00Z', sourceFilename: 'draft.zip', sourceSizeBytes: 90, sourceType: 'WEB_UPLOAD', sourceReference: null, planDigestSha256: 'b'.repeat(64), pullRequestNumber: null, pullRequestUrl: null, resumeStage: 'REVIEW' },
       { id: 'import-old-upload', projectId: 'project-1', baseBranch: 'main', status: 'UPLOADED', createdAt: '2026-08-06T19:00:00Z', sourceFilename: 'older-draft.zip', sourceSizeBytes: 80, sourceType: 'WEB_UPLOAD', sourceReference: null, planDigestSha256: null, pullRequestNumber: null, pullRequestUrl: null, resumeStage: 'UPLOAD' },
     ]), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    if (url.endsWith('/work/actions/details')) return new Response(JSON.stringify({ importId: 'import-result', repositoryFullName: 'owner/repo', commitSha: '1234567890abcdef', detailsUrl: 'https://github.com/owner/repo/actions', artifacts: [], failures: [{ workflowRunId: 7, workflowName: 'CI', jobId: 8, jobName: 'backend', stepName: 'test', tool: 'maven', lines: ['BUILD FAILURE', 'Tests failed'], githubUrl: 'https://github.com/owner/repo/actions/runs/7' }], checkedAt: '2026-08-08T15:00:01Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/work/actions/details')) return new Response(JSON.stringify({ importId: 'import-result', repositoryFullName: 'owner/repo', commitSha: '1234567890abcdef', detailsUrl: 'https://github.com/owner/repo/actions', artifacts: [], failures: [{ workflowRunId: 7, workflowName: 'CI', jobId: 8, jobName: 'backend', stepName: 'test', tool: 'maven', lines: ['BUILD FAILURE', 'Tests failed'], contextLines: ['Running tests', 'BUILD FAILURE', 'Tests failed'], jobLogLines: ['setup', 'Running tests', 'BUILD FAILURE', 'Tests failed'], logTruncated: false, githubUrl: 'https://github.com/owner/repo/actions/runs/7' }], checkedAt: '2026-08-08T15:00:01Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/imports/import-result/actions/control')) return new Response(JSON.stringify({ importId: 'import-result', repositoryFullName: 'owner/repo', branchRef: 'zip-github/work-1', commitSha: '1234567890abcdef', currentWork: true, disabledReason: null, workflows: [{ identifier: '.github/workflows/ci.yml', workflowId: 70, name: 'CI', path: '.github/workflows/ci.yml', htmlUrl: 'https://github.com/owner/repo/actions/workflows/ci.yml', dispatchAllowed: true, rerunAllowed: true }] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/work/actions')) return new Response(JSON.stringify({ importId: 'import-result', repositoryFullName: 'owner/repo', commitSha: '1234567890abcdef', state: 'failure', terminal: true, detailsUrl: 'https://github.com/owner/repo/actions', workflows: [{ id: 7, workflowId: 70, workflowPath: '.github/workflows/ci.yml', headBranch: 'zip-github/work-1', headSha: '1234567890abcdef', name: 'CI', state: 'failure', terminal: true, event: 'push', htmlUrl: 'https://github.com/owner/repo/actions/runs/7', createdAt: '2026-08-08T15:00:00Z', updatedAt: '2026-08-08T15:00:01Z', jobs: [{ id: 8, name: 'backend', state: 'failure', terminal: true, htmlUrl: 'https://github.com/owner/repo/actions/runs/7/job/8', startedAt: '2026-08-08T15:00:00Z', completedAt: '2026-08-08T15:00:01Z' }] }], checks: [], checkedAt: '2026-08-08T15:00:01Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/work/commits')) return new Response(JSON.stringify({ githubAvailable: true, commits: [
       { sha: '1234567890abcdef', message: 'Update game board\n\nDetails', authorName: 'Erland', authorEmail: 'e@example.test', authoredAt: '2026-08-06T20:00:00Z', htmlUrl: 'https://github.com/owner/repo/commit/1234567890abcdef', fallback: false },
     ] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    if (url.endsWith('/work')) return new Response(JSON.stringify({ id: 'work-1', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-1', status: 'ACTIVE', headCommitSha: '1234567890abcdef', pullRequestNumber: null, pullRequestUrl: null, createdAt: '2026-08-06T18:30:00Z', updatedAt: '2026-08-06T20:00:00Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/work')) return new Response(JSON.stringify({ id: 'work-1', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-1', status: 'ACTIVE', headCommitSha: '1234567890abcdef', lastImportId: 'import-result', pullRequestNumber: null, pullRequestUrl: null, createdAt: '2026-08-06T18:30:00Z', updatedAt: '2026-08-06T20:00:00Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     return new Response(JSON.stringify({ id: 'project-1', name: 'Bokprojekt', githubInstallationId: 1, githubRepositoryId: 2, repositoryFullName: 'owner/repo', privateRepository: true, defaultBranch: 'main', active: true, createdAt: '2026-08-06T18:00:00Z', updatedAt: '2026-08-06T18:00:00Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }));
 });
@@ -27,12 +28,14 @@ beforeEach(() => {
 describe('ProjectDetailPage work history', () => {
   it('shows Git commits and only the active import in the primary project view', async () => {
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
-    expect(await screen.findByRole('heading', { name: 'Bokprojekt' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'repo' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Commits i arbetet' })).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'GitHub Actions' })).toBeInTheDocument();
-    expect(await screen.findByText('Kondenserade fel')).toBeInTheDocument();
+    expect(await screen.findByText('Fel och jobbloggar')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Uppdatera status' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Kopiera fel' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Kopiera fel med sammanhang' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Kör workflow' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Kör om misslyckade jobb' })).toBeInTheDocument();
     expect(screen.getByText('Update game board')).toBeInTheDocument();
     const history = screen.getByRole('heading', { name: 'Commits i arbetet' }).closest('section');
     expect(history).not.toBeNull();
@@ -54,7 +57,7 @@ describe('ProjectDetailPage work history', () => {
     const user = userEvent.setup();
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
-    await user.click(await screen.findByRole('button', { name: 'Kopiera fel' }));
+    await user.click(await screen.findByRole('button', { name: 'Kopiera fel med sammanhang' }));
     expect(writeText).toHaveBeenCalledTimes(1);
     const copied = String(writeText.mock.calls[0][0]);
     expect(copied).toContain('Repository: owner/repo');
@@ -81,7 +84,7 @@ describe('ProjectDetailPage degraded Work history', () => {
     }));
 
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
-    expect(await screen.findByRole('heading', { name: 'Bokprojekt' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'repo' })).toBeInTheDocument();
     expect(screen.getByText('GitHub-historiken kunde inte läsas just nu. Senaste lokalt kända commit visas.')).toBeInTheDocument();
     expect(screen.getByText('Senaste kända Work-commit')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Fortsätt granska' })).toHaveAttribute('href', '/projects/project-1/imports/import-review/review');
@@ -102,7 +105,7 @@ describe('ProjectDetailPage state-based Work actions', () => {
     }));
 
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
-    expect(await screen.findByRole('heading', { name: 'Bokprojekt' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'repo' })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Ladda upp nästa ZIP' })).toHaveLength(1);
     expect(screen.queryByRole('link', { name: 'Fortsätt arbete' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Arbetet är klart – skapa pull request' })).toBeEnabled();

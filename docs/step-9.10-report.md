@@ -35,7 +35,7 @@ Full Maven/Quarkus and frontend Vitest execution remains delegated to normal CI 
 - Work cannot become ACTIVE until the remote branch is observed at the expected SHA; retry recovers PROVISIONING and delivery never creates a missing Work branch implicitly.
 - Work may be abandoned without PR, an old branch may be retained/resumed, and project removal is soft archive rather than audit deletion.
 - Actions status/details are bound to the exact Work head commit and remain available after revisiting the project page with bounded/redacted copyable diagnostics.
-- Signed Shortcut bytes are deployment-only, Git-ignored/import-hard-blocked, manifest-bound and served under the user-facing filename `Skicka till zip-github.shortcut`.
+- Signed Shortcut bytes are deployment-only, manifest-bound and served under the user-facing filename `Skicka till zip-github.shortcut`. At the time of 9.10 they also had an exact import hard block; step 9.12 supersedes that project-specific rule with generic repository `.gitignore` handling for untracked files.
 
 ## Files added
 

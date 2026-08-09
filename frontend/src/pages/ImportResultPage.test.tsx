@@ -94,7 +94,7 @@ it('shows a bounded condensed failure with workflow job step and GitHub source',
     workflows: [{ id: 10, name: 'CI', state: 'failure', terminal: true, event: 'push', htmlUrl: 'https://github.com/erland/example/actions/runs/10', createdAt: null, updatedAt: null,
       jobs: [{ id: 11, name: 'backend', state: 'failure', terminal: true, htmlUrl: 'https://github.com/erland/example/actions/runs/10/job/11', startedAt: null, completedAt: null }] }], checks: [] };
   const details = { importId: 'import-1', repositoryFullName: 'erland/example', commitSha: 'a'.repeat(40), detailsUrl: actions.detailsUrl, checkedAt: '2026-08-06T20:01:01Z', artifacts: [],
-    failures: [{ workflowRunId: 10, workflowName: 'CI', jobId: 11, jobName: 'backend', stepName: 'Build backend', tool: 'Maven/Gradle', lines: ['[ERROR] Failed to execute goal compiler'], githubUrl: 'https://github.com/erland/example/actions/runs/10/job/11' }] };
+    failures: [{ workflowRunId: 10, workflowName: 'CI', jobId: 11, jobName: 'backend', stepName: 'Build backend', tool: 'Maven/Gradle', lines: ['[ERROR] Failed to execute goal compiler'], contextLines: ['Compiling module', '[ERROR] Failed to execute goal compiler', 'Build stopped'], jobLogLines: ['setup', 'Compiling module', '[ERROR] Failed to execute goal compiler', 'Build stopped'], logTruncated: false, githubUrl: 'https://github.com/erland/example/actions/runs/10/job/11' }] };
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     if (url.endsWith('/api/imports/import-1/delivery')) return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -103,10 +103,13 @@ it('shows a bounded condensed failure with workflow job step and GitHub source',
     throw new Error(`Unexpected fetch: ${url}`);
   }));
   render(<MemoryRouter initialEntries={['/projects/p1/imports/import-1/result']}><Routes><Route path="projects/:projectId/imports/:importId/result" element={<ImportResultPage />} /></Routes></MemoryRouter>);
-  expect(await screen.findByRole('heading', { name: 'Kondenserade fel' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'Fel och jobbloggar' })).toBeInTheDocument();
   expect(screen.getByText('CI / backend')).toBeInTheDocument();
   expect(screen.getByText('Build backend · Maven/Gradle')).toBeInTheDocument();
   expect(screen.getByText('[ERROR] Failed to execute goal compiler')).toBeInTheDocument();
+  expect(screen.getByText('Visa sammanhang kring felet')).toBeInTheDocument();
+  expect(screen.getByText('Visa sanerad jobblogg')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Kopiera jobblogg' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Öppna jobb på GitHub' })).toHaveAttribute('href', expect.stringContaining('/job/11'));
 });
 

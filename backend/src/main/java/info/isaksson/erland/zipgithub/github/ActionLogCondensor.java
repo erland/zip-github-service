@@ -54,6 +54,37 @@ final class ActionLogCondensor {
         return clean;
     }
 
+
+    static List<String> context(String raw, int before, int after) {
+        if (raw == null || raw.isBlank()) return List.of();
+        String[] all = sanitize(raw).split("\\R");
+        ToolPattern selected = selectTool(all);
+        int match = -1;
+        if (selected != null) {
+            for (int i = 0; i < all.length; i++) {
+                if (selected.pattern().matcher(all[i]).find()) { match = i; break; }
+            }
+        }
+        if (match < 0) match = Math.max(0, all.length - Math.max(1, before + after + 1));
+        int start = Math.max(0, match - Math.max(0, before));
+        int end = Math.min(all.length, match + Math.max(0, after) + 1);
+        List<String> lines = new ArrayList<>();
+        for (int i = start; i < end; i++) lines.add(trimDisplayLine(all[i]));
+        return List.copyOf(lines);
+    }
+
+    static List<String> sanitizedLines(String raw, int maxLines) {
+        if (raw == null || raw.isBlank() || maxLines <= 0) return List.of();
+        String[] all = sanitize(raw).split("\\R");
+        List<String> lines = new ArrayList<>();
+        for (int i = 0; i < all.length && lines.size() < maxLines; i++) lines.add(trimDisplayLine(all[i]));
+        return List.copyOf(lines);
+    }
+
+    private static String trimDisplayLine(String line) {
+        return line.length() <= 500 ? line : line.substring(0, 499) + "…";
+    }
+
     private static ToolPattern selectTool(String[] lines) {
         int best = 0;
         ToolPattern selected = null;

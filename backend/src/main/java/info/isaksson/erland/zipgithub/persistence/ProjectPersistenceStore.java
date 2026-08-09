@@ -123,6 +123,42 @@ public class ProjectPersistenceStore {
         }
     }
 
+    public Optional<ProjectResponse> findProjectByRepository(UUID ownerUserId, long installationId, long repositoryId) {
+        if (!enabled) return Optional.empty();
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement("""
+                     SELECT id, name, github_installation_id, github_repository_id,
+                            repository_owner, repository_name, private_repository,
+                            default_branch, active, created_at, updated_at
+                     FROM project
+                     WHERE owner_user_id = ? AND github_installation_id = ? AND github_repository_id = ?
+                       AND archived_at IS NULL
+                     ORDER BY created_at DESC LIMIT 1
+                     """)) {
+            statement.setObject(1, ownerUserId);
+            statement.setLong(2, installationId);
+            statement.setLong(3, repositoryId);
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next() ? Optional.of(mapProject(result)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Could not load project by repository.", e);
+        }
+    }
+
+    public boolean projectNameExistsIncludingArchived(UUID ownerUserId, String name) {
+        if (!enabled) return false;
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT 1 FROM project WHERE owner_user_id = ? AND lower(name) = lower(?) LIMIT 1")) {
+            statement.setObject(1, ownerUserId);
+            statement.setString(2, name);
+            try (ResultSet result = statement.executeQuery()) { return result.next(); }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Could not validate internal project name.", e);
+        }
+    }
+
     public Optional<ProjectResponse> findProject(UUID ownerUserId, UUID projectId) {
         if (!enabled) return Optional.empty();
         try (Connection connection = dataSource.getConnection();

@@ -56,4 +56,41 @@ class ImportComparisonServiceTest {
         assertEquals("100644", byPath.get("new.sh").effectiveMode());
     }
 
+    @Test
+    void marksOnlyUntrackedZipPathsMatchingRepositoryGitignoreAsIgnored() {
+        UUID importId = UUID.randomUUID();
+        var archive = new ArchiveInventory(null, List.of(), List.of(
+                new ArchiveInventoryEntry("shortcut/releases/zip-github.shortcut", 20, "aaaa", false),
+                new ArchiveInventoryEntry("generated/cache.bin", 5, "bbbb", false),
+                new ArchiveInventoryEntry("tracked.log", 4, "cccc", true),
+                new ArchiveInventoryEntry("keep.log", 3, "dddd", true)));
+        var snapshot = new RepositorySnapshot(importId, "owner/repo", "main", "f".repeat(40), List.of(
+                new RepositorySnapshotEntry(".gitignore", "100644", "blob", "1".repeat(40), 40, "eeee"),
+                new RepositorySnapshotEntry("tracked.log", "100644", "blob", "2".repeat(40), 4, "ffff")),
+                Map.of(".gitignore", "/shortcut/releases/*.shortcut\n*.log\n!keep.log\ngenerated/\n"), Instant.EPOCH);
+
+        ImportComparison comparison = new ImportComparisonService().compare(archive, snapshot);
+        var byPath = comparison.entries().stream().collect(java.util.stream.Collectors.toMap(ImportComparisonEntry::path, e -> e));
+
+        assertEquals(ImportFileStatus.IGNORED, byPath.get("shortcut/releases/zip-github.shortcut").status());
+        assertEquals(ImportFileStatus.IGNORED, byPath.get("generated/cache.bin").status());
+        assertEquals(ImportFileStatus.MODIFIED, byPath.get("tracked.log").status(), "tracked files remain tracked even when .gitignore matches");
+        assertEquals(ImportFileStatus.ADDED, byPath.get("keep.log").status(), "later negation must re-include a path");
+    }
+
+    @Test
+    void nestedGitignoreOverridesParentForItsSubtree() {
+        UUID importId = UUID.randomUUID();
+        var archive = new ArchiveInventory(null, List.of(), List.of(
+                new ArchiveInventoryEntry("build/drop.txt", 1, "a", true),
+                new ArchiveInventoryEntry("build/keep.txt", 1, "b", true)));
+        var snapshot = new RepositorySnapshot(importId, "owner/repo", "main", "f".repeat(40), List.of(),
+                Map.of(".gitignore", "build/*\n", "build/.gitignore", "!keep.txt\n"), Instant.EPOCH);
+
+        var byPath = new ImportComparisonService().compare(archive, snapshot).entries().stream()
+                .collect(java.util.stream.Collectors.toMap(ImportComparisonEntry::path, e -> e));
+        assertEquals(ImportFileStatus.IGNORED, byPath.get("build/drop.txt").status());
+        assertEquals(ImportFileStatus.ADDED, byPath.get("build/keep.txt").status());
+    }
+
 }

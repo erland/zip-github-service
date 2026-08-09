@@ -105,7 +105,7 @@ Requires a stored upload and repository snapshot. Returns stable SHA-256 based c
 
 `POST /api/imports/{importId}/policy`
 
-Recreates the normalized archive inventory and hash comparison against the import's locked repository snapshot, then applies policy version `mvp-3`.
+Recreates the normalized archive inventory and hash comparison against the import's locked repository snapshot, then applies policy version `mvp-4`.
 
 The response contains deterministic path-sorted entries and an `approvable` flag. Policy blockers are typed. `.git/**`, oversized files and high-risk private-key/credential filenames are `HARD_BLOCKED`; `.github/**` and repository deletions are `OVERRIDABLE_BLOCKED` and require explicit per-path override before selection. Transport noise is returned as `IGNORED`; `.env` and environment-specific `.env.*` files are warnings, while `.env.example` remains allowed.
 
@@ -136,7 +136,7 @@ Repeated calls are idempotent when the canonical plan digest is unchanged. If a 
 1. returns the already stored immutable plan immediately when one exists;
 2. otherwise reuses an already locked repository snapshot when preparation previously progressed that far;
 3. otherwise resolves and records one exact repository snapshot;
-4. runs the existing archive inventory, comparison, `mvp-3` policy and immutable plan creation;
+4. runs the existing archive inventory, comparison, `mvp-4` policy and immutable plan creation;
 5. returns the resulting `ImportPlanResponse`.
 
 The endpoint does not introduce a second plan implementation: it delegates to the existing snapshot and plan services. Retry/refresh therefore preserves the first locked base SHA and immutable plan identity rather than resolving a new moving branch after partial success. The older granular snapshot/plan endpoints remain available for diagnostics and compatibility, but the normal UI no longer requires separate user actions for them.
@@ -202,7 +202,7 @@ Requires an exact approved plan and a verified applied workspace. Revalidates th
 
 ## Actions artifacts and condensed errors (step 8.2)
 
-`GET /api/imports/{importId}/actions/details` returns bounded read-only artifact metadata and condensed failed-job errors for the exact delivered commit. The endpoint is owner-scoped through the existing import/delivery lookup and uses a short-lived GitHub App installation token server-side.
+`GET /api/imports/{importId}/actions/details` returns bounded read-only artifact metadata plus sanitized failed-job diagnostics for the exact delivered commit: condensed lines, contextual lines around the failure, bounded job-log lines and a truncation flag. The endpoint is owner-scoped through the existing import/delivery lookup and uses a short-lived GitHub App installation token server-side.
 
 The response is deliberately limited: at most 20 artifact metadata entries across at most 10 matching workflow runs and at most three failed-job summaries. Artifact bytes and authenticated archive URLs are never returned or persisted; each artifact instead links to its owning GitHub workflow run. Each candidate failed-job log read is capped at 24 KiB before parsing. Summaries recognize Maven/Gradle, npm/Vite, Pandoc and xcodebuild only when robust patterns match, sanitize terminal/control sequences and common credential patterns, and identify workflow, job, failed step, detected tool and the GitHub job URL. Unknown log formats are not guessed.
 
@@ -382,7 +382,9 @@ Capability staging uploads using a missing/old/revoked `X-ZipGitHub-Upload-Crede
 ## Work Actions status (step 9.9)
 
 - `GET /api/projects/{projectId}/work/actions` returns the same bounded Actions status contract as the import result path, but is resolved from the authenticated project's active Work and exact `headCommitSha`.
-- `GET /api/projects/{projectId}/work/actions/details` returns the existing sanitized artifacts/failure-detail contract for the same exact Work-head commit.
+- `GET /api/projects/{projectId}/work/actions/details` returns the same shared sanitized artifacts/failure-detail contract for the exact Work-head commit.
+- `GET /api/projects/{projectId}/work` includes the owner-scoped `lastImportId` for an active Work with a delivered head so the frontend can reuse the same import-bound Actions control policy instead of introducing a separate dispatch/rerun authorization path.
+- Actions status responses may include `diagnosticCode`/`diagnosticMessage`; `ACTIONS_PERMISSION_REQUIRED` means GitHub returned an authorization failure for the Actions endpoint and must not be interpreted as `not_started`.
 - Both return a conflict when the active Work has no delivered commit yet. They never search by branch alone.
 
 
@@ -394,3 +396,14 @@ Capability staging uploads using a missing/old/revoked `X-ZipGitHub-Upload-Crede
 - Existing Work branches may be selected only when they are neither the default branch nor protected/in use by another active Work.
 - Work Actions endpoints are bound to both the active Work and its exact head commit.
 - Signed Shortcut download returns the configured signed bytes with `Content-Disposition` filename `Skicka till zip-github.shortcut`; the technical server filename is not part of the user-facing contract.
+
+## Repository ignore semantics
+
+Import plan creation evaluates tracked `.gitignore` files from the exact locked repository snapshot. A ZIP path that is not already tracked and matches those rules is returned as `IGNORED` with policy code `GITIGNORE_IGNORED`, severity `WARNING`, blocker type `NONE`, and is not selectable for delivery. Existing tracked files remain comparable even when an ignore pattern matches them. `.git/**` is always hard-blocked independently of ignore rules.
+
+## Repository-first bootstrap (step 9.13)
+
+- `GET /api/repositories` returns the repositories visible through the authenticated user's GitHub App installations. Each item includes installation/repository identity, short/full repository name, default branch, privacy/html URL and nullable `projectId`. This endpoint is read-only and MUST NOT create Projects.
+- `POST /api/repositories/{installationId}/{repositoryId}/work` verifies the repository through the user-scoped GitHub catalogue, lazily creates or reuses the internal owner-bound Project, then starts/reuses Work through the established Work lifecycle.
+- `POST /api/staging-imports/{stagingId}/promote` accepts either legacy `projectId` or repository identity (`githubInstallationId`, `githubRepositoryId`). Repository identity is resolved through the same lazy Project bootstrap before ordinary staging promotion.
+- Project APIs remain internal/compatibility building blocks after repository bootstrap; repository-first UX does not weaken owner checks, immutable plan/selection/approval binding or exact delivery.

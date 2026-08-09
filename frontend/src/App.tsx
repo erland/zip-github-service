@@ -6,8 +6,8 @@ import ImportReviewPage from './pages/ImportReviewPage';
 import ImportResultPage from './pages/ImportResultPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
-import CreateProjectPage from './pages/CreateProjectPage';
 import ProjectListPage from './pages/ProjectListPage';
+import RepositoryDetailPage from './pages/RepositoryDetailPage';
 import StagingClaimPage from './pages/StagingClaimPage';
 import ShortcutInstallPage from './pages/ShortcutInstallPage';
 import './styles/global.css';
@@ -18,7 +18,8 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route index element={<Navigate replace to="/projects" />} />
         <Route path="projects" element={<ProjectListPage />} />
-        <Route path="projects/new" element={<CreateProjectPage />} />
+        <Route path="projects/new" element={<Navigate replace to="/projects" />} />
+        <Route path="repositories/:installationId/:repositoryId" element={<RepositoryDetailPage />} />
         <Route path="projects/:projectId" element={<ProjectDetailPage />} />
         <Route path="projects/:projectId/imports/new" element={<NewImportPage />} />
         <Route path="projects/:projectId/imports/:importId/review" element={<ImportReviewPage />} />

@@ -1,19 +1,19 @@
-> **Current handoff r0111 / 1.0.0-rc.63:** Phase 9 is complete. r0111 is a final frontend CI test correction only; no product behavior or implementation-step state changed.
+> **Current handoff r0118 / 1.0.0-rc.70:** Phase 9 remains complete. Step 9.13 makes repositories the primary user-facing concept: the start page lists/searches GitHub App repositories, manual Project creation is removed from normal UX, and the internal owner-bound Project is lazily created/reused only when Work or Shortcut promotion begins.
 
 > **Planning refinement r0105 / 1.0.0-rc.57:** Phase 9.7 now explicitly requires the authenticated Shortcut download to expose `Skicka till zip-github.shortcut` via `Content-Disposition` and requires deployment verification that the backend runtime user can read the signed bind-mounted artifact (avoiding the observed `0600` failure). The same checks are included in the final 9.10 E2E gate. No 9.8 implementation has started.
 
-> **Signed Shortcut integration r0103 / 1.0.0-rc.55:** The operator-provided Apple-signed reference Shortcut is now included in the deployment bundle at `shortcut/releases/zip-github.shortcut` (version 1 / g1, SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`). The file is gitignored and hard-blocked from ordinary Import delivery to prevent credential leakage. Step 9.7 is now blocked only on deploying this bundle, downloading the artifact through authenticated `/shortcut`, and confirming that exact served copy installs on iOS.
+> **Signed Shortcut integration r0103 / 1.0.0-rc.55:** The operator-provided Apple-signed reference Shortcut is now included in the deployment bundle at `shortcut/releases/zip-github.shortcut` (version 1 / g1, SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`). The file is gitignored; import review evaluates repository `.gitignore` rules generically and excludes matching untracked files from delivery without a Shortcut-specific hard block. Step 9.7 is now blocked only on deploying this bundle, downloading the artifact through authenticated `/shortcut`, and confirming that exact served copy installs on iOS.
 
 # Continuation handoff — phase 8 and later
 
 > **CI correction r0102 / 1.0.0-rc.54:** The container-image job now downloads the already verified `backend-quarkus-app` and `frontend-dist` artifacts from its prerequisite jobs and assembles runtime-only images. It no longer reruns Maven/npm inside Docker, avoiding the independent Maven Central path that returned HTTP 429. Phase 9 remains blocked at 9.7 only on the external Apple signing/iOS installation gate.
 
 
-Date: 8 August 2026  
-Repository revision: r0111  
-Application version: 1.0.0-rc.63  
-Last completed implementation step: 9.7  
-Current position: 9.8 NEXT — Work lifecycle, project lifecycle and robust branch provisioning
+Date: 9 August 2026  
+Repository revision: r0118  
+Application version: 1.0.0-rc.70  
+Last completed implementation step: 9.13  
+Current position: implementation plan complete; no NEXT step remains
 
 ## Why this file exists
 
@@ -40,8 +40,9 @@ The service currently provides the full phase-7 flow:
 
 ```text
 GitHub App user login
-→ choose/configure Project
-→ one active Work per Project
+→ choose repository from GitHub App access
+→ lazy internal Project bootstrap when work begins
+→ one active Work per internal Project
 → upload ZIP
 → secure ingestion + inspection
 → exact repository snapshot/base SHA
@@ -214,7 +215,7 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 
 ## Release/packaging discipline
 
-- Application version is `1.0.0-rc.63`; repository revision is r0111. Phase 9 is complete; r0111 only scopes the final degraded-history frontend test to the exact fallback message now that the page legitimately contains multiple live-status regions.
+- Application version is `1.0.0-rc.67`; repository revision is r0115. Phase 9 is complete; r0115 is the frontend CI hardening correction for the shared ActionsPanel while retaining the rc.65 200M upload fix and rc.66 Actions UX/diagnostics work.
 - Steps 9.1–9.9 are complete. The signed Shortcut is device-verified, Work lifecycle uses verified GitHub branches, and Actions status/failures are revisitable from the active Work view. Step 9.10 is NEXT.
 - Keep exactly one `NEXT` step in `docs/implementation-status.md`.
 - Every delivered ZIP must include one top-level `zip-github/` folder.
@@ -226,9 +227,9 @@ During the recent ChatGPT packaging sessions, Maven could not start because the 
 - Advanced three-way/provenance detection for ZIPs created from older repository state is backlog; ordinary ZIPs are not required to contain zip-github metadata.
 - Horizontal backend scaling remains unsupported until shared/persistent coordination is designed for all required runtime locks/state.
 
-## Phase 9 current position — r0111
+## Phase 9 current position — r0115
 
-The zip-github runtime side of signed Shortcut distribution is implemented and r0103 now carries the operator-provided signed `.shortcut` in the deployment bundle. The binary embeds the deployment staging credential, so it remains gitignored and is hard-blocked from ordinary Import delivery.
+The zip-github runtime side of signed Shortcut distribution is implemented and r0103 now carries the operator-provided signed `.shortcut` in the deployment bundle. The binary embeds the deployment staging credential, so it remains gitignored. Since 9.12, ordinary Import review applies the repository `.gitignore` generically and marks the untracked artifact ignored/non-selectable instead of using a Shortcut-specific hard block.
 
 9.7 is **DONE**. The operator-provided Apple-signed artifact is published as `shortcut/releases/zip-github.shortcut`; the authenticated `/shortcut` download was exercised and the downloaded copy imported on iPhone. The technical server filename is decoupled from the user-facing download filename, and the standard deployment mode is runtime-readable. Steps 9.8 and 9.9 are DONE; 9.10 is NEXT.
 
@@ -246,3 +247,11 @@ The active Work view now exposes exact-head GitHub Actions status/details using 
 ## Phase 9 completion — r0109 / rc.61
 
 Step 9.10 completed the final cross-step regression/release gate. Phase 9 is complete and the active implementation ledger has no NEXT step. The signed Shortcut has real iPhone download/import evidence; Work provisioning is remote-verified before ACTIVE; delivery fails closed on missing/stale Work branches; Actions diagnostics are revisitable and commit-bound. Future AI/integration items remain a separate backlog, not an automatic continuation step.
+
+
+### r0113 container upload-limit correction
+
+The frontend nginx container now renders `client_max_body_size` from `ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE` (default `200M`). This removes nginx's implicit 1 MB request-body ceiling. The backend compressed upload default is aligned to 200 MiB and remains the authoritative byte-level limit.
+
+### r0112 Actions visibility correction
+Work Actions status now preserves successfully fetched workflow runs/jobs if the separate commit check-runs request fails (for example due to Checks permission drift or a transient GitHub error). This was verified against the shape of got-test-repo run `31258714926` at commit `f3689dfd3b5f011e2ba04d56e3a5f50b4bc97e69`.

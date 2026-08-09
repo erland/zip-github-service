@@ -46,7 +46,7 @@ describe('App routing and authentication', () => {
     }));
     renderAt('/');
     expect(await screen.findByRole('heading', { name: 'Repositories' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'example-book-project' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'example-book-project' })).toBeInTheDocument();
     await user.type(screen.getByRole('searchbox', { name: 'Sök repositories' }), 'other');
     expect(screen.getByRole('link', { name: 'other-repo' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'example-book-project' })).not.toBeInTheDocument();

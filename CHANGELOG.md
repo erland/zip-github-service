@@ -1,3 +1,9 @@
+## 1.0.0-rc.71 - 2026-08-09
+
+- Corrected the rc.70 frontend CI race in the repository-list filtering regression.
+- The App test now waits for the asynchronously loaded repository link before exercising client-side filtering.
+- No production frontend or backend behavior changed; step 9.13 remains complete.
+
 ## 1.0.0-rc.70 - 2026-08-09
 
 - Added step 9.13 repository-first UX: the authenticated start page now lists GitHub App repositories instead of user-created Projects.

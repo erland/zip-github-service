@@ -85,6 +85,17 @@ export default function ActionsPanel({
     {controls}
   </section>;
 
+  const targetCommitSha = actions.commitSha || commitSha;
+  const representedWorkflowJobNames = new Set(
+    (actions.workflows ?? []).flatMap(workflow => {
+      if (workflow.headSha && workflow.headSha !== targetCommitSha) return [];
+      return (workflow.jobs ?? []).map(job => normalizeCheckName(job.name));
+    }),
+  );
+  const additionalChecks = (actions.checks ?? []).filter(check =>
+    !isDuplicateGitHubActionsCheck(check.appName, check.name, representedWorkflowJobNames),
+  );
+
   return <section className="actions-overview" aria-labelledby="actions-heading">
     <div className="review-list-heading"><div><Heading id="actions-heading">GitHub Actions</Heading><p>Commit <code>{commitSha.slice(0, 12)}</code>. GitHub är källa för fullständig körningsinformation.</p></div><div className="actions-heading-actions"><StateBadge state={actions.state} />{onRefresh && <button className="button button--secondary" type="button" disabled={refreshing} onClick={onRefresh}>{refreshing ? 'Uppdaterar…' : 'Uppdatera status'}</button>}</div></div>
     {(actions.workflows ?? []).length > 0 && <ol className="actions-list">{(actions.workflows ?? []).map(workflow => {
@@ -95,7 +106,7 @@ export default function ActionsPanel({
       {jobs.length > 0 && <ul className="actions-job-list">{jobs.map(job => <li key={job.id}><span>{job.htmlUrl ? <a href={job.htmlUrl} target="_blank" rel="noreferrer">{job.name}</a> : job.name}</span><StateBadge state={job.state} /></li>)}</ul>}
     </li>;
     })}</ol>}
-    {(actions.checks ?? []).length > 0 && <div className="actions-checks"><h3>Checks</h3><ul className="actions-job-list">{(actions.checks ?? []).map(check => <li key={check.id}><span>{check.htmlUrl ? <a href={check.htmlUrl} target="_blank" rel="noreferrer">{check.name}</a> : check.name}{check.appName ? ` · ${check.appName}` : ''}</span><StateBadge state={check.state} /></li>)}</ul></div>}
+    {additionalChecks.length > 0 && <div className="actions-checks"><h3>Övriga kontroller</h3><ul className="actions-job-list">{additionalChecks.map(check => <li key={check.id}><span>{check.htmlUrl ? <a href={check.htmlUrl} target="_blank" rel="noreferrer">{check.name}</a> : check.name}{check.appName ? ` · ${check.appName}` : ''}</span><StateBadge state={check.state} /></li>)}</ul></div>}
     {detailsUnavailable && <p className="status-message">Artifacts och feldiagnostik kunde inte läsas just nu. <a href={fallbackUrl} target="_blank" rel="noreferrer">Öppna Actions på GitHub</a>.</p>}
     {details && <ActionsDetails details={details} copyFailure={copyFailure} copyJobLog={copyJobLog} />}
     {controls}
@@ -120,6 +131,15 @@ function formatBytes(bytes:number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} kB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function normalizeCheckName(name:string) {
+  return name.trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US');
+}
+
+function isDuplicateGitHubActionsCheck(appName:string | null | undefined, checkName:string, representedWorkflowJobNames:Set<string>) {
+  return normalizeCheckName(appName ?? '') === 'github actions'
+    && representedWorkflowJobNames.has(normalizeCheckName(checkName));
 }
 
 export function StateBadge({state}:{state:string}) { return <span className={`status-badge status-badge--${state}`}>{stateLabel(state)}</span>; }

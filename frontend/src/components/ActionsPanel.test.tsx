@@ -44,3 +44,48 @@ it('falls back to the panel commit when a workflow payload has no headSha', () =
   expect(screen.getByText('CI')).toBeInTheDocument();
   expect(screen.getAllByText('ffffffffffff').length).toBeGreaterThan(0);
 });
+
+it('deduplicates GitHub Actions checks already represented by workflow jobs and keeps other checks', () => {
+  const commitSha = 'a'.repeat(40);
+  const actions: ImportActionsStatusResponse = {
+    importId:'i-dedup', repositoryFullName:'erland/example', commitSha, state:'success', terminal:true,
+    detailsUrl:'https://github.com/erland/example/actions', diagnosticCode:null, diagnosticMessage:null, checkedAt:'2026-08-09T18:00:00Z',
+    workflows:[{ id:10, workflowId:20, workflowPath:'.github/workflows/ci.yml', headBranch:'zip-github/work-1', headSha:commitSha,
+      name:'CI', state:'success', terminal:true, event:'push', htmlUrl:'https://github.com/erland/example/actions/runs/10', createdAt:null, updatedAt:null,
+      jobs:[{ id:11, name:'Frontend tests and build', state:'success', terminal:true, htmlUrl:'https://github.com/erland/example/actions/runs/10/job/11', startedAt:null, completedAt:null }] }],
+    checks:[
+      { id:101, name:'Frontend tests and build', state:'success', terminal:true, htmlUrl:'https://github.com/erland/example/actions/runs/10/job/11', appName:'GitHub Actions', startedAt:null, completedAt:null },
+      { id:102, name:'CodeQL', state:'success', terminal:true, htmlUrl:'https://github.com/erland/example/security/code-scanning', appName:'GitHub Advanced Security', startedAt:null, completedAt:null },
+      { id:103, name:'Dependency review', state:'success', terminal:true, htmlUrl:'https://github.com/erland/example/runs/103', appName:'GitHub Actions', startedAt:null, completedAt:null },
+    ],
+  };
+
+  render(<ActionsPanel actions={actions} details={null} fallbackUrl={actions.detailsUrl} repositoryFullName="erland/example" branchName="zip-github/work-1" commitSha={commitSha} />);
+
+  expect(screen.getAllByText('Frontend tests and build')).toHaveLength(1);
+  expect(screen.getByRole('heading', { name:'Övriga kontroller' })).toBeInTheDocument();
+  const codeQlLink = screen.getByRole('link', { name:'CodeQL' });
+  expect(codeQlLink).toBeInTheDocument();
+  expect(codeQlLink.closest('li')).toHaveTextContent('GitHub Advanced Security');
+  const dependencyReviewLink = screen.getByRole('link', { name:'Dependency review' });
+  expect(dependencyReviewLink).toBeInTheDocument();
+  expect(dependencyReviewLink.closest('li')).toHaveTextContent('GitHub Actions');
+  expect(screen.queryByRole('heading', { name:'Checks' })).not.toBeInTheDocument();
+});
+
+it('omits the extra-check section when every check is the GitHub Actions representation of a shown job', () => {
+  const commitSha = 'b'.repeat(40);
+  const actions: ImportActionsStatusResponse = {
+    importId:'i-dedup-only', repositoryFullName:'erland/example', commitSha, state:'success', terminal:true,
+    detailsUrl:'https://github.com/erland/example/actions', diagnosticCode:null, diagnosticMessage:null, checkedAt:'2026-08-09T18:01:00Z',
+    workflows:[{ id:20, workflowId:30, workflowPath:'.github/workflows/ci.yml', headBranch:'zip-github/work-2', headSha:commitSha,
+      name:'CI', state:'success', terminal:true, event:'push', htmlUrl:'https://github.com/erland/example/actions/runs/20', createdAt:null, updatedAt:null,
+      jobs:[{ id:21, name:'Backend tests and package', state:'success', terminal:true, htmlUrl:null, startedAt:null, completedAt:null }] }],
+    checks:[{ id:201, name:'Backend tests and package', state:'success', terminal:true, htmlUrl:null, appName:'GitHub Actions', startedAt:null, completedAt:null }],
+  };
+
+  render(<ActionsPanel actions={actions} details={null} fallbackUrl={actions.detailsUrl} repositoryFullName="erland/example" branchName="zip-github/work-2" commitSha={commitSha} />);
+
+  expect(screen.getAllByText('Backend tests and package')).toHaveLength(1);
+  expect(screen.queryByRole('heading', { name:'Övriga kontroller' })).not.toBeInTheDocument();
+});

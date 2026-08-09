@@ -1,3 +1,15 @@
+## 1.0.0-rc.82 - 2026-08-09
+
+- Corrected the Step 9.18 frontend regression test to assert the visible CodeQL and Dependency review rows without assuming the link text and app label are one DOM text node.
+- No production behavior changes.
+
+## 1.0.0-rc.81 - 2026-08-09
+
+- Added step 9.18 to remove duplicate GitHub Actions status presentation without changing repository workflow configuration.
+- Workflow runs and their jobs remain the primary Actions view; GitHub Actions checks with a matching displayed job for the same commit are suppressed from the secondary list.
+- Remaining checks from other apps, or GitHub Actions checks without a corresponding displayed job, are shown under `Övriga kontroller`.
+- Added frontend regressions for both mixed checks and the all-duplicated case.
+
 ## 1.0.0-rc.80 - 2026-08-09
 
 - Corrected the Step 9.16 race where a pull request could be merged on GitHub before the persisted Work state had synchronized, allowing a later web/Shortcut import to reuse the already-merged Work branch.

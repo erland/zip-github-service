@@ -320,7 +320,8 @@ public class ImportResource {
     @POST
     @Path("/{importId}/pull-request")
     public PullRequestResponse createPullRequest(@PathParam("importId") UUID importId) {
-        UUID ownerUserId = currentUser.requireUserId();
+        var session = currentUser.requireSession();
+        UUID ownerUserId = session.userId();
         var existing = service.findPullRequest(ownerUserId, importId);
         if (existing.isPresent()) {
             var stored = existing.get();
@@ -333,7 +334,7 @@ public class ImportResource {
                 .orElseThrow(() -> ApiException.conflict("GIT_DELIVERY_REQUIRED",
                         "Push the approved import branch before creating a pull request."));
         try {
-            var created = pullRequests.createOrReuseDraft(sources.githubInstallationId(), delivery);
+            var created = pullRequests.createOrReuseDraft(session.githubUserAccessToken(), delivery);
             var stored = service.recordPullRequest(ownerUserId, importId, created);
             return new PullRequestResponse(stored.importId(), stored.repositoryFullName(), stored.baseBranch(),
                     stored.branchName(), stored.commitSha(), stored.planDigestSha256(),

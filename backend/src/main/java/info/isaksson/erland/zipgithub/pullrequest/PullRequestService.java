@@ -1,7 +1,6 @@
 package info.isaksson.erland.zipgithub.pullrequest;
 
 import info.isaksson.erland.zipgithub.delivery.GitDeliveryResult;
-import info.isaksson.erland.zipgithub.github.GitHubInstallationTokenProvider;
 import info.isaksson.erland.zipgithub.github.GitHubPullRequestClient;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -10,21 +9,23 @@ import java.time.Clock;
 
 @ApplicationScoped
 public class PullRequestService {
-    private final GitHubInstallationTokenProvider tokens;
     private final GitHubPullRequestClient client;
     private final Clock clock;
 
     @Inject
-    public PullRequestService(GitHubInstallationTokenProvider tokens, GitHubPullRequestClient client) {
-        this(tokens, client, Clock.systemUTC());
+    public PullRequestService(GitHubPullRequestClient client) {
+        this(client, Clock.systemUTC());
     }
 
-    PullRequestService(GitHubInstallationTokenProvider tokens, GitHubPullRequestClient client, Clock clock) {
-        this.tokens = tokens; this.client = client; this.clock = clock;
+    PullRequestService(GitHubPullRequestClient client, Clock clock) {
+        this.client = client; this.clock = clock;
     }
 
-    public PullRequestResult createOrReuseDraft(long installationId, GitDeliveryResult delivery) {
-        String token = tokens.createInstallationToken(installationId);
+    /** Creates or reuses the draft PR on behalf of the authenticated GitHub user. */
+    public PullRequestResult createOrReuseDraft(String userAccessToken, GitDeliveryResult delivery) {
+        if (userAccessToken == null || userAccessToken.isBlank())
+            throw new IllegalArgumentException("GitHub user access token is required for pull request attribution.");
+        String token = userAccessToken;
         var existing = client.findOpenPullRequest(token, delivery.repositoryFullName(),
                 delivery.branchName(), delivery.baseBranch());
         if (existing.isPresent()) return toResult(delivery, existing.get());

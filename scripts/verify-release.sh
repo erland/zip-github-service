@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.73"
+expected_version="1.0.0-rc.74"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.73 - 2026-08-09' CHANGELOG.md
+grep -q '## 1.0.0-rc.74 - 2026-08-09' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,14 +23,14 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0121`' docs/implementation-status.md
+grep -q 'Repository revision: `r0122`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'body: JSON.stringify(target)' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.14`' docs/implementation-status.md
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — REPOSITORY-FIRST UX + GITHUB PRODUCTION DEPLOY APPLIED`' docs/implementation-status.md
+grep -q 'Last completed step: `9.15`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — USER-ATTRIBUTED PULL REQUESTS APPLIED`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -39,6 +39,13 @@ test -s docs/step-9.11-report.md
 test -s docs/rc67-frontend-actions-panel-ci-correction.md
 test -s docs/step-9.12-report.md
 test -s docs/step-9.13-report.md
+
+test -s docs/step-9.15-report.md
+grep -q '| `9.15` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q 'createOrReuseDraft(String userAccessToken' backend/src/main/java/info/isaksson/erland/zipgithub/pullrequest/PullRequestService.java
+! grep -q 'GitHubInstallationTokenProvider' backend/src/main/java/info/isaksson/erland/zipgithub/pullrequest/PullRequestService.java
+grep -q 'session.githubUserAccessToken(), delivery' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java backend/src/main/java/info/isaksson/erland/zipgithub/api/ProjectResource.java
+grep -q 'PR create must use authenticated user access token' backend/src/test/java/info/isaksson/erland/zipgithub/pullrequest/PullRequestServiceSelfTest.java
 test -s docs/rc69-frontend-review-ci-correction.md
 test -s frontend/src/components/ActionsPanel.tsx
 test -s frontend/src/components/ActionsControls.tsx

@@ -1,4 +1,4 @@
-> **Current handoff r0121 / 1.0.0-rc.73:** Phase 9 remains complete. Step 9.14 adds a manual GitHub Actions production deployment path using a restricted `zip-github-deploy` SSH identity, root-owned deploy script and explicit `production` Environment. Repository-first UX from 9.13 remains unchanged.
+> **Current handoff r0122 / 1.0.0-rc.74:** Phase 9 remains complete. Step 9.14 adds a manual GitHub Actions production deployment path using a restricted `zip-github-deploy` SSH identity, root-owned deploy script and explicit `production` Environment. Repository-first UX from 9.13 remains unchanged.
 
 > **Planning refinement r0105 / 1.0.0-rc.57:** Phase 9.7 now explicitly requires the authenticated Shortcut download to expose `Skicka till zip-github.shortcut` via `Content-Disposition` and requires deployment verification that the backend runtime user can read the signed bind-mounted artifact (avoiding the observed `0600` failure). The same checks are included in the final 9.10 E2E gate. No 9.8 implementation has started.
 

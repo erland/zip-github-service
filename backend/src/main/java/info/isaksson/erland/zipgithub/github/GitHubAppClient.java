@@ -64,7 +64,7 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
 
 
     @Override
-    public GitHubPullRequest createDraftPullRequest(String installationToken, String repositoryFullName,
+    public GitHubPullRequest createDraftPullRequest(String accessToken, String repositoryFullName,
                                                      String title, String headBranch, String baseBranch, String body) {
         try {
             String payload = mapper.createObjectNode()
@@ -75,7 +75,7 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
                     .put("draft", true)
                     .toString();
             HttpRequest request = baseRequest(URI.create("https://api.github.com/repos/" + repositoryFullName + "/pulls"))
-                    .header("Authorization", "Bearer " + installationToken)
+                    .header("Authorization", "Bearer " + accessToken)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
                     .build();
@@ -89,13 +89,13 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
 
 
     @Override
-    public Optional<GitHubPullRequest> findOpenPullRequest(String installationToken, String repositoryFullName,
+    public Optional<GitHubPullRequest> findOpenPullRequest(String accessToken, String repositoryFullName,
                                                            String headBranch, String baseBranch) {
         try {
             String head = java.net.URLEncoder.encode(repositoryFullName.split("/", 2)[0] + ":" + headBranch, StandardCharsets.UTF_8);
             String base = java.net.URLEncoder.encode(baseBranch, StandardCharsets.UTF_8);
             JsonNode root = getJson("https://api.github.com/repos/" + repositoryFullName
-                    + "/pulls?state=open&head=" + head + "&base=" + base + "&per_page=10", installationToken);
+                    + "/pulls?state=open&head=" + head + "&base=" + base + "&per_page=10", accessToken);
             for (JsonNode json : root) {
                 return Optional.of(new GitHubPullRequest(json.path("number").asLong(), json.path("html_url").asText(),
                         json.path("state").asText(), json.path("draft").asBoolean()));

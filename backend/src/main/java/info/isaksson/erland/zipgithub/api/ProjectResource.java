@@ -148,13 +148,14 @@ public class ProjectResource {
 
     @POST @Path("/{projectId}/work/pull-request")
     public PullRequestResponse createWorkPullRequest(@PathParam("projectId") UUID projectId) {
-        UUID ownerUserId = currentUser.requireUserId();
+        var session = currentUser.requireSession();
+        UUID ownerUserId = session.userId();
         var source = service.activeWorkSource(ownerUserId, projectId);
         var work = source.work();
         var delivery = new GitDeliveryResult(work.lastImportId(), source.repositoryFullName(), work.baseBranch(),
                 work.branchName(), work.baseCommitSha(), work.headCommitSha(), work.lastPlanDigestSha256(), work.updatedAt());
         try {
-            var created = pullRequests.createOrReuseDraft(source.githubInstallationId(), delivery);
+            var created = pullRequests.createOrReuseDraft(session.githubUserAccessToken(), delivery);
             service.recordWorkPullRequest(ownerUserId, projectId, created);
             return new PullRequestResponse(created.importId(), created.repositoryFullName(), created.baseBranch(),
                     created.branchName(), created.commitSha(), created.planDigestSha256(), created.pullRequestNumber(),

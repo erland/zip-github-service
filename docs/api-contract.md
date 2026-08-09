@@ -183,7 +183,7 @@ Requires an exact approved plan and a verified applied workspace. Revalidates th
 
 ### Create draft pull request
 
-`POST /api/imports/{importId}/pull-request` creates a draft pull request from the already pushed import branch to the frozen base branch. The response contains stable repository, branch, commit, plan digest, pull request number and URL metadata.
+`POST /api/imports/{importId}/pull-request` creates a draft pull request from the already pushed import branch to the frozen base branch. The endpoint requires the authenticated web session and uses that session's GitHub App user access token for PR lookup/create so GitHub attributes the PR to the acting user; the token is never returned to the browser. The response contains stable repository, branch, commit, plan digest, pull request number and URL metadata.
 
 `GET /api/imports/{importId}/pull-request` returns the recorded metadata without contacting GitHub again.
 

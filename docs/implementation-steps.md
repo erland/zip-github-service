@@ -722,3 +722,16 @@ Rapportera kort vad som ändrats, vilka tester som körts och om kvalitetsgrinde
 
 Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller flera steg per fas, och en kvalitetsgrind efter varje fas**.
 
+## Steg 9.17 - Explicit commit- och PR-metadata
+
+- Nya interaktiva importer ska börja med tomt commitmeddelande. Användaren måste skriva ett icke-tomt commitmeddelande innan urvalet kan godkännas; den äldre deterministiska texten får endast finnas kvar som kompatibilitetsfallback för historiska approvals/interna legacy-anrop.
+- PR-skapande ska inte längre använda en genererad standardtitel eller standardbeskrivning. Användaren ska ange både titel och beskrivning explicit innan draft-PR:n skapas.
+- Validera PR-titel och PR-beskrivning både i frontend och backend, med tydliga längdgränser och `400 PULL_REQUEST_METADATA_INVALID` för ogiltig interaktiv metadata.
+- Visa PR-komponeringen innan GitHub-anropet både från Work-vyn och post-commit-resultatet. Fälten ska vara vanliga redigerbara textfält och ska inte innebära något implicit godkännande.
+- Lägg till en frivillig snabbåtgärd `Fyll från commitmeddelanden` som hämtar commits som faktiskt ingår i aktuellt Work (efter Workens base SHA) och fyller PR-beskrivningen med dessa i kronologisk ordning. Användaren ska därefter kunna redigera, ta bort och komplettera texten fritt.
+- Snabbfyllningen får inte använda fallback-/osäker historik som om den vore faktisk GitHub-historik. Om commitmeddelandena inte kan läsas säkert ska användaren få skriva beskrivningen manuellt.
+- Behåll användarattribuerad PR-create från 9.15 och PR-livscykeln från 9.16 oförändrade; detta steg ändrar endast användarkontrollerad metadata och hur den samlas in.
+- Lägg regression för tomt commitmeddelande, obligatorisk PR-titel/beskrivning, överförd explicit metadata, snabbfyllning från endast Work-commits och fortsatt redigerbar beskrivning.
+
+**Kvalitetsgrind för 9.17:** inga nya commits eller PR:er får skapas med zip-github-genererad standardtext i det interaktiva flödet. Commitmeddelande, PR-titel och PR-beskrivning kräver användarens explicita innehåll; PR-beskrivningen kan frivilligt fyllas från de faktiska commitmeddelandena i aktuellt Work men förblir helt redigerbar före skapandet.
+

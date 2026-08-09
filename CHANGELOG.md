@@ -1,3 +1,25 @@
+## 1.0.0-rc.79 - 2026-08-09
+
+- Corrected the Step 9.17 frontend regression test to expect Work commit messages in chronological order (oldest to newest), matching the implemented PR description behavior.
+- Added a release-gate assertion for the chronological commit-message draft order.
+- No production behavior changes.
+
+## 1.0.0-rc.78 - 2026-08-09
+
+- Corrected frontend CI regressions after step 9.17 without changing production behavior.
+- Existing import-flow tests now enter an explicit commit message before approval/delivery, matching the new mandatory metadata contract.
+- Review-state assertions now keep approval disabled while the commit message is blank, including after external-branch-change acknowledgement.
+- Added release-gate checks so the simplified import flow and delivery/retry regressions cannot silently bypass the explicit commit-message requirement again.
+
+
+## 1.0.0-rc.77 - 2026-08-09
+
+- Added step 9.17 explicit commit and pull-request metadata. New interactive commit messages now start empty and must be entered by the user.
+- Draft PR creation now requires an explicit user-entered title and description; the previous generated PR title/body were removed.
+- Added a reusable PR composer on both Work and post-commit views with server-side validation and clear 400 responses for invalid metadata.
+- Added `Fyll från commitmeddelanden`, which fills an editable Markdown description from the commits belonging to the current Work only, in chronological order.
+- Work commit history is now bounded to commits after the Work base SHA so base-branch history cannot leak into the PR-description helper.
+
 ## 1.0.0-rc.76 - 2026-08-09
 
 - Corrected CI regressions introduced with step 9.16 without changing production behavior.

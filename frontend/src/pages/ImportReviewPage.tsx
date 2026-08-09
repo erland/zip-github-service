@@ -30,7 +30,7 @@ export default function ImportReviewPage() {
   const [overridePaths, setOverridePaths] = useState<Set<string>>(new Set());
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [cancelling, setCancelling] = useState(false);
-  const [commitMessage, setCommitMessage] = useState(() => importId ? `Apply approved ZIP import ${importId}` : '');
+  const [commitMessage, setCommitMessage] = useState('');
   const [externalChanges, setExternalChanges] = useState<ExternalBranchChangesResponse | null>(null);
   const [externalChangesAcknowledged, setExternalChangesAcknowledged] = useState(false);
 
@@ -68,8 +68,6 @@ export default function ImportReviewPage() {
         if (existingApproval) {
           setApproval(existingApproval);
           setCommitMessage(existingApproval.commitMessage);
-        } else if (importId) {
-          setCommitMessage(`Apply approved ZIP import ${importId}`);
         }
       } catch (reason) {
         if (active) setError(reason instanceof Error ? reason.message : 'Importplanen kunde inte hämtas.');
@@ -275,7 +273,7 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
 
       <section className="commit-message-editor" aria-labelledby="commit-message-heading">
         <h2 id="commit-message-heading">Commitmeddelande</h2>
-        <p>Det här meddelandet används för committen på Work-branchen. Du kan ersätta förslaget helt innan du godkänner.</p>
+        <p>Det här meddelandet används för committen på Work-branchen. Skriv ett tydligt meddelande som beskriver de valda förändringarna.</p>
         <label htmlFor="commit-message">Meddelande</label>
         <textarea id="commit-message" rows={3} maxLength={500} value={commitMessage}
           disabled={Boolean(approval) || approving || delivering}

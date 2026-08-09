@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { dispatchImportWorkflow, getDelivery, getImportActions, getImportActionDetails, getImportActionsControlOptions, rerunImportWorkflowFailedJobs, GitDeliveryResponse, ImportActionsControlOptionsResponse, ImportActionsDetailsResponse, ImportActionsStatusResponse } from '../api/imports';
-import { createWorkPullRequest } from '../api/projects';
 import ActionsPanel from '../components/ActionsPanel';
 import ActionsControls from '../components/ActionsControls';
+import PullRequestComposer from '../components/PullRequestComposer';
 
 const ACTION_POLL_DELAYS_MS = [0, 8000, 15000, 30000, 60000, 60000, 60000, 60000];
 
@@ -15,7 +15,7 @@ export default function ImportResultPage() {
   const [actions, setActions] = useState<ImportActionsStatusResponse | null>(null);
   const [actionDetails, setActionDetails] = useState<ImportActionsDetailsResponse | null>(null);
   const [actionDetailsUnavailable, setActionDetailsUnavailable] = useState(false);
-  const [finishing, setFinishing] = useState(false);
+  const [showPullRequestComposer, setShowPullRequestComposer] = useState(false);
   const [pullRequestUrl, setPullRequestUrl] = useState('');
   const [controlOptions, setControlOptions] = useState<ImportActionsControlOptionsResponse | null>(null);
   const [controlBusy, setControlBusy] = useState('');
@@ -135,28 +135,24 @@ export default function ImportResultPage() {
     }
   }
 
-  async function finishWork() {
-    if (!projectId || finishing || pullRequestUrl) return;
-    setFinishing(true); setError('');
-    try { const created = await createWorkPullRequest(projectId); setPullRequestUrl(created.pullRequestUrl); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : 'Pull request kunde inte skapas.'); }
-    finally { setFinishing(false); }
-  }
-
   const links = useMemo(() => result ? githubLinks(result) : null, [result]);
   return <section className="page-card result-page" aria-labelledby="result-heading">
     <p><Link className="back-link" to={projectId ? `/projects/${projectId}` : '/projects'}>← Till projektet</Link></p>
     <p className="eyebrow">Importresultat</p>
     <h1 id="result-heading">Commit skapad</h1>
-    <p className="lead">ZIP-importen är committad på projektets arbetsbranch. Du kan fortsätta med nästa ZIP eller avsluta arbetet och skapa en pull request direkt här.</p>
+    <p className="lead">ZIP-importen är committad på projektets arbetsbranch. Du kan fortsätta med nästa ZIP eller skapa en pull request med en egen titel och beskrivning.</p>
     {loading && <p role="status">Hämtar resultat…</p>}
     {error && <p role="alert" className="status-message status-message--error">{error}</p>}
     {result && links && <>
       <div className="result-success" role="status"><div><strong>Importen är committad</strong><p>Arbetsbranchen är uppdaterad med den godkända ZIP-filen.</p></div><span className="status-badge">PUSHED</span></div>
       {pullRequestUrl && <p className="status-message" role="status">Arbetets pull request är skapad. <a href={pullRequestUrl} target="_blank" rel="noreferrer">Öppna pull request</a></p>}
+      {projectId && showPullRequestComposer && !pullRequestUrl && <PullRequestComposer projectId={projectId}
+        onCreated={created => { setPullRequestUrl(created.pullRequestUrl); setShowPullRequestComposer(false); }}
+        onCancel={() => setShowPullRequestComposer(false)} />}
       <div className="result-primary-action">
         {projectId && <Link className="button" to={`/projects/${projectId}/imports/new`}>Ladda upp nästa ZIP</Link>}
-        {projectId && <button className="button button--secondary" type="button" disabled={finishing || Boolean(pullRequestUrl)} onClick={finishWork}>{pullRequestUrl?'Pull request skapad':finishing?'Skapar pull request…':'Arbetet är klart – skapa pull request'}</button>}
+        {projectId && !pullRequestUrl && !showPullRequestComposer && <button className="button button--secondary" type="button" onClick={()=>setShowPullRequestComposer(true)}>Skapa pull request</button>}
+        {projectId && pullRequestUrl && <button className="button button--secondary" type="button" disabled>Pull request skapad</button>}
       </div>
       <dl className="result-link-grid">
         <ResultLink label="Repository" value={result.repositoryFullName} href={links.repository} />

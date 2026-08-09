@@ -26,6 +26,10 @@ it('shows both next-ZIP and direct finish-work actions after commit', async () =
     if (url.endsWith('/api/imports/import-1/checks')) return new Response(JSON.stringify(checks), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions')) return new Response(JSON.stringify(actions), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions/details')) return new Response(JSON.stringify(actionDetails), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/projects/p1/work/commits')) return new Response(JSON.stringify({ githubAvailable: true, commits: [
+      { sha: 'a'.repeat(40), message: 'Add explicit PR metadata', authorName: 'Erland', authorEmail: 'e@example.test', authoredAt: '2026-08-06T20:00:00Z', htmlUrl: null, fallback: false },
+      { sha: '9'.repeat(40), message: 'Keep Work open after PR', authorName: 'Erland', authorEmail: 'e@example.test', authoredAt: '2026-08-06T19:00:00Z', htmlUrl: null, fallback: false },
+    ] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/projects/p1/work/pull-request') && init?.method === 'POST') return new Response(JSON.stringify(pullRequest), { status: 200, headers: { 'Content-Type': 'application/json' } });
     throw new Error(`Unexpected fetch: ${url}`);
   });
@@ -33,7 +37,7 @@ it('shows both next-ZIP and direct finish-work actions after commit', async () =
   render(<MemoryRouter initialEntries={['/projects/p1/imports/import-1/result']}><Routes><Route path="projects/:projectId/imports/:importId/result" element={<ImportResultPage />} /></Routes></MemoryRouter>);
   expect(await screen.findByRole('heading', { name: 'Commit skapad' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Ladda upp nästa ZIP' })).toHaveAttribute('href', '/projects/p1/imports/new');
-  expect(screen.getByRole('button', { name: 'Arbetet är klart – skapa pull request' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Skapa pull request' })).toBeEnabled();
   expect(screen.getByRole('link', { name: result.branchName })).toHaveAttribute('href', expect.stringContaining('/tree/'));
   expect(await screen.findByText('CI')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'backend' })).toHaveAttribute('href', expect.stringContaining('/job/11'));
@@ -41,10 +45,17 @@ it('shows both next-ZIP and direct finish-work actions after commit', async () =
   expect(await screen.findByText('frontend-dist')).toBeInTheDocument();
   expect(screen.getByText('2.0 kB · CI')).toBeInTheDocument();
 
-  await user.click(screen.getByRole('button', { name: 'Arbetet är klart – skapa pull request' }));
+  await user.click(screen.getByRole('button', { name: 'Skapa pull request' }));
+  expect(screen.getByLabelText('Titel')).toHaveValue('');
+  expect(screen.getByLabelText('Beskrivning')).toHaveValue('');
+  await user.type(screen.getByLabelText('Titel'), 'Improve ZIP review flow');
+  await user.click(screen.getByRole('button', { name: 'Fyll från commitmeddelanden' }));
+  expect(await screen.findByDisplayValue(/Add explicit PR metadata/)).toHaveValue('## Ingående commits\n\n- Keep Work open after PR\n- Add explicit PR metadata');
+  await user.type(screen.getByLabelText('Beskrivning'), '\n\nExtra context edited by the user.');
+  await user.click(screen.getByRole('button', { name: 'Skapa pull request' }));
   expect(await screen.findByRole('link', { name: 'Öppna pull request' })).toHaveAttribute('href', pullRequest.pullRequestUrl);
   expect(screen.getByRole('button', { name: 'Pull request skapad' })).toBeDisabled();
-  expect(fetchMock).toHaveBeenCalledWith('/api/projects/p1/work/pull-request', expect.objectContaining({ method: 'POST' }));
+  expect(fetchMock).toHaveBeenCalledWith('/api/projects/p1/work/pull-request', expect.objectContaining({ method: 'POST', body: JSON.stringify({ title: 'Improve ZIP review flow', description: '## Ingående commits\n\n- Keep Work open after PR\n- Add explicit PR metadata\n\nExtra context edited by the user.' }) }));
 });
 
 
@@ -76,12 +87,16 @@ it('retries direct finish-work after a transient failure without creating a seco
   }));
 
   render(<MemoryRouter initialEntries={['/projects/p1/imports/import-1/result']}><Routes><Route path="projects/:projectId/imports/:importId/result" element={<ImportResultPage />} /></Routes></MemoryRouter>);
-  const finish = await screen.findByRole('button', { name: 'Arbetet är klart – skapa pull request' });
+  const finish = await screen.findByRole('button', { name: 'Skapa pull request' });
   await user.click(finish);
+  await user.type(screen.getByLabelText('Titel'), 'Retryable PR title');
+  await user.type(screen.getByLabelText('Beskrivning'), 'Retryable PR description');
+  await user.click(screen.getByRole('button', { name: 'Skapa pull request' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('GitHub svarade inte i tid.');
-  expect(screen.getAllByRole('button', { name: 'Arbetet är klart – skapa pull request' })).toHaveLength(1);
+  expect(screen.getByLabelText('Titel')).toHaveValue('Retryable PR title');
+  expect(screen.getByLabelText('Beskrivning')).toHaveValue('Retryable PR description');
 
-  await user.click(screen.getByRole('button', { name: 'Arbetet är klart – skapa pull request' }));
+  await user.click(screen.getByRole('button', { name: 'Skapa pull request' }));
   expect(await screen.findByRole('link', { name: 'Öppna pull request' })).toHaveAttribute('href', pullRequest.pullRequestUrl);
   expect(prAttempts).toBe(2);
   expect(screen.getByRole('button', { name: 'Pull request skapad' })).toBeDisabled();

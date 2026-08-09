@@ -4,7 +4,7 @@ Implemented in r0097 / `1.0.0-rc.49` as phase 9 step 9.5.
 
 ## Behavior
 
-The ordinary import review page, used by both browser uploads and promoted StagingImports, shows the previous generated message `Apply approved ZIP import <importId>` as an editable suggestion. The user may replace it completely before approval. The final confirmation shows the commit message, locked base ref and selected-file count.
+The ordinary import review page, used by both browser uploads and promoted StagingImports, starts with an empty commit-message field. The user must enter a non-blank message before approval. The final confirmation shows the commit message, locked base ref and selected-file count.
 
 Interactive approval validates the message server-side: line endings become LF, surrounding whitespace is stripped, empty messages are rejected, unsupported ASCII control characters are rejected and the normalized value is limited to 500 characters.
 

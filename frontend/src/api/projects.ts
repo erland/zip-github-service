@@ -100,9 +100,10 @@ export async function getProjectWorkCommits(projectId: string): Promise<WorkHist
   return requestJson(`/api/projects/${encodeURIComponent(projectId)}/work/commits`);
 }
 
-export async function createWorkPullRequest(projectId: string) {
+export async function createWorkPullRequest(projectId: string, title: string, description: string) {
   return requestJson<import('./imports').PullRequestResponse>(`/api/projects/${encodeURIComponent(projectId)}/work/pull-request`, {
-    method: 'POST', headers: { 'X-Zip-GitHub-Request': '1' },
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Zip-GitHub-Request': '1' },
+    body: JSON.stringify({ title, description }),
   });
 }
 

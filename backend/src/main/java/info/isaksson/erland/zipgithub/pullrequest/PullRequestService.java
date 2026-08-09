@@ -22,21 +22,16 @@ public class PullRequestService {
     }
 
     /** Creates or reuses the draft PR on behalf of the authenticated GitHub user. */
-    public PullRequestResult createOrReuseDraft(String userAccessToken, GitDeliveryResult delivery) {
+    public PullRequestResult createOrReuseDraft(String userAccessToken, GitDeliveryResult delivery, String submittedTitle, String submittedDescription) {
         if (userAccessToken == null || userAccessToken.isBlank())
             throw new IllegalArgumentException("GitHub user access token is required for pull request attribution.");
         String token = userAccessToken;
+        String title = PullRequestMetadataPolicy.requireTitle(submittedTitle);
+        String body = PullRequestMetadataPolicy.requireDescription(submittedDescription);
         var existing = client.findOpenPullRequest(token, delivery.repositoryFullName(),
                 delivery.branchName(), delivery.baseBranch());
         if (existing.isPresent()) return toResult(delivery, existing.get());
 
-        String shortDigest = delivery.planDigestSha256().substring(0, 12);
-        String title = "Complete zip-github work " + shortDigest;
-        String body = "Created by zip-github from one or more approved ZIP imports on a persistent work branch.\n\n"
-                + "- Work branch: `" + delivery.branchName() + "`\n"
-                + "- Base commit: `" + delivery.baseCommitSha() + "`\n"
-                + "- Commit: `" + delivery.commitSha() + "`\n"
-                + "- Latest approved plan digest: `" + delivery.planDigestSha256() + "`\n";
         try {
             return toResult(delivery, client.createDraftPullRequest(token, delivery.repositoryFullName(), title,
                     delivery.branchName(), delivery.baseBranch(), body));

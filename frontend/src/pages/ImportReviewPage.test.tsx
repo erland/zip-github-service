@@ -85,7 +85,7 @@ describe('ImportReviewPage', () => {
     expect(screen.getByText('README.md')).toBeInTheDocument();
     expect(screen.getByTitle('docs/new.md')).toBeInTheDocument();
     expect(screen.queryByTitle('.github/workflows/ci.yml')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeDisabled();
   });
 
 
@@ -101,6 +101,8 @@ describe('ImportReviewPage', () => {
     renderPage();
     expect(await screen.findByLabelText('GitHub-branchen har ändrats')).toHaveTextContent('1 fil');
     expect(screen.getByText('Ändrad på GitHub')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeDisabled();
+    await user.type(screen.getByRole('textbox', { name: 'Meddelande' }), 'Preserve reviewed external changes');
     expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeDisabled();
     await user.click(screen.getByRole('checkbox', { name: /Jag förstår att 1 vald sökväg ersätter ändringar/ }));
     expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeEnabled();
@@ -142,7 +144,8 @@ describe('ImportReviewPage', () => {
     const readySelection = { ...selection, planDigestSha256: readyPlan.planDigestSha256 };
     const fetchMock = installHappyPath(readyPlan, readySelection);
     renderPage();
-    await user.click(await screen.findByRole('button', { name: 'Godkänn valda förändringar' }));
+    await user.type(await screen.findByRole('textbox', { name: 'Meddelande' }), 'Deliver reviewed changes');
+    await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));
     expect(await screen.findByText('Importresultat')).toBeInTheDocument();
     const postUrls = fetchMock.mock.calls.filter(([, init]) => (init as RequestInit | undefined)?.method === 'POST').map(([url]) => String(url));
     expect(postUrls).toEqual([
@@ -158,6 +161,7 @@ describe('ImportReviewPage', () => {
     const partial = { ...selection, selectedPaths: ['docs/new.md'], excludedPaths: ['README.md'] };
     const fetchMock = installHappyPath(plan, partial);
     renderPage(); await screen.findByText('README.md');
+    await user.type(screen.getByRole('textbox', { name: 'Meddelande' }), 'Deliver selected documentation change');
     await user.click(screen.getByRole('checkbox', { name: 'Exkludera README.md' }));
     await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));
     expect(await screen.findByText('Importresultat')).toBeInTheDocument();
@@ -173,6 +177,7 @@ describe('ImportReviewPage', () => {
     const mixedSelection = { ...selection, selectionDigestSha256: 'f'.repeat(64), selectedPaths: ['.github/workflows/ci.yml', 'docs/new.md'], overrides: [{ path: '.github/workflows/ci.yml', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'GITHUB_WORKFLOW_PROTECTED', acknowledgement: 'User explicitly approved this policy override in the review UI.' }] };
     const fetchMock = installHappyPath(mixedPlan, mixedSelection);
     renderPage(); await screen.findByText('README.md');
+    await user.type(screen.getByRole('textbox', { name: 'Meddelande' }), 'Deliver approved workflow override');
     await user.click(screen.getByRole('checkbox', { name: 'Exkludera README.md' }));
     await user.click(screen.getByRole('button', { name: /Blockerade/ }));
     expect(screen.getByRole('checkbox', { name: 'Inkludera .git/config' })).toBeDisabled();
@@ -224,7 +229,8 @@ describe('ImportReviewPage', () => {
     vi.stubGlobal('fetch', fetchMock);
     renderPage();
 
-    await user.click(await screen.findByRole('button', { name: 'Godkänn valda förändringar' }));
+    await user.type(await screen.findByRole('textbox', { name: 'Meddelande' }), 'Retry delivery without duplicate approval');
+    await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));
     expect(await screen.findByText('push failed')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Godkänn valda förändringar' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Försök skapa commit igen' }));
@@ -255,13 +261,12 @@ describe('ImportReviewPage', () => {
     await user.click(screen.getByRole('button', { name: 'Försök skapa commit igen' }));
     expect(await screen.findByText('Importresultat')).toBeInTheDocument();
   });
-  it('lets the user replace the suggested commit message and submits it with approval', async () => {
+  it('requires the user to enter an explicit commit message and submits it with approval', async () => {
     const user = userEvent.setup();
     const fetchMock = installHappyPath();
     renderPage();
     const field = await screen.findByRole('textbox', { name: 'Meddelande' });
-    expect(field).toHaveValue('Apply approved ZIP import import-1');
-    await user.clear(field);
+    expect(field).toHaveValue('');
     await user.type(field, 'Preserve executable script modes');
     await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));
     await screen.findByText('Importresultat');

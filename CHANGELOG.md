@@ -1,3 +1,11 @@
+## 1.0.0-rc.80 - 2026-08-09
+
+- Corrected the Step 9.16 race where a pull request could be merged on GitHub before the persisted Work state had synchronized, allowing a later web/Shortcut import to reuse the already-merged Work branch.
+- New imports now strictly verify current PR state before reusing a Work with PR metadata; merged PRs close the old Work and start a fresh Work from the current default-branch HEAD.
+- GitHub PR-state unavailability now fails new-import reuse closed with `WORK_PULL_REQUEST_STATUS_UNAVAILABLE` instead of risking a commit on a merged branch.
+- Git delivery re-verifies PR state immediately before push and rejects delivery with `WORK_PULL_REQUEST_MERGED_REVIEW_REQUIRED` if the PR merged after review.
+- Added regression coverage for merge-before-upload, GitHub-status-unavailable and merge-after-review-before-delivery scenarios.
+
 ## 1.0.0-rc.79 - 2026-08-09
 
 - Corrected the Step 9.17 frontend regression test to expect Work commit messages in chronological order (oldest to newest), matching the implemented PR description behavior.

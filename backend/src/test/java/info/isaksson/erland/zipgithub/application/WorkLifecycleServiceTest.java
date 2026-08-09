@@ -76,6 +76,82 @@ class WorkLifecycleServiceTest {
     }
 
 
+
+    @Test
+    void newImportReconcilesMergedPullRequestAndStartsFreshWorkFromCurrentDefaultBranch() {
+        Fixture f = fixture();
+        WorkSession old = new WorkSession(UUID.randomUUID(), f.project.id(), f.owner, "main", "zip-github/work-old", "PR_OPEN",
+                "a".repeat(40), "b".repeat(40), UUID.randomUUID(), "c".repeat(64), 42L,
+                "https://github.com/erland/repo/pull/42", Instant.now(), Instant.now());
+        WorkSession merged = new WorkSession(old.id(), old.projectId(), old.ownerUserId(), old.baseBranch(), old.branchName(), "MERGED",
+                old.headCommitSha(), old.baseCommitSha(), old.lastImportId(), old.lastPlanDigestSha256(), old.pullRequestNumber(), old.pullRequestUrl(), old.createdAt(), Instant.now());
+        String mainSha = "d".repeat(40);
+        UUID newWorkId = UUID.randomUUID();
+
+        when(f.work.findActive(f.owner, f.project.id())).thenReturn(Optional.of(old), Optional.empty());
+        when(f.pullRequests.getPullRequest("installation-token", "erland/repo", 42L))
+                .thenReturn(new GitHubPullRequestClient.GitHubPullRequest(42L, old.pullRequestUrl(), "closed", false, true, old.headCommitSha()));
+        when(f.work.updatePullRequestState(f.owner, f.project.id(), "MERGED")).thenReturn(merged);
+        when(f.work.findOpen(f.owner, f.project.id())).thenReturn(Optional.empty());
+        when(f.work.activeBranchInUse(eq(f.owner), eq(f.project.id()), anyString())).thenReturn(false);
+        when(f.branches.branchHeadSha("installation-token", "erland/repo", "main")).thenReturn(mainSha);
+        when(f.branches.branchHeadSha(eq("installation-token"), eq("erland/repo"), startsWith("zip-github/work-"))).thenReturn(mainSha);
+        when(f.work.createProvisioning(eq(f.owner), eq(f.project.id()), eq("main"), anyString(), eq(mainSha)))
+                .thenAnswer(inv -> new WorkSession(newWorkId, f.project.id(), f.owner, "main", inv.getArgument(3), "PROVISIONING",
+                        null, mainSha, null, null, null, null, Instant.now(), Instant.now()));
+        when(f.work.activate(eq(f.owner), eq(f.project.id()), anyString(), eq(mainSha)))
+                .thenAnswer(inv -> new WorkSession(newWorkId, f.project.id(), f.owner, "main", inv.getArgument(2), "ACTIVE",
+                        null, mainSha, null, null, null, null, Instant.now(), Instant.now()));
+
+        var imported = f.service.createImport(f.owner, f.project.id(), null, "Erland", "erland@example.invalid");
+
+        assertNotEquals(old.branchName(), imported.baseBranch());
+        assertTrue(imported.baseBranch().startsWith("zip-github/work-"));
+        verify(f.work).updatePullRequestState(f.owner, f.project.id(), "MERGED");
+        verify(f.branches).createBranch("installation-token", "erland/repo", imported.baseBranch(), mainSha);
+    }
+
+    @Test
+    void newImportFailsClosedWhenPullRequestStateCannotBeVerified() {
+        Fixture f = fixture();
+        WorkSession open = new WorkSession(UUID.randomUUID(), f.project.id(), f.owner, "main", "zip-github/work-old", "PR_OPEN",
+                "a".repeat(40), "b".repeat(40), UUID.randomUUID(), "c".repeat(64), 42L,
+                "https://github.com/erland/repo/pull/42", Instant.now(), Instant.now());
+        when(f.work.findActive(f.owner, f.project.id())).thenReturn(Optional.of(open));
+        when(f.pullRequests.getPullRequest("installation-token", "erland/repo", 42L)).thenThrow(new IllegalStateException("GitHub unavailable"));
+
+        ApiException error = assertThrows(ApiException.class,
+                () -> f.service.createImport(f.owner, f.project.id(), null, "Erland", "erland@example.invalid"));
+
+        assertEquals(502, error.status());
+        assertEquals("WORK_PULL_REQUEST_STATUS_UNAVAILABLE", error.code());
+        verify(f.branches, never()).createBranch(anyString(), anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void deliveryIsBlockedIfPullRequestMergedAfterImportReviewStarted() {
+        Fixture f = fixture();
+        WorkSession open = new WorkSession(UUID.randomUUID(), f.project.id(), f.owner, "main", "zip-github/work-old", "PR_OPEN",
+                "a".repeat(40), "b".repeat(40), UUID.randomUUID(), "c".repeat(64), 42L,
+                "https://github.com/erland/repo/pull/42", Instant.now(), Instant.now());
+        WorkSession merged = new WorkSession(open.id(), open.projectId(), open.ownerUserId(), open.baseBranch(), open.branchName(), "MERGED",
+                open.headCommitSha(), open.baseCommitSha(), open.lastImportId(), open.lastPlanDigestSha256(), open.pullRequestNumber(), open.pullRequestUrl(), open.createdAt(), Instant.now());
+        when(f.work.findActive(f.owner, f.project.id())).thenReturn(Optional.of(open));
+        when(f.branches.branchHeadSha("installation-token", "erland/repo", open.branchName())).thenReturn(open.headCommitSha());
+        when(f.pullRequests.getPullRequest("installation-token", "erland/repo", 42L))
+                .thenReturn(new GitHubPullRequestClient.GitHubPullRequest(42L, open.pullRequestUrl(), "open", false, false, open.headCommitSha()),
+                        new GitHubPullRequestClient.GitHubPullRequest(42L, open.pullRequestUrl(), "closed", false, true, open.headCommitSha()));
+        when(f.work.updatePullRequestState(f.owner, f.project.id(), "MERGED")).thenReturn(merged);
+
+        var imported = f.service.createImport(f.owner, f.project.id(), null, "Erland", "erland@example.invalid");
+        ApiException error = assertThrows(ApiException.class,
+                () -> f.service.assertWorkPullRequestStillReusableForDelivery(f.owner, imported.id()));
+
+        assertEquals(409, error.status());
+        assertEquals("WORK_PULL_REQUEST_MERGED_REVIEW_REQUIRED", error.code());
+        verify(f.work).updatePullRequestState(f.owner, f.project.id(), "MERGED");
+    }
+
     @Test
     void mergedPullRequestClosesTheLogicalWork() {
         Fixture f = fixture();

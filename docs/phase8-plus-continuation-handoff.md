@@ -1,4 +1,4 @@
-> **Current handoff r0126 / 1.0.0-rc.78:** Phase 9 remains complete. Step 9.17 behavior is unchanged; rc.78 corrects frontend CI regressions so all delivery-path tests satisfy the explicit commit-message requirement before approval.
+> **Current handoff r0127 / 1.0.0-rc.79:** Phase 9 remains complete. Step 9.17 behavior is unchanged; rc.79 corrects the final frontend CI expectation so the PR-description helper is verified in chronological Work-commit order (oldest to newest).
 
 > **Current handoff r0124 / 1.0.0-rc.76:** Phase 9 remains complete. This revision is a CI-only correction after step 9.16: the backend imports the external-branch DTO correctly and frontend regressions match the intended PR action label and mock the new external-branch review API. Step 9.16 production behavior is unchanged.
 

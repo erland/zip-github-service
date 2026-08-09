@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0126`
+- Repository revision: `r0127`
 - Last completed step: `9.17`
 - Next step: `none` — implementation plan complete
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.17 COMPLETE`
@@ -278,4 +278,4 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 | `r0108` | 2026-08-08 | Step 9.9 | Added commit-correct revisitable Actions status/details and bounded copyable failure diagnostics on the Work page | `9.10` |
 | `r0125` | 2026-08-09 | Step 9.17 | Removed interactive generated commit/PR metadata and added editable PR description fill from current Work commit messages | `none` |
-| `r0126` | 2026-08-09 | Step 9.17 CI correction | Updated frontend regressions to honor the mandatory explicit commit-message gate introduced by step 9.17 | `none` |
+| `r0127` | 2026-08-09 | Step 9.17 CI correction | Updated frontend regressions to honor the mandatory explicit commit-message gate introduced by step 9.17 | `none` |

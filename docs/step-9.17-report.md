@@ -15,3 +15,7 @@ Backend validation rejects blank/oversized/unsupported PR metadata with `400 PUL
 ## rc.78 frontend CI correction
 
 GitHub Actions run `31323190916` exposed stale frontend regressions that still attempted approval with the newly mandatory commit-message field blank. rc.78 updates those tests to enter explicit messages where delivery is intended, asserts the blank-message gate where no delivery is intended, and strengthens `scripts/verify-release.sh`. Production behavior from step 9.17 is unchanged. See `docs/rc78-step-9.17-frontend-ci-correction.md`.
+
+## rc.79 CI correction
+
+The post-commit PR composer regression test now asserts the intended chronological (oldest-to-newest) order when `Fyll från commitmeddelanden` reverses GitHub's newest-first commit history. Production behavior is unchanged.

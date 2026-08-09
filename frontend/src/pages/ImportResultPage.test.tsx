@@ -50,12 +50,12 @@ it('shows both next-ZIP and direct finish-work actions after commit', async () =
   expect(screen.getByLabelText('Beskrivning')).toHaveValue('');
   await user.type(screen.getByLabelText('Titel'), 'Improve ZIP review flow');
   await user.click(screen.getByRole('button', { name: 'Fyll från commitmeddelanden' }));
-  expect(await screen.findByDisplayValue(/Add explicit PR metadata/)).toHaveValue('## Ingående commits\n\n- Add explicit PR metadata\n- Keep Work open after PR');
+  expect(await screen.findByDisplayValue(/Add explicit PR metadata/)).toHaveValue('## Ingående commits\n\n- Keep Work open after PR\n- Add explicit PR metadata');
   await user.type(screen.getByLabelText('Beskrivning'), '\n\nExtra context edited by the user.');
   await user.click(screen.getByRole('button', { name: 'Skapa pull request' }));
   expect(await screen.findByRole('link', { name: 'Öppna pull request' })).toHaveAttribute('href', pullRequest.pullRequestUrl);
   expect(screen.getByRole('button', { name: 'Pull request skapad' })).toBeDisabled();
-  expect(fetchMock).toHaveBeenCalledWith('/api/projects/p1/work/pull-request', expect.objectContaining({ method: 'POST', body: JSON.stringify({ title: 'Improve ZIP review flow', description: '## Ingående commits\n\n- Add explicit PR metadata\n- Keep Work open after PR\n\nExtra context edited by the user.' }) }));
+  expect(fetchMock).toHaveBeenCalledWith('/api/projects/p1/work/pull-request', expect.objectContaining({ method: 'POST', body: JSON.stringify({ title: 'Improve ZIP review flow', description: '## Ingående commits\n\n- Keep Work open after PR\n- Add explicit PR metadata\n\nExtra context edited by the user.' }) }));
 });
 
 

@@ -1,9 +1,16 @@
+## 1.0.0-rc.79 - 2026-08-09
+
+- Corrected the Step 9.17 frontend regression test to expect Work commit messages in chronological order (oldest to newest), matching the implemented PR description behavior.
+- Added a release-gate assertion for the chronological commit-message draft order.
+- No production behavior changes.
+
 ## 1.0.0-rc.78 - 2026-08-09
 
 - Corrected frontend CI regressions after step 9.17 without changing production behavior.
 - Existing import-flow tests now enter an explicit commit message before approval/delivery, matching the new mandatory metadata contract.
 - Review-state assertions now keep approval disabled while the commit message is blank, including after external-branch-change acknowledgement.
 - Added release-gate checks so the simplified import flow and delivery/retry regressions cannot silently bypass the explicit commit-message requirement again.
+
 
 ## 1.0.0-rc.77 - 2026-08-09
 

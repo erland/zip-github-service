@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.76"
+expected_version="1.0.0-rc.78"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.76 - 2026-08-09' CHANGELOG.md
+grep -q '## 1.0.0-rc.78 - 2026-08-09' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,14 +23,19 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0124`' docs/implementation-status.md
+grep -q 'Repository revision: `r0126`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'body: JSON.stringify(target)' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.16`' docs/implementation-status.md
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — 9.16 CI CORRECTION APPLIED`' docs/implementation-status.md
+grep -q 'Last completed step: `9.17`' docs/implementation-status.md
+test -s docs/rc78-step-9.17-frontend-ci-correction.md
+grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
+grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
+grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.17 COMPLETE`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -44,6 +49,14 @@ test -s docs/step-9.15-report.md
 grep -q '| `9.15` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `9.16` .*\*\*DONE\*\*' docs/implementation-status.md
 test -s docs/step-9.16-report.md
+test -s docs/step-9.17-report.md
+grep -q '| `9.17` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q "const \[commitMessage, setCommitMessage\] = useState('')" frontend/src/pages/ImportReviewPage.tsx
+test -s frontend/src/components/PullRequestComposer.tsx
+grep -q 'Fyll från commitmeddelanden' frontend/src/components/PullRequestComposer.tsx
+grep -q 'PULL_REQUEST_METADATA_INVALID' backend/src/main/java/info/isaksson/erland/zipgithub/api/ProjectResource.java backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
+grep -q 'PullRequestMetadataPolicy.requireTitle' backend/src/main/java/info/isaksson/erland/zipgithub/pullrequest/PullRequestService.java
+! grep -q 'Complete zip-github work' backend/src/main/java/info/isaksson/erland/zipgithub/pullrequest/PullRequestService.java
 test -s docs/rc76-step-9.16-ci-correction.md
 grep -q 'import info.isaksson.erland.zipgithub.api.dto.ExternalBranchChangesResponse;' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
 grep -q "name: 'Skapa pull request'" frontend/src/pages/ProjectDetailPage.test.tsx
@@ -124,7 +137,7 @@ grep -q 'Step 7.22 report' docs/step-7.22-report.md
 grep -q 'ACTIVE_IMPORT_EXISTS' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
 grep -q 'class ActiveImportInvariantTest' backend/src/test/java/info/isaksson/erland/zipgithub/application/ActiveImportInvariantTest.java
 ! grep -q 'Fortsätt arbete' frontend/src/pages/ProjectDetailPage.tsx
-grep -q 'Arbetet är klart – skapa pull request' frontend/src/pages/ImportResultPage.tsx
+grep -q 'showPullRequestComposer' frontend/src/pages/ImportResultPage.tsx
 grep -q 'Step 7.23 report' docs/step-7.23-report.md
 grep -q 'work/commits' backend/src/main/java/info/isaksson/erland/zipgithub/api/ProjectResource.java
 grep -q 'listBranchCommits' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
@@ -307,7 +320,7 @@ grep -q 'String commitMessage' backend/src/main/java/info/isaksson/erland/zipgit
 grep -q 'request.commitMessage()' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
 grep -q 'sources.approval().commitMessage()' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
 grep -q 'Commitmeddelande' frontend/src/pages/ImportReviewPage.tsx
-grep -q 'lets the user replace the suggested commit message' frontend/src/pages/ImportReviewPage.test.tsx
+grep -q 'requires the user to enter an explicit commit message' frontend/src/pages/ImportReviewPage.test.tsx
 grep -Fq '| `9.6` | Fas 9 — Shortcut/StagingImport | Retention, abuse-skydd och säkerhetsregression | **DONE**' docs/implementation-status.md
 grep -q 'Resume-safe message' backend/src/test/java/info/isaksson/erland/zipgithub/application/ImportResumeRecoveryTest.java
 

@@ -16,6 +16,7 @@ public final class PullRequestServiceSelfTest {
         GitHubPullRequestClient client = new GitHubPullRequestClient() {
             @Override public GitHubPullRequest createDraftPullRequest(String t, String r, String title, String h, String b, String body) {
                 if (!userToken.equals(t)) throw new AssertionError("PR create must use authenticated user access token");
+                if (!"Explicit PR title".equals(title) || !"Explicit PR description".equals(body)) throw new AssertionError("PR metadata must be user supplied");
                 creates[0]++;
                 return new GitHubPullRequest(42, "https://github.com/o/r/pull/42", "open", true);
             }
@@ -27,7 +28,7 @@ public final class PullRequestServiceSelfTest {
         var service = new PullRequestService(client, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
         var d = new GitDeliveryResult(UUID.randomUUID(), "o/r", "main", "zip-github/import-x",
                 "a".repeat(40), "b".repeat(40), "c".repeat(64), Instant.EPOCH);
-        var result = service.createOrReuseDraft(userToken, d);
+        var result = service.createOrReuseDraft(userToken, d, "Explicit PR title", "Explicit PR description");
         if (result.pullRequestNumber() != 42 || creates[0] != 1) throw new AssertionError();
 
         GitHubPullRequestClient existingClient = new GitHubPullRequestClient() {
@@ -40,7 +41,7 @@ public final class PullRequestServiceSelfTest {
             }
         };
         var reused = new PullRequestService(existingClient, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
-                .createOrReuseDraft(userToken, d);
+                .createOrReuseDraft(userToken, d, "Explicit PR title", "Explicit PR description");
         if (reused.pullRequestNumber() != 43) throw new AssertionError();
 
         final int[] retryCreates = {0};
@@ -58,8 +59,17 @@ public final class PullRequestServiceSelfTest {
             }
         };
         var recovered = new PullRequestService(retryClient, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
-                .createOrReuseDraft(userToken, d);
+                .createOrReuseDraft(userToken, d, "Explicit PR title", "Explicit PR description");
         if (recovered.pullRequestNumber() != 44 || retryCreates[0] != 1)
             throw new AssertionError("retry recovery must reuse the already-created PR");
+
+        try {
+            service.createOrReuseDraft(userToken, d, " ", "Description");
+            throw new AssertionError("blank PR title must be rejected");
+        } catch (IllegalArgumentException expected) { }
+        try {
+            service.createOrReuseDraft(userToken, d, "Title", " ");
+            throw new AssertionError("blank PR description must be rejected");
+        } catch (IllegalArgumentException expected) { }
     }
 }

@@ -105,8 +105,10 @@ public class ProjectResource {
         if (work.isEmpty() || work.get().headCommitSha() == null) return new WorkHistoryResponse(List.of(), true);
         try {
             String installationToken = installationTokens.createInstallationToken(project.githubInstallationId());
-            var commits = commitHistory.listBranchCommits(installationToken, project.repositoryFullName(), work.get().branchName(), 50)
+            String baseSha = work.get().baseCommitSha();
+            var commits = commitHistory.listBranchCommits(installationToken, project.repositoryFullName(), work.get().branchName(), 100)
                     .stream()
+                    .takeWhile(item -> baseSha == null || !item.sha().equalsIgnoreCase(baseSha))
                     .map(item -> new WorkCommitResponse(item.sha(), item.message(), item.authorName(), item.authorEmail(),
                             item.authoredAt(), item.htmlUrl(), false))
                     .toList();
@@ -166,7 +168,7 @@ public class ProjectResource {
     }
 
     @POST @Path("/{projectId}/work/pull-request")
-    public PullRequestResponse createWorkPullRequest(@PathParam("projectId") UUID projectId) {
+    public PullRequestResponse createWorkPullRequest(@PathParam("projectId") UUID projectId, CreatePullRequestRequest request) {
         var session = currentUser.requireSession();
         UUID ownerUserId = session.userId();
         var source = service.activeWorkSource(ownerUserId, projectId);
@@ -174,11 +176,14 @@ public class ProjectResource {
         var delivery = new GitDeliveryResult(work.lastImportId(), source.repositoryFullName(), work.baseBranch(),
                 work.branchName(), work.baseCommitSha(), work.headCommitSha(), work.lastPlanDigestSha256(), work.updatedAt());
         try {
-            var created = pullRequests.createOrReuseDraft(session.githubUserAccessToken(), delivery);
+            var created = pullRequests.createOrReuseDraft(session.githubUserAccessToken(), delivery,
+                    request == null ? null : request.title(), request == null ? null : request.description());
             service.recordWorkPullRequest(ownerUserId, projectId, created);
             return new PullRequestResponse(created.importId(), created.repositoryFullName(), created.baseBranch(),
                     created.branchName(), created.commitSha(), created.planDigestSha256(), created.pullRequestNumber(),
                     created.pullRequestUrl(), created.draft(), created.state(), "PULL_REQUEST_CREATED", created.createdAt());
+        } catch (IllegalArgumentException e) {
+            throw info.isaksson.erland.zipgithub.api.error.ApiException.badRequest("PULL_REQUEST_METADATA_INVALID", e.getMessage());
         } catch (IllegalStateException e) {
             throw info.isaksson.erland.zipgithub.api.error.ApiException.badGateway("PULL_REQUEST_CREATION_FAILED", e.getMessage());
         }

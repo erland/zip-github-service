@@ -1,6 +1,7 @@
 package info.isaksson.erland.zipgithub.api;
 
 import info.isaksson.erland.zipgithub.api.dto.ImportResponse;
+import info.isaksson.erland.zipgithub.api.dto.CreatePullRequestRequest;
 import info.isaksson.erland.zipgithub.api.dto.SourceUploadResponse;
 import info.isaksson.erland.zipgithub.api.dto.RepositorySnapshotResponse;
 import info.isaksson.erland.zipgithub.api.dto.ImportComparisonResponse;
@@ -328,7 +329,7 @@ public class ImportResource {
 
     @POST
     @Path("/{importId}/pull-request")
-    public PullRequestResponse createPullRequest(@PathParam("importId") UUID importId) {
+    public PullRequestResponse createPullRequest(@PathParam("importId") UUID importId, CreatePullRequestRequest request) {
         var session = currentUser.requireSession();
         UUID ownerUserId = session.userId();
         var existing = service.findPullRequest(ownerUserId, importId);
@@ -343,12 +344,15 @@ public class ImportResource {
                 .orElseThrow(() -> ApiException.conflict("GIT_DELIVERY_REQUIRED",
                         "Push the approved import branch before creating a pull request."));
         try {
-            var created = pullRequests.createOrReuseDraft(session.githubUserAccessToken(), delivery);
+            var created = pullRequests.createOrReuseDraft(session.githubUserAccessToken(), delivery,
+                    request == null ? null : request.title(), request == null ? null : request.description());
             var stored = service.recordPullRequest(ownerUserId, importId, created);
             return new PullRequestResponse(stored.importId(), stored.repositoryFullName(), stored.baseBranch(),
                     stored.branchName(), stored.commitSha(), stored.planDigestSha256(),
                     stored.pullRequestNumber(), stored.pullRequestUrl(), stored.draft(), stored.state(),
                     "PULL_REQUEST_CREATED", stored.createdAt());
+        } catch (IllegalArgumentException e) {
+            throw ApiException.badRequest("PULL_REQUEST_METADATA_INVALID", e.getMessage());
         } catch (IllegalStateException e) {
             throw ApiException.badGateway("PULL_REQUEST_CREATION_FAILED", e.getMessage());
         }

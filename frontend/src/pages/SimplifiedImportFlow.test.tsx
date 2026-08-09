@@ -146,6 +146,7 @@ describe('simplified import flow E2E regression', () => {
     await user.click(screen.getByRole('button', { name: /Blockerade \(1\)/ }));
     expect(screen.getByTitle('.github/workflows/changed.yml')).toBeInTheDocument();
     await user.click(screen.getByRole('checkbox', { name: 'Jag förstår risken och vill ta med denna blockerade förändring' }));
+    await user.type(screen.getByRole('textbox', { name: 'Meddelande' }), 'Apply reviewed ZIP changes');
     await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));
 
     expect(await screen.findByRole('heading', { name: 'Importresultat' })).toBeInTheDocument();

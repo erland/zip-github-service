@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
-  createWorkPullRequest,
   abandonProjectWork, archiveProject, getAvailableWorkBranches, startProjectWork, WorkBranch,
   getProject,
   getProjectImports,
@@ -15,6 +14,7 @@ import {
 import { cancelImport, dispatchImportWorkflow, getImportActionsControlOptions, ImportActionsControlOptionsResponse, ImportActionsDetailsResponse, ImportActionsStatusResponse, rerunImportWorkflowFailedJobs } from '../api/imports';
 import ActionsPanel from '../components/ActionsPanel';
 import ActionsControls from '../components/ActionsControls';
+import PullRequestComposer from '../components/PullRequestComposer';
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
@@ -26,7 +26,7 @@ export default function ProjectDetailPage() {
   const [githubHistoryAvailable, setGithubHistoryAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [finishing, setFinishing] = useState(false);
+  const [showPullRequestComposer, setShowPullRequestComposer] = useState(false);
   const [completedPullRequestUrl, setCompletedPullRequestUrl] = useState('');
   const [branches, setBranches] = useState<WorkBranch[]>([]);
   const [existingBranch, setExistingBranch] = useState('');
@@ -51,14 +51,6 @@ export default function ProjectDetailPage() {
     finally { setLoading(false); }
   }
   useEffect(() => { void load(); }, [projectId]);
-
-  async function finishWork() {
-    if (!projectId || finishing) return;
-    setFinishing(true); setError('');
-    try { const created = await createWorkPullRequest(projectId); setCompletedPullRequestUrl(created.pullRequestUrl); await load(); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : 'Pull request kunde inte skapas.'); }
-    finally { setFinishing(false); }
-  }
 
 
   async function startWork(resume: boolean) {
@@ -113,7 +105,10 @@ export default function ProjectDetailPage() {
           {!githubHistoryAvailable && <p className="status-message" role="status">GitHub-historiken kunde inte läsas just nu. Senaste lokalt kända commit visas.</p>}
           {commits.length === 0 ? <div className="empty-state"><p>Ännu ingen commit i arbetet.</p></div> : <ol className="work-commit-list">{commits.map(commit => <WorkCommitRow key={commit.sha} commit={commit} />)}</ol>}
         </section>
-        <div className="result-primary-action">{work.status !== 'PR_OPEN' && <button className="button" type="button" disabled={!work.headCommitSha || finishing || Boolean(activeImport)} onClick={finishWork}>{finishing?'Skapar pull request…':work.status === 'PR_CLOSED'?'Skapa ny pull request':'Skapa pull request'}</button>}{!abandonConfirm ? <button className="button button--secondary" type="button" disabled={Boolean(activeImport) || workBusy} onClick={()=>setAbandonConfirm(true)}>{work.status === 'PR_OPEN'?'Avsluta Work':'Avsluta utan PR'}</button> : <div><label className="checkbox-row"><input type="checkbox" checked={deleteWorkBranch} onChange={e=>setDeleteWorkBranch(e.target.checked)} /> Ta även bort Work-branchen från GitHub</label><button className="button" type="button" disabled={workBusy} onClick={()=>void abandonWork()}>{workBusy?'Avslutar…':'Bekräfta avslut'}</button><button className="button button--secondary" type="button" disabled={workBusy} onClick={()=>setAbandonConfirm(false)}>Behåll arbetet</button></div>}</div>
+        {showPullRequestComposer && projectId && work.status !== 'PR_OPEN' && <PullRequestComposer projectId={projectId}
+          onCreated={async created => { setCompletedPullRequestUrl(created.pullRequestUrl); setShowPullRequestComposer(false); await load(); }}
+          onCancel={() => setShowPullRequestComposer(false)} />}
+        <div className="result-primary-action">{work.status !== 'PR_OPEN' && !showPullRequestComposer && <button className="button" type="button" disabled={!work.headCommitSha || Boolean(activeImport)} onClick={()=>setShowPullRequestComposer(true)}>{work.status === 'PR_CLOSED'?'Skapa ny pull request':'Skapa pull request'}</button>}{!abandonConfirm ? <button className="button button--secondary" type="button" disabled={Boolean(activeImport) || workBusy} onClick={()=>setAbandonConfirm(true)}>{work.status === 'PR_OPEN'?'Avsluta Work':'Avsluta utan PR'}</button> : <div><label className="checkbox-row"><input type="checkbox" checked={deleteWorkBranch} onChange={e=>setDeleteWorkBranch(e.target.checked)} /> Ta även bort Work-branchen från GitHub</label><button className="button" type="button" disabled={workBusy} onClick={()=>void abandonWork()}>{workBusy?'Avslutar…':'Bekräfta avslut'}</button><button className="button button--secondary" type="button" disabled={workBusy} onClick={()=>setAbandonConfirm(false)}>Behåll arbetet</button></div>}</div>
       </div>}
     </section>
     <section aria-labelledby="project-actions-heading"><h2 id="project-actions-heading">Repositoryåtgärder</h2>{!archiveConfirm ? <button className="button button--secondary" type="button" disabled={Boolean(work)} onClick={()=>setArchiveConfirm(true)}>Ta bort från zip-github</button> : <div className="status-message"><p>Repositoryts zip-github-koppling tas bort från den aktiva vyn men historiken behålls. GitHub-repositoryt påverkas inte.</p><button className="button" type="button" disabled={workBusy} onClick={()=>void removeProject()}>Ja, ta bort från zip-github</button><button className="button button--secondary" type="button" onClick={()=>setArchiveConfirm(false)}>Avbryt</button></div>}</section>

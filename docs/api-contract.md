@@ -183,7 +183,7 @@ Requires an exact approved plan and a verified applied workspace. Revalidates th
 
 ### Create draft pull request
 
-`POST /api/imports/{importId}/pull-request` creates a draft pull request from the already pushed import branch to the frozen base branch. The endpoint requires the authenticated web session and uses that session's GitHub App user access token for PR lookup/create so GitHub attributes the PR to the acting user; the token is never returned to the browser. The response contains stable repository, branch, commit, plan digest, pull request number and URL metadata.
+`POST /api/imports/{importId}/pull-request` accepts `{ "title": "...", "description": "..." }` and creates a draft pull request from the already pushed import branch to the frozen base branch. Both fields are required for new interactive PR creation; invalid metadata returns `400 PULL_REQUEST_METADATA_INVALID`. The endpoint requires the authenticated web session and uses that session's GitHub App user access token for PR lookup/create so GitHub attributes the PR to the acting user; the token is never returned to the browser. The response contains stable repository, branch, commit, plan digest, pull request number and URL metadata.
 
 `GET /api/imports/{importId}/pull-request` returns the recorded metadata without contacting GitHub again.
 
@@ -278,7 +278,7 @@ Project import-history entries expose `sourceType` and nullable `sourceReference
 
 `POST /api/projects/{projectId}/imports` now enforces one active import per Work/project. If a non-terminal import already exists for the authenticated owner, the request returns `409 ACTIVE_IMPORT_EXISTS`. Terminal states (`PUSHED`, `PULL_REQUEST_CREATED`, `CANCELLED`) do not block the next import. This invariant is server-side and cannot be bypassed by calling the create-import API directly.
 
-The existing owner-scoped `POST /api/projects/{projectId}/work/pull-request` remains the single explicit Work-completion operation and may be invoked directly from the post-commit result view. Its existing idempotency and Work-head validation continue to apply.
+The owner-scoped `POST /api/projects/{projectId}/work/pull-request` accepts `{ "title": "...", "description": "..." }`. Both values are explicit user-controlled metadata and are required before a new draft PR is created. The same PR composer is available from the Work view and post-commit result view; Work lifecycle and idempotency rules remain unchanged.
 
 ## Controlled Actions writes (step 8.3)
 

@@ -1,3 +1,5 @@
+> **Current handoff r0126 / 1.0.0-rc.78:** Phase 9 remains complete. Step 9.17 behavior is unchanged; rc.78 corrects frontend CI regressions so all delivery-path tests satisfy the explicit commit-message requirement before approval.
+
 > **Current handoff r0124 / 1.0.0-rc.76:** Phase 9 remains complete. This revision is a CI-only correction after step 9.16: the backend imports the external-branch DTO correctly and frontend regressions match the intended PR action label and mock the new external-branch review API. Step 9.16 production behavior is unchanged.
 
 > **Planning refinement r0105 / 1.0.0-rc.57:** Phase 9.7 now explicitly requires the authenticated Shortcut download to expose `Skicka till zip-github.shortcut` via `Content-Disposition` and requires deployment verification that the backend runtime user can read the signed bind-mounted artifact (avoiding the observed `0600` failure). The same checks are included in the final 9.10 E2E gate. No 9.8 implementation has started.

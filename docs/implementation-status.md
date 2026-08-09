@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0129`
+- Repository revision: `r0130`
 - Last completed step: `9.18`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.18 COMPLETE — ACTIONS/CHECKS DEDUPLICATED`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.18 COMPLETE — ACTIONS/CHECKS DEDUPLICATED — CI TEST CORRECTED`
 
 ## Step ledger
 
@@ -282,3 +282,4 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0127` | 2026-08-09 | Step 9.17 CI correction | Updated frontend regressions to honor the mandatory explicit commit-message gate introduced by step 9.17 | `none` |
 | `r0128` | 2026-08-09 | Step 9.16 merge-race correction | Strict PR-state reconciliation before Work reuse and immediately before delivery prevents commits from continuing on a PR branch that GitHub has already merged | `none` |
 | `r0129` | 2026-08-09 | Step 9.18 Actions/check deduplication | Workflow jobs remain primary; matching GitHub Actions checks are suppressed while external and unmatched checks remain under Övriga kontroller | `none` |
+| `r0130` | 2026-08-09 | Step 9.18 frontend CI correction | Test assertions now match the rendered link/app-label DOM structure; production deduplication behavior is unchanged | `none` |

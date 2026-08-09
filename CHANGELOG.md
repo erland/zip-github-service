@@ -1,3 +1,8 @@
+## 1.0.0-rc.82 - 2026-08-09
+
+- Corrected the Step 9.18 frontend regression test to assert the visible CodeQL and Dependency review rows without assuming the link text and app label are one DOM text node.
+- No production behavior changes.
+
 ## 1.0.0-rc.81 - 2026-08-09
 
 - Added step 9.18 to remove duplicate GitHub Actions status presentation without changing repository workflow configuration.

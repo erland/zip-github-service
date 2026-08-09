@@ -64,8 +64,12 @@ it('deduplicates GitHub Actions checks already represented by workflow jobs and 
 
   expect(screen.getAllByText('Frontend tests and build')).toHaveLength(1);
   expect(screen.getByRole('heading', { name:'Övriga kontroller' })).toBeInTheDocument();
-  expect(screen.getByText('CodeQL · GitHub Advanced Security')).toBeInTheDocument();
-  expect(screen.getByText('Dependency review · GitHub Actions')).toBeInTheDocument();
+  const codeQlLink = screen.getByRole('link', { name:'CodeQL' });
+  expect(codeQlLink).toBeInTheDocument();
+  expect(codeQlLink.closest('li')).toHaveTextContent('GitHub Advanced Security');
+  const dependencyReviewLink = screen.getByRole('link', { name:'Dependency review' });
+  expect(dependencyReviewLink).toBeInTheDocument();
+  expect(dependencyReviewLink.closest('li')).toHaveTextContent('GitHub Actions');
   expect(screen.queryByRole('heading', { name:'Checks' })).not.toBeInTheDocument();
 });
 

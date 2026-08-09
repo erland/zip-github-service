@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.81"
+expected_version="1.0.0-rc.82"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.81 - 2026-08-09' CHANGELOG.md
+grep -q '## 1.0.0-rc.82 - 2026-08-09' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,7 +23,7 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0129`' docs/implementation-status.md
+grep -q 'Repository revision: `r0130`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -44,7 +44,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.18 COMPLETE — ACTIONS/CHECKS DEDUPLICATED`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.18 COMPLETE — ACTIONS/CHECKS DEDUPLICATED — CI TEST CORRECTED`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -65,6 +65,8 @@ grep -q 'Övriga kontroller' frontend/src/components/ActionsPanel.tsx frontend/s
 grep -q 'isDuplicateGitHubActionsCheck' frontend/src/components/ActionsPanel.tsx
 grep -q 'deduplicates GitHub Actions checks already represented by workflow jobs' frontend/src/components/ActionsPanel.test.tsx
 grep -q 'omits the extra-check section when every check is the GitHub Actions representation of a shown job' frontend/src/components/ActionsPanel.test.tsx
+grep -q "getByRole('link', { name:'CodeQL' })" frontend/src/components/ActionsPanel.test.tsx
+grep -q "closest('li')).toHaveTextContent('GitHub Advanced Security')" frontend/src/components/ActionsPanel.test.tsx
 grep -q '| `9.17` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q "const \[commitMessage, setCommitMessage\] = useState('')" frontend/src/pages/ImportReviewPage.tsx
 test -s frontend/src/components/PullRequestComposer.tsx

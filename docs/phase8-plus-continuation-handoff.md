@@ -1,3 +1,5 @@
+> **Current handoff r0128 / 1.0.0-rc.80:** Phase 9 remains complete. Step 9.16 is hardened against GitHub/database PR-state races: any new web/Shortcut import strictly reconciles PR state before reusing Work, merged PRs start a fresh Work from current default HEAD, and delivery rechecks PR state immediately before push. This closes the observed stale-database race and minimizes the remaining GitHub network TOCTOU window. Step 9.17 behavior is unchanged.
+
 > **Current handoff r0127 / 1.0.0-rc.79:** Phase 9 remains complete. Step 9.17 behavior is unchanged; rc.79 corrects the final frontend CI expectation so the PR-description helper is verified in chronological Work-commit order (oldest to newest).
 
 > **Current handoff r0124 / 1.0.0-rc.76:** Phase 9 remains complete. This revision is a CI-only correction after step 9.16: the backend imports the external-branch DTO correctly and frontend regressions match the intended PR action label and mock the new external-branch review API. Step 9.16 production behavior is unchanged.

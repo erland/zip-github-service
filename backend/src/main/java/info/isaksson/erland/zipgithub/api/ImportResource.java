@@ -298,6 +298,7 @@ public class ImportResource {
                     stored.branchName(), stored.baseCommitSha(), stored.commitSha(), stored.planDigestSha256(),
                     "PUSHED", stored.pushedAt());
         }
+        service.assertWorkPullRequestStillReusableForDelivery(ownerUserId, importId);
         var sources = service.deliverySources(ownerUserId, importId);
         var workspace = service.findAppliedWorkspace(ownerUserId, importId)
                 .orElseThrow(() -> ApiException.conflict("WORKSPACE_REQUIRED",

@@ -316,25 +316,72 @@ public class ProjectApplicationService {
         ProjectResponse project = requireOwnedProject(ownerUserId, projectId).response;
         Optional<WorkSession> current = activeWork(ownerUserId, projectId);
         if (current.isEmpty()) return Optional.empty();
+        try {
+            return refreshPullRequestState(ownerUserId, project, current.get(), false);
+        } catch (RuntimeException unavailable) {
+            return current;
+        }
+    }
+
+    /**
+     * Strict lifecycle reconciliation used before a new import can reuse a Work branch.
+     * Unlike the presentation-oriented sync above, GitHub unavailability must fail closed:
+     * continuing on an already-merged PR branch is more dangerous than asking the user to retry.
+     */
+    private WorkSession workForNewImport(UUID ownerUserId, ProjectResponse project) {
+        Optional<WorkSession> current = activeWork(ownerUserId, project.id());
+        if (current.isEmpty()) return startWork(ownerUserId, project.id(), null);
         WorkSession work = current.get();
-        if (work.pullRequestNumber() == null || githubPullRequests == null || installationTokens == null) return current;
+        if (work.pullRequestNumber() == null) return work;
+        Optional<WorkSession> refreshed = refreshPullRequestState(ownerUserId, project, work, true);
+        return refreshed.orElseGet(() -> startWork(ownerUserId, project.id(), null));
+    }
+
+    /**
+     * Re-checks PR state immediately before Git delivery so a merge that happens after review
+     * cannot receive another commit on the already-completed Work branch.
+     */
+    public void assertWorkPullRequestStillReusableForDelivery(UUID ownerUserId, UUID importId) {
+        OwnedImport owned = requireOwnedImport(ownerUserId, importId);
+        ProjectResponse project = requireOwnedProject(ownerUserId, owned.response.projectId()).response;
+        WorkSession work = requireActiveWork(ownerUserId, project.id());
+        if (!work.branchName().equals(owned.response.baseBranch()))
+            throw ApiException.conflict("IMPORT_WORK_MISMATCH", "The import no longer belongs to the active Work branch. Start a new import.");
+        if (work.pullRequestNumber() == null) return;
+        Optional<WorkSession> refreshed = refreshPullRequestState(ownerUserId, project, work, true);
+        if (refreshed.isEmpty())
+            throw ApiException.conflict("WORK_PULL_REQUEST_MERGED_REVIEW_REQUIRED",
+                    "The Work pull request was merged after this import was prepared. Cancel this import and upload the ZIP again so it is reviewed against the current default branch.");
+    }
+
+    private Optional<WorkSession> refreshPullRequestState(UUID ownerUserId, ProjectResponse project, WorkSession work, boolean strict) {
+        if (work.pullRequestNumber() == null) return Optional.of(work);
+        if (githubPullRequests == null || installationTokens == null) {
+            if (strict) throw ApiException.badGateway("WORK_PULL_REQUEST_STATUS_UNAVAILABLE",
+                    "Could not verify the Work pull request state before continuing. Retry when GitHub is available.");
+            return Optional.of(work);
+        }
         try {
             String token = installationTokens.createInstallationToken(project.githubInstallationId());
             var pr = githubPullRequests.getPullRequest(token, project.repositoryFullName(), work.pullRequestNumber());
             String next = pr.merged() ? "MERGED" : ("open".equalsIgnoreCase(pr.state()) ? "PR_OPEN" : "PR_CLOSED");
-            if (next.equals(work.status())) return current;
+            if (next.equals(work.status())) return Optional.of(work);
             WorkSession updated;
             if (persistentProjects.enabled()) {
-                updated = persistentWork.updatePullRequestState(ownerUserId, projectId, next);
+                updated = persistentWork.updatePullRequestState(ownerUserId, project.id(), next);
             } else {
                 updated = new WorkSession(work.id(), work.projectId(), work.ownerUserId(), work.baseBranch(), work.branchName(),
                         next, work.headCommitSha(), work.baseCommitSha(), work.lastImportId(), work.lastPlanDigestSha256(),
                         work.pullRequestNumber(), work.pullRequestUrl(), work.createdAt(), Instant.now());
-                workByProject.put(projectId, updated);
+                workByProject.put(project.id(), updated);
             }
             return "MERGED".equals(next) ? Optional.empty() : Optional.of(updated);
+        } catch (ApiException e) {
+            throw e;
         } catch (RuntimeException unavailable) {
-            return current;
+            if (strict) throw ApiException.badGateway("WORK_PULL_REQUEST_STATUS_UNAVAILABLE",
+                    "Could not verify the Work pull request state before continuing. Retry when GitHub is available.");
+            return Optional.of(work);
         }
     }
 
@@ -371,7 +418,7 @@ public class ProjectApplicationService {
         ProjectResponse project = requireOwnedProject(ownerUserId, projectId).response;
         if (!project.active()) throw ApiException.conflict("PROJECT_INACTIVE", "The project is inactive.");
         assertNoActiveImport(ownerUserId, projectId);
-        WorkSession work = activeWork(ownerUserId, projectId).orElseGet(() -> startWork(ownerUserId, projectId, null));
+        WorkSession work = workForNewImport(ownerUserId, project);
         ensureActiveWorkBranch(ownerUserId, project, work);
         String branch = work.branchName();
         String requestedName = request == null ? null : request.authorName();

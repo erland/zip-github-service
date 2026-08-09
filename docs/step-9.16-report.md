@@ -55,3 +55,8 @@ None.
 Repository structure/security/source/release/phase-9 verification scripts are run before packaging. All TypeScript/TSX source files are parser/transpiler checked with the installed TypeScript compiler. Full Maven compilation/tests cannot run in this sandbox because the Maven wrapper cannot resolve `repo.maven.apache.org`; GitHub CI remains the dependency-backed validation environment.
 
 The existing stale Work-branch delivery regression remains part of the release gate and was not weakened.
+
+
+## rc.80 race correction
+
+Production use exposed a synchronization race: GitHub could already report the Work PR as merged while the database still held `PR_OPEN`, because display synchronization is best-effort. rc.80 adds a strict PR-state preflight before every new web/Shortcut import that would reuse a Work with PR metadata. A merged PR is persisted as `MERGED` and a fresh Work is provisioned from current default HEAD. The same strict check is repeated immediately before Git delivery; a merge after review invalidates delivery and requires a new import/review. GitHub status lookup failure fails closed for these mutating operations. See `docs/rc80-step-9.16-merged-pr-race-correction.md`.

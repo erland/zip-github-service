@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.80"
+expected_version="1.0.0-rc.81"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.79 - 2026-08-09' CHANGELOG.md
+grep -q '## 1.0.0-rc.81 - 2026-08-09' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,13 +23,13 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0128`' docs/implementation-status.md
+grep -q 'Repository revision: `r0129`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'body: JSON.stringify(target)' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.17`' docs/implementation-status.md
+grep -q 'Last completed step: `9.18`' docs/implementation-status.md
 test -s docs/rc78-step-9.17-frontend-ci-correction.md
 test -s docs/rc79-step-9.17-commit-order-ci-correction.md
 test -s docs/rc80-step-9.16-merged-pr-race-correction.md
@@ -44,7 +44,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.17 COMPLETE — 9.16 MERGE-RACE HARDENED`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.18 COMPLETE — ACTIONS/CHECKS DEDUPLICATED`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -59,6 +59,12 @@ grep -q '| `9.15` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `9.16` .*\*\*DONE\*\*' docs/implementation-status.md
 test -s docs/step-9.16-report.md
 test -s docs/step-9.17-report.md
+test -s docs/step-9.18-report.md
+grep -q '| `9.18` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q 'Övriga kontroller' frontend/src/components/ActionsPanel.tsx frontend/src/components/ActionsPanel.test.tsx
+grep -q 'isDuplicateGitHubActionsCheck' frontend/src/components/ActionsPanel.tsx
+grep -q 'deduplicates GitHub Actions checks already represented by workflow jobs' frontend/src/components/ActionsPanel.test.tsx
+grep -q 'omits the extra-check section when every check is the GitHub Actions representation of a shown job' frontend/src/components/ActionsPanel.test.tsx
 grep -q '| `9.17` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q "const \[commitMessage, setCommitMessage\] = useState('')" frontend/src/pages/ImportReviewPage.tsx
 test -s frontend/src/components/PullRequestComposer.tsx

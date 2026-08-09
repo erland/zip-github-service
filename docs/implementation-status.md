@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0128`
-- Last completed step: `9.17`
+- Repository revision: `r0129`
+- Last completed step: `9.18`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.17 COMPLETE — 9.16 MERGE-RACE HARDENED`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.18 COMPLETE — ACTIONS/CHECKS DEDUPLICATED`
 
 ## Step ledger
 
@@ -102,6 +102,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.15` | Fas 9 — GitHub attribution | Draft PR skapad på uppdrag av autentiserad GitHub-användare | **DONE** | 2026-08-09 | `docs/step-9.15-report.md`, `docs/pull-request-and-result-metadata.md` |
 | `9.16` | Fas 9 — PR-livscykel | Fortsatt Work under öppen PR, remote HEAD och extern-ändringsvarning | **DONE** | 2026-08-09 | `docs/step-9.16-report.md` |
 | `9.17` | Fas 9 — produktionshärdning och arbetsflöde | Explicit commit- och PR-metadata | **DONE** | 2026-08-09 | `docs/step-9.17-report.md` |
+| `9.18` | Fas 9 — Actions presentation | Deduplicerad workflow-jobb/check-presentation | **DONE** | 2026-08-09 | `docs/step-9.18-report.md` |
 
 ## Revision history
 
@@ -280,3 +281,4 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0125` | 2026-08-09 | Step 9.17 | Removed interactive generated commit/PR metadata and added editable PR description fill from current Work commit messages | `none` |
 | `r0127` | 2026-08-09 | Step 9.17 CI correction | Updated frontend regressions to honor the mandatory explicit commit-message gate introduced by step 9.17 | `none` |
 | `r0128` | 2026-08-09 | Step 9.16 merge-race correction | Strict PR-state reconciliation before Work reuse and immediately before delivery prevents commits from continuing on a PR branch that GitHub has already merged | `none` |
+| `r0129` | 2026-08-09 | Step 9.18 Actions/check deduplication | Workflow jobs remain primary; matching GitHub Actions checks are suppressed while external and unmatched checks remain under Övriga kontroller | `none` |

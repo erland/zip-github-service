@@ -1,3 +1,5 @@
+> **Current handoff r0129 / 1.0.0-rc.81:** Phase 9 remains complete. Step 9.18 deduplicates GitHub Actions presentation: workflow runs/jobs remain primary, matching GitHub Actions checks are suppressed, and only external or unmatched checks remain under `Övriga kontroller`. No GitHub workflow configuration, backend Actions collection, 9.16 lifecycle behavior or 9.17 metadata behavior changed.
+
 > **Current handoff r0128 / 1.0.0-rc.80:** Phase 9 remains complete. Step 9.16 is hardened against GitHub/database PR-state races: any new web/Shortcut import strictly reconciles PR state before reusing Work, merged PRs start a fresh Work from current default HEAD, and delivery rechecks PR state immediately before push. This closes the observed stale-database race and minimizes the remaining GitHub network TOCTOU window. Step 9.17 behavior is unchanged.
 
 > **Current handoff r0127 / 1.0.0-rc.79:** Phase 9 remains complete. Step 9.17 behavior is unchanged; rc.79 corrects the final frontend CI expectation so the PR-description helper is verified in chronological Work-commit order (oldest to newest).

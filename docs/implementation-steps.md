@@ -735,3 +735,15 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 
 **Kvalitetsgrind för 9.17:** inga nya commits eller PR:er får skapas med zip-github-genererad standardtext i det interaktiva flödet. Commitmeddelande, PR-titel och PR-beskrivning kräver användarens explicita innehåll; PR-beskrivningen kan frivilligt fyllas från de faktiska commitmeddelandena i aktuellt Work men förblir helt redigerbar före skapandet.
 
+## Steg 9.18 - Deduplicerad GitHub Actions/check-presentation
+
+- Behåll workflow-runs och deras jobs som primär presentation av GitHub Actions-status; repositoryts workflow-konfiguration ska inte ändras för att lösa UI-dubbleringen.
+- Innan den sekundära check-listan renderas ska zip-github identifiera checks från appen `GitHub Actions` som redan motsvaras av ett visat workflow-jobb för samma commit.
+- Matchningen ska vara konservativ och baseras på normaliserat jobb/check-namn. En check får endast döljas när appen är GitHub Actions och motsvarande jobb redan visas; osäkra eller omatchade checks ska aldrig tappas.
+- Checks från andra appar, till exempel CodeQL eller externa CI-/security-appar, ska fortsätta visas. GitHub Actions-checks utan motsvarande laddat workflow-jobb ska också visas.
+- Den sekundära rubriken ska heta `Övriga kontroller` och hela sektionen ska utelämnas när samtliga checks redan representeras av visade workflow-jobs.
+- Behåll sammanvägd commitstatus, workflowstatus, jobbstatus, artifacts, feldiagnostik, loggar och rerun-/dispatchfunktioner oförändrade.
+- Lägg regression för dels ett normalt CI-jobb som annars skulle visas dubbelt, dels blandade checks där externa/omatchade kontroller måste ligga kvar.
+
+**Kvalitetsgrind för 9.18:** samma GitHub Actions-jobb visas högst en gång i Actions-panelen när dess workflow-jobb finns tillgängligt. Ingen check från annan app eller omatchad GitHub Actions-check får försvinna, och `Övriga kontroller` visas endast när det faktiskt finns ytterligare kontroller.
+

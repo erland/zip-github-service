@@ -656,6 +656,17 @@ Fas 9 ska samtidigt täppa till metadataförlust som kan uppstå i ZIP→GitHub-
 
 **Kvalitetsgrind för 9.14:** produktion kan deployas manuellt från GitHub med en immutable version utan att använda operatörens personliga SSH-konto. Deployment-nyckeln kan endast starta den validerade deployvägen, servercheckouten uppdateras utan root, Docker/root-behörighet är kapslad bakom root-ägt script, parallella deploys förhindras och ett fel lämnar tydlig diagnostik utan riskabel automatisk rollback.
 
+## Steg 9.15 - Användarattribuerad pull request
+
+- Behåll Git commit author/committer enligt den autentiserade användaridentitet som låses vid Import-skapande; installation token får fortsatt användas som transportcredential för Git push.
+- Skapa och återanvänd draft pull requests med den autentiserade GitHub App-användarens user access token i stället för en installation token, så GitHub attribuerar PR:n till den användare som utförde åtgärden.
+- Använd samma user access token för idempotent PR-lookup före create och recovery-lookup efter osäkert create-svar.
+- Browsern får fortfarande aldrig se GitHub user access token; token hämtas endast från den server-side webbsession som redan krävs av endpointen.
+- Övrig repositoryautomation, Actions/status och Git transport ska fortsatt använda kortlivade installation tokens där användarattribution inte är operationens syfte.
+- Lägg regression som verifierar att PR lookup/create/retry får exakt den autentiserade user access token och att PullRequestService inte längre skapar en installation token.
+
+**Kvalitetsgrind för 9.15:** en draft PR som initieras av en inloggad användare skapas via GitHub user-to-server-auth och attribueras därför till användaren; commitens author/committer är fortsatt användarens låsta Git-identitet; inga GitHub credentials exponeras för frontend och serverns övriga installation-tokenmodell ändras inte.
+
 # Framtida backlog - AI- och integrationsyta
 
 Det tidigare steg 8.4 flyttas uttryckligen utanför den aktiva fasplanen. Det ska omprövas först efter verklig användning av Actions- och Shortcut-flödena.

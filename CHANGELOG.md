@@ -1,3 +1,10 @@
+## 1.0.0-rc.74 - 2026-08-09
+
+- Added step 9.15 to attribute draft pull request creation to the authenticated GitHub user instead of `zip-github-service[bot]`.
+- Draft PR lookup/create/retry now uses the session's GitHub App user access token; repository push and other server-side automation continue to use short-lived installation tokens.
+- Confirmed commit author/committer identity was already locked to the authenticated user's GitHub identity (or explicit alternate author) and did not require a behavior change.
+- Added regression coverage that rejects PR creation paths using any token other than the authenticated user access token.
+
 ## 1.0.0-rc.73 - 2026-08-09
 
 - Added step 9.14 with an explicit manual GitHub Actions production-deployment workflow using an immutable image version.

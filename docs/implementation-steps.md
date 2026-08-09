@@ -667,6 +667,22 @@ Fas 9 ska samtidigt täppa till metadataförlust som kan uppstå i ZIP→GitHub-
 
 **Kvalitetsgrind för 9.15:** en draft PR som initieras av en inloggad användare skapas via GitHub user-to-server-auth och attribueras därför till användaren; commitens author/committer är fortsatt användarens låsta Git-identitet; inga GitHub credentials exponeras för frontend och serverns övriga installation-tokenmodell ändras inte.
 
+## Steg 9.16 - PR-livscykel, fortsatt Work och externa branchändringar
+
+- Ändra Work-livscykeln så skapad PR inte avslutar arbetet. Ett Work med öppen PR ska vara fortsatt aktivt och kunna ta emot fler ZIP-importer/commits på samma Work-branch; GitHub uppdaterar då samma PR automatiskt.
+- Modellera minst `ACTIVE`, `PR_OPEN`, `PR_CLOSED`, `MERGED` och `ABANDONED` som tydliga Work-lägen. Migrera den senaste äldre `PULL_REQUEST_CREATED`-Work per repository/projekt till `PR_OPEN` utan att återöppna äldre historiska Work. En mergad PR avslutar Work automatiskt; en stängd PR utan merge ska inte radera arbetet utan ge användaren möjlighet att fortsätta och skapa en ny PR eller avsluta Work.
+- Läs aktuell PR-state från GitHub när Work öppnas. zip-github ska observera open/closed/merged men lämna reviewkonversation, approvals, inline-kommentarer och merge-metod till GitHubs gränssnitt.
+- När en öppen/stängd PR-Work får en ny ZIP ska repositorysnapshoten fortsatt låsas mot aktuell remote Work-branch HEAD. Nya commits pushas på samma branch och därmed till samma öppna PR.
+- Gör remote Work HEAD till källa för aktuell Actions/check-status. Om GitHub-branchen har commits efter zip-githubs senast kända delivery ska Work-vyn tydligt visa att branchen ändrats externt och Actions ska avse remote HEAD, inte den äldre lokalt kända SHA:n.
+- För varje ny review efter en extern branchändring, jämför zip-githubs senast kända Work-head med reviewns låsta remote HEAD via GitHub compare och samla berörda sökvägar.
+- Markera i reviewn vilka ZIP-förändringar som överlappar dessa externa GitHub-ändringar, inklusive filer som ZIP:en skulle ta bort. Visa ett särskilt `Externa ändringar`-filter och en tydlig varning.
+- Extern branchändring före review ska inte vara en policyblockerare. Om användaren väljer en överlappande sökväg ska UI:t kräva ett uttryckligt bekräftande innan godkännande/commit.
+- Behåll befintlig SHA-bound stale-plan-kontroll vid delivery: ändras remote branch efter att review/snapshot låsts måste delivery stoppas och en ny review krävas.
+- Efter merge ska nästa Work starta från aktuell default branch. Försök inte hålla samma Work levande över en merge eller implementera partial merge/cherry-pick i zip-github; sådana avancerade Git-operationer lämnas till GitHub.
+- Lägg regression för fortsatt ZIP-import under `PR_OPEN`, PR-state open/closed/merged, remote Actions HEAD, extern branchvarning/överlappsfilter/bekräftelse och bevarad stale-plan delivery guard.
+
+**Kvalitetsgrind för 9.16:** en skapad PR avslutar inte längre Work. Nya ZIP:ar på en öppen PR granskas mot aktuell remote Work HEAD och uppdaterar samma branch/PR. GitHub-side commits blir synliga i Work/Actions; en gammal ZIP som skulle ersätta sådana ändringar flaggas per sökväg och kräver användarbekräftelse, medan en branchändring efter låst review fortfarande stoppas av SHA-invarianten. Merge avslutar Work och nästa Work utgår från ny default-branch HEAD.
+
 # Framtida backlog - AI- och integrationsyta
 
 Det tidigare steg 8.4 flyttas uttryckligen utanför den aktiva fasplanen. Det ska omprövas först efter verklig användning av Actions- och Shortcut-flödena.

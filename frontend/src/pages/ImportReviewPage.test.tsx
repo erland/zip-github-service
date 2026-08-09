@@ -88,6 +88,26 @@ describe('ImportReviewPage', () => {
     expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeEnabled();
   });
 
+
+  it('warns when the ZIP overlaps changes made on the Work branch after the last zip-github commit', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (!init?.method && url.endsWith('/plan')) return response(plan);
+      if (!init?.method && url.endsWith('/external-branch-changes')) return response({ branchChanged: true, previousKnownHeadSha: '1'.repeat(40), reviewBaseHeadSha: '2'.repeat(40), changedPaths: ['README.md', 'server-only.txt'] });
+      if (!init?.method && (url.endsWith('/selection') || url.endsWith('/plan/approval') || url.endsWith('/delivery'))) return response({}, 404);
+      return response({});
+    }));
+    renderPage();
+    expect(await screen.findByLabelText('GitHub-branchen har ändrats')).toHaveTextContent('1 fil');
+    expect(screen.getByText('Ändrad på GitHub')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeDisabled();
+    await user.click(screen.getByRole('checkbox', { name: /Jag förstår att 1 vald sökväg ersätter ändringar/ }));
+    expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: /Externa ändringar \(1\)/ }));
+    expect(screen.getByText('README.md')).toBeInTheDocument();
+    expect(screen.queryByTitle('docs/new.md')).not.toBeInTheDocument();
+  });
   it('presents gitignored ZIP files as informational warnings and keeps filters as the only buttons', async () => {
     const ignoredPlan = { ...plan, ignored: 2, warnings: 2, entries: [...plan.entries,
       { path: 'shortcut/releases/zip-github.shortcut', status: 'IGNORED', comparisonStatus: 'IGNORED', severity: 'WARNING', blockerType: 'NONE', policyCode: 'GITIGNORE_IGNORED', message: 'Filen matchar repositoryts .gitignore och kommer inte att tas med i Git-committen.', archiveSizeBytes: 23821, archiveSha256: '7'.repeat(64), repositorySizeBytes: null, repositorySha256: null, textCandidate: false }] };

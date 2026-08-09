@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.74"
+expected_version="1.0.0-rc.75"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.74 - 2026-08-09' CHANGELOG.md
+grep -q '## 1.0.0-rc.75 - 2026-08-09' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,14 +23,14 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0122`' docs/implementation-status.md
+grep -q 'Repository revision: `r0123`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'body: JSON.stringify(target)' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.15`' docs/implementation-status.md
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — USER-ATTRIBUTED PULL REQUESTS APPLIED`' docs/implementation-status.md
+grep -q 'Last completed step: `9.16`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — PR LIFECYCLE AND CONTINUED WORK APPLIED`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -42,6 +42,19 @@ test -s docs/step-9.13-report.md
 
 test -s docs/step-9.15-report.md
 grep -q '| `9.15` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `9.16` .*\*\*DONE\*\*' docs/implementation-status.md
+test -s docs/step-9.16-report.md
+test -s backend/src/main/resources/db/migration/V14__pull_request_work_lifecycle.sql
+grep -q "status='PR_OPEN'" backend/src/main/java/info/isaksson/erland/zipgithub/persistence/WorkPersistenceStore.java
+grep -q "'PR_OPEN','PR_CLOSED'" backend/src/main/java/info/isaksson/erland/zipgithub/persistence/WorkPersistenceStore.java
+grep -q 'syncWorkPullRequestState' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java backend/src/main/java/info/isaksson/erland/zipgithub/api/ProjectResource.java
+grep -q 'changedPaths' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubBranchClient.java backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'external-branch-changes' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java frontend/src/api/imports.ts
+grep -q 'Externa ändringar' frontend/src/pages/ImportReviewPage.tsx
+grep -q 'Ändrad på GitHub' frontend/src/components/ReviewFileTree.tsx
+grep -q 'Work-branchen har ändrats på GitHub' frontend/src/pages/ProjectDetailPage.tsx
+grep -q 'remoteHeadCommitSha' backend/src/main/java/info/isaksson/erland/zipgithub/api/dto/WorkSessionResponse.java frontend/src/api/projects.ts
+grep -q 'stale base branch was accepted' backend/src/test/java/info/isaksson/erland/zipgithub/delivery/GitDeliveryServiceSelfTest.java
 grep -q 'createOrReuseDraft(String userAccessToken' backend/src/main/java/info/isaksson/erland/zipgithub/pullrequest/PullRequestService.java
 ! grep -q 'GitHubInstallationTokenProvider' backend/src/main/java/info/isaksson/erland/zipgithub/pullrequest/PullRequestService.java
 grep -q 'session.githubUserAccessToken(), delivery' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java backend/src/main/java/info/isaksson/erland/zipgithub/api/ProjectResource.java
@@ -176,7 +189,7 @@ grep -q 'GIT_COMMITTER_NAME' backend/src/main/java/info/isaksson/erland/zipgithu
 grep -q 'authorMode' frontend/src/pages/NewImportPage.tsx
 grep -q 'CREATE TABLE work_session' backend/src/main/resources/db/migration/V6__work_sessions.sql
 grep -q 'zip-github/work-' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
-grep -q 'Arbetet är klart' frontend/src/pages/ProjectDetailPage.tsx
+grep -q 'Skapa pull request' frontend/src/pages/ProjectDetailPage.tsx
 ! grep -q 'ZIP_GITHUB_GIT_AUTHOR_' .env.example docker-compose.yml backend/src/main/resources/application.properties
 
 bash ./scripts/verify-structure.sh
@@ -335,7 +348,7 @@ grep -q 'GITIGNORE_IGNORED' backend/src/main/java/info/isaksson/erland/zipgithub
 ! grep -q 'SIGNED_SHORTCUT_SECRET_ARTIFACT' backend/src/main/java/info/isaksson/erland/zipgithub/policy/ImportPolicyService.java
 grep -q 'GitIgnoreMatcher' backend/src/main/java/info/isaksson/erland/zipgithub/comparison/ImportComparisonService.java
 grep -q 'gitIgnoreFiles' backend/src/main/java/info/isaksson/erland/zipgithub/snapshot/RepositorySnapshot.java
-grep -Fq '{candidate.label} ({filterCount(plan, candidate.id)})' frontend/src/pages/ImportReviewPage.tsx
+grep -Fq '{candidate.label} ({filterCount(plan, candidate.id, externalChangedPaths)})' frontend/src/pages/ImportReviewPage.tsx
 grep -q 'ZIP_GITHUB_SHORTCUT_VERSION:-1' docker-compose.yml
 grep -q 'ZIP_GITHUB_SHORTCUT_GENERATION:-g1' docker-compose.yml
 grep -Fq '| `9.7` | Fas 9 — Shortcut/StagingImport | iOS Shortcut referensklient och installationsguide | **DONE**' docs/implementation-status.md

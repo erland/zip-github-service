@@ -1,3 +1,12 @@
+## 1.0.0-rc.75 - 2026-08-09
+
+- Added step 9.16: a pull request no longer terminates Work; `PR_OPEN` and `PR_CLOSED` remain continuable until merge/abandon.
+- Added Flyway migration V14 to migrate only the latest historical `PULL_REQUEST_CREATED` Work row per project to `PR_OPEN` and include PR states in the one-open-Work invariant.
+- Work status now refreshes the PR from GitHub; merged PRs close the logical Work while closed-unmerged PRs can be continued or replaced with a new PR.
+- Work Actions/checks now follow the current remote Work-branch HEAD so GitHub-side commits and their CI results are visible.
+- Added GitHub compare-based external branch change detection and review warnings/filtering for ZIP paths that would replace later GitHub-side changes.
+- Selected overlapping external changes require an explicit UI acknowledgement before commit, while existing SHA-bound stale-plan delivery remains the hard guard against post-review branch movement.
+
 ## 1.0.0-rc.74 - 2026-08-09
 
 - Added step 9.15 to attribute draft pull request creation to the authenticated GitHub user instead of `zip-github-service[bot]`.

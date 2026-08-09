@@ -81,7 +81,8 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
                     .build();
             JsonNode json = sendJson(request);
             return new GitHubPullRequest(json.path("number").asLong(), json.path("html_url").asText(),
-                    json.path("state").asText(), json.path("draft").asBoolean());
+                    json.path("state").asText(), json.path("draft").asBoolean(), json.path("merged").asBoolean(false),
+                    json.path("head").path("sha").asText(null));
         } catch (Exception e) {
             throw new IllegalStateException("Could not create draft pull request", e);
         }
@@ -98,11 +99,25 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
                     + "/pulls?state=open&head=" + head + "&base=" + base + "&per_page=10", accessToken);
             for (JsonNode json : root) {
                 return Optional.of(new GitHubPullRequest(json.path("number").asLong(), json.path("html_url").asText(),
-                        json.path("state").asText(), json.path("draft").asBoolean()));
+                        json.path("state").asText(), json.path("draft").asBoolean(), json.path("merged").asBoolean(false),
+                        json.path("head").path("sha").asText(null)));
             }
             return Optional.empty();
         } catch (Exception e) {
             throw new IllegalStateException("Could not search for an existing pull request", e);
+        }
+    }
+
+
+    @Override
+    public GitHubPullRequest getPullRequest(String accessToken, String repositoryFullName, long pullRequestNumber) {
+        try {
+            JsonNode json = getJson("https://api.github.com/repos/" + repositoryFullName + "/pulls/" + pullRequestNumber, accessToken);
+            return new GitHubPullRequest(json.path("number").asLong(), json.path("html_url").asText(),
+                    json.path("state").asText(), json.path("draft").asBoolean(), json.path("merged").asBoolean(false),
+                    json.path("head").path("sha").asText(null));
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not read pull request", e);
         }
     }
 
@@ -409,6 +424,24 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
             return sha.toLowerCase();
         } catch (Exception e) {
             throw new IllegalStateException("Could not resolve repository branch", e);
+        }
+    }
+
+    @Override
+    public java.util.Set<String> changedPaths(String installationToken, String repositoryFullName, String baseCommitSha, String headCommitSha) {
+        if (baseCommitSha == null || headCommitSha == null || baseCommitSha.equalsIgnoreCase(headCommitSha)) return java.util.Set.of();
+        try {
+            JsonNode root = getJson("https://api.github.com/repos/" + repositoryFullName + "/compare/" + baseCommitSha + "..." + headCommitSha + "?per_page=100", installationToken);
+            java.util.Set<String> paths = new java.util.TreeSet<>();
+            for (JsonNode file : root.path("files")) {
+                String name = file.path("filename").asText(null);
+                if (name != null && !name.isBlank()) paths.add(name);
+                String previous = file.path("previous_filename").asText(null);
+                if (previous != null && !previous.isBlank()) paths.add(previous);
+            }
+            return java.util.Set.copyOf(paths);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not compare repository commits", e);
         }
     }
 

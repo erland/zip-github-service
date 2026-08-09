@@ -199,6 +199,14 @@ public class ImportResource {
     }
 
     @GET
+    @Path("/{importId}/external-branch-changes")
+    public ExternalBranchChangesResponse getExternalBranchChanges(@PathParam("importId") UUID importId) {
+        var changes = service.externalBranchChanges(currentUser.requireUserId(), importId);
+        return new ExternalBranchChangesResponse(changes.branchChanged(), changes.previousKnownHeadSha(),
+                changes.reviewBaseHeadSha(), changes.changedPaths().stream().sorted().toList());
+    }
+
+    @GET
     @Path("/{importId}/plan")
     public ImportPlanResponse getPlan(@PathParam("importId") UUID importId) {
         return toPlanResponse(service.getImportPlan(currentUser.requireUserId(), importId));

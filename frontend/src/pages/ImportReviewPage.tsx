@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { approveImportPlan, cancelImport, createImportSelection, deliverImport, findDelivery, getImportPlan, getImportPlanApproval, getImportSelection, ImportPlanApprovalResponse, ImportPlanEntry, ImportPlanResponse, prepareImportWorkspace } from '../api/imports';
+import { approveImportPlan, cancelImport, createImportSelection, deliverImport, findDelivery, getExternalBranchChanges, getImportPlan, getImportPlanApproval, getImportSelection, ExternalBranchChangesResponse, ImportPlanApprovalResponse, ImportPlanEntry, ImportPlanResponse, prepareImportWorkspace } from '../api/imports';
 import { defaultSelectedPaths, ReviewFileTree } from '../components/ReviewFileTree';
 
-type ReviewFilter = 'CHANGES' | 'BLOCKED' | 'WARNINGS' | 'UNCHANGED' | 'IGNORED' | 'ALL';
+type ReviewFilter = 'CHANGES' | 'EXTERNAL' | 'BLOCKED' | 'WARNINGS' | 'UNCHANGED' | 'IGNORED' | 'ALL';
 
 const filters: Array<{ id: ReviewFilter; label: string }> = [
   { id: 'CHANGES', label: 'Förändringar' },
+  { id: 'EXTERNAL', label: 'Externa ändringar' },
   { id: 'BLOCKED', label: 'Blockerade' },
   { id: 'WARNINGS', label: 'Varningar' },
   { id: 'UNCHANGED', label: 'Oförändrade' },
@@ -30,6 +31,8 @@ export default function ImportReviewPage() {
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [commitMessage, setCommitMessage] = useState(() => importId ? `Apply approved ZIP import ${importId}` : '');
+  const [externalChanges, setExternalChanges] = useState<ExternalBranchChangesResponse | null>(null);
+  const [externalChangesAcknowledged, setExternalChangesAcknowledged] = useState(false);
 
   useEffect(() => {
     if (!importId) {
@@ -40,9 +43,10 @@ export default function ImportReviewPage() {
     let active = true;
     async function loadReviewState() {
       try {
-        const loadedPlan = await getImportPlan(importId!);
+        const [loadedPlan, loadedExternalChanges] = await Promise.all([getImportPlan(importId!), getExternalBranchChanges(importId!)]);
         if (!active) return;
         setPlan(loadedPlan);
+        setExternalChanges(loadedExternalChanges);
 
         const [existingSelection, existingApproval, existingDelivery] = await Promise.all([
           getImportSelection(importId!),
@@ -77,10 +81,13 @@ export default function ImportReviewPage() {
     return () => { active = false; };
   }, [importId, navigate, projectId]);
 
-  const visibleEntries = useMemo(() => plan?.entries.filter((entry) => matchesFilter(entry, filter)) ?? [], [plan, filter]);
+  const externalPathSet = useMemo(() => new Set(externalChanges?.changedPaths ?? []), [externalChanges]);
+  const overlappingExternalPaths = useMemo(() => new Set((plan?.entries ?? []).filter((entry) => externalPathSet.has(entry.path) && entry.status !== 'UNCHANGED' && entry.status !== 'IGNORED').map((entry) => entry.path)), [plan, externalPathSet]);
+  const visibleEntries = useMemo(() => plan?.entries.filter((entry) => matchesFilter(entry, filter, overlappingExternalPaths)) ?? [], [plan, filter, overlappingExternalPaths]);
 
   async function approveAndDeliver() {
-    if (!importId || !projectId || !plan || approving || delivering || selectedPaths.size === 0) return;
+    const selectedExternalOverlap = [...selectedPaths].some((path) => overlappingExternalPaths.has(path));
+    if (!importId || !projectId || !plan || approving || delivering || selectedPaths.size === 0 || (selectedExternalOverlap && !externalChangesAcknowledged)) return;
     setApproving(true);
     setDelivering(false);
     setError('');
@@ -165,14 +172,14 @@ export default function ImportReviewPage() {
         overridePaths={overridePaths} setOverridePaths={setOverridePaths} selectionLocked={Boolean(selectionDigest)}
         cancelConfirm={cancelConfirm} setCancelConfirm={setCancelConfirm} cancelling={cancelling}
         confirmCancelImport={confirmCancelImport}
-        commitMessage={commitMessage} setCommitMessage={setCommitMessage} />}
+        commitMessage={commitMessage} setCommitMessage={setCommitMessage} externalChanges={externalChanges} externalChangedPaths={overlappingExternalPaths} externalChangesAcknowledged={externalChangesAcknowledged} setExternalChangesAcknowledged={setExternalChangesAcknowledged} />}
     </section>
   );
 }
 
 function ReviewContent({ plan, filter, setFilter, entries, approving, approval, approveAndDeliver, delivering, retryApprovedDelivery,
   selectedPaths, setSelectedPaths, overridePaths, setOverridePaths, selectionLocked, cancelConfirm, setCancelConfirm, cancelling, confirmCancelImport,
-  commitMessage, setCommitMessage }: {
+  commitMessage, setCommitMessage, externalChanges, externalChangedPaths, externalChangesAcknowledged, setExternalChangesAcknowledged }: {
   plan: ImportPlanResponse;
   filter: ReviewFilter;
   setFilter: (filter: ReviewFilter) => void;
@@ -193,9 +200,22 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
   confirmCancelImport: () => void;
   commitMessage: string;
   setCommitMessage: (value: string) => void;
+  externalChanges: ExternalBranchChangesResponse | null;
+  externalChangedPaths: ReadonlySet<string>;
+  externalChangesAcknowledged: boolean;
+  setExternalChangesAcknowledged: (value: boolean) => void;
 }) {
+  const selectedExternalOverlap = [...selectedPaths].filter((path) => externalChangedPaths.has(path));
   return (
     <>
+      {externalChanges?.branchChanged && <aside className="status-message status-message--warning" aria-label="GitHub-branchen har ändrats">
+        <strong>Work-branchen har ändrats på GitHub sedan zip-githubs senast kända commit.</strong>
+        <p>{externalChangedPaths.size > 0
+          ? `${externalChangedPaths.size} fil${externalChangedPaths.size === 1 ? '' : 'er'} som ändrades externt skulle också ändras eller tas bort av den här ZIP-filen. Kontrollera dem särskilt innan du godkänner.`
+          : 'Den här ZIP-filen skriver inte över någon av de externt ändrade sökvägar som GitHub kunde identifiera.'}</p>
+        {externalChanges.previousKnownHeadSha && externalChanges.reviewBaseHeadSha && <p><code>{externalChanges.previousKnownHeadSha.slice(0,12)}</code> → <code>{externalChanges.reviewBaseHeadSha.slice(0,12)}</code></p>}
+      </aside>}
+
       <div className={`review-decision ${selectedPaths.size > 0 ? 'review-decision--ready' : 'review-decision--blocked'}`} role="status">
         <div>
           <strong>{selectedPaths.size > 0 ? 'Urvalet kan godkännas' : 'Välj minst en förändring'}</strong>
@@ -235,7 +255,7 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
             aria-pressed={filter === candidate.id}
             onClick={() => setFilter(candidate.id)}
           >
-            {candidate.label} ({filterCount(plan, candidate.id)})
+            {candidate.label} ({filterCount(plan, candidate.id, externalChangedPaths)})
           </button>
         ))}
       </div>
@@ -249,7 +269,7 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
       </div>
       {entries.length === 0 ? <p className="empty-state">Inga filer matchar det valda filtret.</p> : (
         <ReviewFileTree entries={entries} selectedPaths={selectedPaths} onSelectedPathsChange={setSelectedPaths}
-          overridePaths={overridePaths} onOverridePathsChange={setOverridePaths} locked={selectionLocked} />
+          overridePaths={overridePaths} onOverridePathsChange={setOverridePaths} externalChangedPaths={externalChangedPaths} locked={selectionLocked} />
       )}
 
 
@@ -284,12 +304,16 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
               : selectedPaths.size > 0
                 ? 'Ett klick låser urvalet, registrerar godkännandet och skapar sedan commit på arbetsbranchen.'
                 : 'Välj minst en förändring innan urvalet kan godkännas.'}</p>
+            {selectedExternalOverlap.length > 0 && <label className="checkbox-row status-message status-message--warning">
+              <input type="checkbox" checked={externalChangesAcknowledged} onChange={(event) => setExternalChangesAcknowledged(event.target.checked)} />
+              Jag förstår att {selectedExternalOverlap.length} vald{selectedExternalOverlap.length === 1 ? '' : 'a'} sökväg{selectedExternalOverlap.length === 1 ? '' : 'ar'} ersätter ändringar som tillkommit på GitHub efter zip-githubs senast kända commit.
+            </label>}
             <dl className="approval-summary" aria-label="Slutlig commitbekräftelse">
               <div><dt>Commitmeddelande</dt><dd><code>{commitMessage.trim() || '—'}</code></dd></div>
               <div><dt>Base ref</dt><dd><code>{plan.baseCommitSha}</code></dd></div>
               <div><dt>Valda filer</dt><dd>{selectedPaths.size}</dd></div>
             </dl>
-            <button className="button" type="button" disabled={selectedPaths.size === 0 || commitMessage.trim().length === 0 || approving || delivering}
+            <button className="button" type="button" disabled={selectedPaths.size === 0 || commitMessage.trim().length === 0 || approving || delivering || (selectedExternalOverlap.length > 0 && !externalChangesAcknowledged)}
               onClick={approveAndDeliver}>
               {approving ? 'Godkänner…' : delivering ? 'Skapar commit på arbetsbranchen…' : 'Godkänn valda förändringar'}
             </button>
@@ -317,8 +341,9 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
   );
 }
 
-function filterCount(plan: ImportPlanResponse, filter: ReviewFilter): number {
+function filterCount(plan: ImportPlanResponse, filter: ReviewFilter, externalChangedPaths: ReadonlySet<string> = new Set()): number {
   if (filter === 'CHANGES') return plan.added + plan.modified;
+  if (filter === 'EXTERNAL') return externalChangedPaths.size;
   if (filter === 'BLOCKED') return plan.blocked;
   if (filter === 'WARNINGS') return plan.warnings;
   if (filter === 'UNCHANGED') return plan.unchanged;
@@ -326,9 +351,10 @@ function filterCount(plan: ImportPlanResponse, filter: ReviewFilter): number {
   return plan.entries.length;
 }
 
-function matchesFilter(entry: ImportPlanEntry, filter: ReviewFilter): boolean {
+function matchesFilter(entry: ImportPlanEntry, filter: ReviewFilter, externalChangedPaths: ReadonlySet<string> = new Set()): boolean {
   if (filter === 'ALL') return true;
   if (filter === 'CHANGES') return entry.status === 'ADDED' || entry.status === 'MODIFIED';
+  if (filter === 'EXTERNAL') return externalChangedPaths.has(entry.path);
   if (filter === 'BLOCKED') return entry.status === 'BLOCKED';
   if (filter === 'WARNINGS') return entry.severity === 'WARNING';
   return entry.status === filter;

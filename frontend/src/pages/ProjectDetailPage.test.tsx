@@ -173,4 +173,27 @@ describe('ProjectDetailPage step 9.8 lifecycle', () => {
     expect(await screen.findByText('zip-github/work-2')).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith('/api/projects/project-1/work', expect.objectContaining({ method: 'POST' }));
   });
+  it('keeps an open pull request as active work and surfaces remote branch changes', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/imports')) return new Response(JSON.stringify([]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      if (url.endsWith('/work/commits')) return new Response(JSON.stringify({ commits: [], githubAvailable: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      if (url.endsWith('/work/actions/details')) return new Response(JSON.stringify({ importId: 'import-result', repositoryFullName: 'owner/repo', commitSha: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', detailsUrl: 'https://github.com/owner/repo/actions', artifacts: [], failures: [], checkedAt: '2026-08-09T10:00:00Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      if (url.endsWith('/api/imports/import-result/actions/control')) return new Response(JSON.stringify({ importId: 'import-result', repositoryFullName: 'owner/repo', branchRef: 'zip-github/work-1', commitSha: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', currentWork: true, disabledReason: null, workflows: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      if (url.endsWith('/work/actions')) return new Response(JSON.stringify({ importId: 'import-result', repositoryFullName: 'owner/repo', commitSha: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', state: 'success', terminal: true, detailsUrl: 'https://github.com/owner/repo/actions', workflows: [], checks: [], checkedAt: '2026-08-09T10:00:00Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      if (url.endsWith('/work')) return new Response(JSON.stringify({ id: 'work-1', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-1', status: 'PR_OPEN', headCommitSha: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', remoteHeadCommitSha: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', branchChangedExternally: true, lastImportId: 'import-result', pullRequestNumber: 42, pullRequestUrl: 'https://github.com/owner/repo/pull/42', createdAt: '2026-08-09T09:00:00Z', updatedAt: '2026-08-09T09:30:00Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      if (url.includes('/api/projects/project-1')) return new Response(JSON.stringify({ id: 'project-1', name: 'repo', githubInstallationId: 10, githubRepositoryId: 20, repositoryFullName: 'owner/repo', privateRepository: true, defaultBranch: 'main', active: true, createdAt: '2026-08-08T10:00:00Z', updatedAt: '2026-08-08T10:00:00Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }));
+    render(
+      <MemoryRouter initialEntries={['/projects/project-1']}>
+        <Routes><Route path="projects/:projectId" element={<ProjectDetailPage />} /></Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText('Pull request #42')).toBeInTheDocument();
+    expect(screen.getByLabelText('Work-branchen har ändrats externt')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ladda upp nästa ZIP' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Skapa pull request' })).not.toBeInTheDocument();
+  });
+
 });

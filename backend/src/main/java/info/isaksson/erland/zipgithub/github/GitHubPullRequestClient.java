@@ -9,5 +9,13 @@ public interface GitHubPullRequestClient {
     Optional<GitHubPullRequest> findOpenPullRequest(String accessToken, String repositoryFullName,
                                                     String headBranch, String baseBranch);
 
-    record GitHubPullRequest(long number, String htmlUrl, String state, boolean draft) { }
+    default GitHubPullRequest getPullRequest(String accessToken, String repositoryFullName, long pullRequestNumber) {
+        throw new UnsupportedOperationException("Pull request read is not implemented");
+    }
+
+    record GitHubPullRequest(long number, String htmlUrl, String state, boolean draft, boolean merged, String headSha) {
+        public GitHubPullRequest(long number, String htmlUrl, String state, boolean draft) {
+            this(number, htmlUrl, state, draft, false, null);
+        }
+    }
 }

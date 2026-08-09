@@ -1,0 +1,77 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Immutable application image tag, for example 1.0.0-rc.72"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy production
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      url: https://zip-github.isaksson.info/
+
+    steps:
+      - name: Validate deployment request
+        shell: bash
+        env:
+          DEPLOY_VERSION: ${{ inputs.version }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/${DEFAULT_BRANCH}" ]]; then
+            echo "Production deploys must be dispatched from the default branch (${DEFAULT_BRANCH})." >&2
+            exit 1
+          fi
+          if [[ ! "${DEPLOY_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
+            echo "Invalid deployment version: ${DEPLOY_VERSION}" >&2
+            exit 1
+          fi
+
+      - name: Configure production SSH identity
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ vars.PRODUCTION_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "${SSH_PRIVATE_KEY}" || { echo "Missing PRODUCTION_SSH_PRIVATE_KEY" >&2; exit 1; }
+          test -n "${SSH_KNOWN_HOSTS}" || { echo "Missing PRODUCTION_SSH_KNOWN_HOSTS" >&2; exit 1; }
+          install -d -m 0700 ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519
+          chmod 0600 ~/.ssh/id_ed25519
+          printf '%s\n' "${SSH_KNOWN_HOSTS}" > ~/.ssh/known_hosts
+          chmod 0600 ~/.ssh/known_hosts
+
+      - name: Deploy selected version
+        shell: bash
+        env:
+          DEPLOY_VERSION: ${{ inputs.version }}
+          PRODUCTION_HOST: ${{ vars.PRODUCTION_HOST }}
+          PRODUCTION_PORT: ${{ vars.PRODUCTION_PORT }}
+          PRODUCTION_USER: ${{ vars.PRODUCTION_USER }}
+        run: |
+          set -euo pipefail
+          : "${PRODUCTION_HOST:?Missing PRODUCTION_HOST}"
+          : "${PRODUCTION_USER:?Missing PRODUCTION_USER}"
+          PRODUCTION_PORT="${PRODUCTION_PORT:-22}"
+          ssh \
+            -i ~/.ssh/id_ed25519 \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -p "${PRODUCTION_PORT}" \
+            "${PRODUCTION_USER}@${PRODUCTION_HOST}" \
+            "deploy ${DEPLOY_VERSION}"

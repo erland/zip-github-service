@@ -626,6 +626,36 @@ Fas 9 ska samtidigt täppa till metadataförlust som kan uppstå i ZIP→GitHub-
 
 **Kvalitetsgrind för 9.12:** en ny ZIP-fil som Git skulle ignorera får inte bli blockerande eller valbar; tracked paths försvinner inte på grund av ignore; `.git/**` förblir hard-blocked; ingen produktionspolicy specialbehandlar zip-githubs Shortcut-filnamn; review-sidan har endast ett klickbart filterområde.
 
+## Steg 9.13 - Repository-first UX och lazy intern Project
+
+- Gör repositories som GitHub App-installationen ger användaren åtkomst till till den primära startsidan. Project ska fortsatt finnas som intern owner-bunden resurs för Work/import/audit men inte behöva skapas eller namnges manuellt av användaren.
+- Lägg ett owner-skyddat repository-API som slår ihop användarens synliga GitHub App-installationer/repositories med eventuell befintlig intern Project-identitet utan att skapa nya Projects vid listning.
+- Visa endast repositoryts korta namn i normallistan. Om flera synliga repositories har samma korta namn får `owner/repo` visas sekundärt för disambiguering; branch/status/övrig Project-metadata ska inte visas i listan.
+- Lägg enkel klient-side sökning/filter som matchar case-insensitive på både kort repositorynamn och `owner/repo` medan användaren skriver.
+- Ta bort den manuella "Skapa projekt"-vägen från normal routing/startsida. Gamla `/projects/new` ska säkert redirecta till repositorylistan i stället för att bli en trasig länk.
+- För ett repository utan Project ska Project skapas först när användaren faktiskt startar Work. `ensureProject` ska verifiera installation/repository/default branch via samma GitHub-katalog som tidigare, återanvända befintlig Project när den finns och generera ett internt kollisionssäkert namn utan att exponera namnhantering i UI.
+- Efter lazy creation ska befintliga Project/Work/import-API:er återanvändas så etablerade ägarskaps-, branch-, approval- och delivery-invarianter inte dupliceras.
+- Uppdatera Shortcut claim/promotion så användaren väljer repository i stället för Project. Befintlig Project återanvänds; annars får promotion skapa Project lazy innan den vanliga `StoredUpload`-promotionen fortsätter.
+- Uppdatera repository-/Work-vyer och navigationstexter så "Project" inte presenteras som det primära användarbegreppet, utan att ta bort den interna domänmodellen eller historiken.
+- Lägg regression som bevisar: repositorylistning skapar inga Projects; första Starta arbete skapar exakt en Project och Work; retry återanvänder samma Project; Shortcut-promotion kan välja ett repo utan tidigare Project; sökning filtrerar på kort namn/full name; befintliga repos med Project öppnar befintlig Work-vy.
+
+**Kvalitetsgrind för 9.13:** användaren börjar i en sökbar repositorylista som motsvarar GitHub App-åtkomsten och behöver aldrig ange ett projektnamn. Ingen Project skapas bara för att listan öppnas. Första verkliga Work/Shortcut-promotion skapar eller återanvänder exakt en owner-bunden Project och fortsätter därefter genom den befintliga säkra Work/import-pipelinen.
+
+## Steg 9.14 - Manuell produktionsdeploy från GitHub Actions
+
+- Lägg en explicit `workflow_dispatch`-baserad GitHub Actions-workflow för produktion där operatören anger en immutable `ZIP_GITHUB_VERSION`; en push till repositoryt får inte automatiskt deploya produktion.
+- Använd GitHub Environment `production`, minimal workflow-permission (`contents: read`) och en concurrency-grupp som förhindrar parallella produktionsdeployments. Workflowen ska vägra deploy från annan ref än repositoryts default branch.
+- Anslut till produktion via vanlig OpenSSH från GitHub-hosted runner utan tredjeparts-SSH-action. Serverns host key ska vara explicit pinnad via en verifierad `known_hosts`-variabel; workflowen får inte etablera trust-on-first-use genom ett okontrollerat `ssh-keyscan` vid varje deploy.
+- Skapa en dedikerad OS-identitet `zip-github-deploy` för Git checkout. Den ska inte vara medlem i Docker-gruppen och deploy-SSH-nyckeln ska vara begränsad med `restrict` + forced command så nyckeln inte ger generell shell-/tunnelåtkomst.
+- Lägg ett root-ägt deploy-script under `/opt/zip-github/bin` och en smal sudoers-regel som endast tillåter deploy-identiteten att köra detta script. Scriptet ska strikt validera versionsargument och aldrig `eval`-a användardata.
+- Flytta ägarskapet för `/opt/zip-github/app` till deploy-identiteten så `git fetch/pull --ff-only` sker utan root. `.env` ska vara `root:zip-github-deploy` mode `0640`; deploy-scriptet får ändra endast `ZIP_GITHUB_VERSION` och ska bevara filens owner/mode.
+- Deploy-scriptet ska vägra tracked lokala ändringar, aldrig köra `git clean`, hämta default-branch, dra immutable container images, köra Compose, vänta på backend readiness och kontrollera frontend.
+- Ingen automatisk rollback vid misslyckad readiness eftersom databasmigreringar är forward-only. Dokumentera diagnostik och manuell rollback genom att köra samma workflow med tidigare immutable image-version.
+- Dokumentera exakt serverbootstrap, SSH-nyckelinstallation, host-key-verifiering, GitHub Environment, variables/secrets och hur workflowen körs/roteras.
+- Lägg release-verifiering för workflowens manuella trigger/default-branch guard/concurrency/minimala permissions samt deploy-scriptets versionsvalidering, no-`git clean`, readiness och forced-command/sudoers-modell.
+
+**Kvalitetsgrind för 9.14:** produktion kan deployas manuellt från GitHub med en immutable version utan att använda operatörens personliga SSH-konto. Deployment-nyckeln kan endast starta den validerade deployvägen, servercheckouten uppdateras utan root, Docker/root-behörighet är kapslad bakom root-ägt script, parallella deploys förhindras och ett fel lämnar tydlig diagnostik utan riskabel automatisk rollback.
+
 # Framtida backlog - AI- och integrationsyta
 
 Det tidigare steg 8.4 flyttas uttryckligen utanför den aktiva fasplanen. Det ska omprövas först efter verklig användning av Actions- och Shortcut-flödena.
@@ -665,17 +695,3 @@ Rapportera kort vad som ändrats, vilka tester som körts och om kvalitetsgrinde
 
 Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller flera steg per fas, och en kvalitetsgrind efter varje fas**.
 
-## Steg 9.13 - Repository-first UX och lazy intern Project
-
-- Gör repositories som GitHub App-installationen ger användaren åtkomst till till den primära startsidan. Project ska fortsatt finnas som intern owner-bunden resurs för Work/import/audit men inte behöva skapas eller namnges manuellt av användaren.
-- Lägg ett owner-skyddat repository-API som slår ihop användarens synliga GitHub App-installationer/repositories med eventuell befintlig intern Project-identitet utan att skapa nya Projects vid listning.
-- Visa endast repositoryts korta namn i normallistan. Om flera synliga repositories har samma korta namn får `owner/repo` visas sekundärt för disambiguering; branch/status/övrig Project-metadata ska inte visas i listan.
-- Lägg enkel klient-side sökning/filter som matchar case-insensitive på både kort repositorynamn och `owner/repo` medan användaren skriver.
-- Ta bort den manuella "Skapa projekt"-vägen från normal routing/startsida. Gamla `/projects/new` ska säkert redirecta till repositorylistan i stället för att bli en trasig länk.
-- För ett repository utan Project ska Project skapas först när användaren faktiskt startar Work. `ensureProject` ska verifiera installation/repository/default branch via samma GitHub-katalog som tidigare, återanvända befintlig Project när den finns och generera ett internt kollisionssäkert namn utan att exponera namnhantering i UI.
-- Efter lazy creation ska befintliga Project/Work/import-API:er återanvändas så etablerade ägarskaps-, branch-, approval- och delivery-invarianter inte dupliceras.
-- Uppdatera Shortcut claim/promotion så användaren väljer repository i stället för Project. Befintlig Project återanvänds; annars får promotion skapa Project lazy innan den vanliga `StoredUpload`-promotionen fortsätter.
-- Uppdatera repository-/Work-vyer och navigationstexter så "Project" inte presenteras som det primära användarbegreppet, utan att ta bort den interna domänmodellen eller historiken.
-- Lägg regression som bevisar: repositorylistning skapar inga Projects; första Starta arbete skapar exakt en Project och Work; retry återanvänder samma Project; Shortcut-promotion kan välja ett repo utan tidigare Project; sökning filtrerar på kort namn/full name; befintliga repos med Project öppnar befintlig Work-vy.
-
-**Kvalitetsgrind för 9.13:** användaren börjar i en sökbar repositorylista som motsvarar GitHub App-åtkomsten och behöver aldrig ange ett projektnamn. Ingen Project skapas bara för att listan öppnas. Första verkliga Work/Shortcut-promotion skapar eller återanvänder exakt en owner-bunden Project och fortsätter därefter genom den befintliga säkra Work/import-pipelinen.

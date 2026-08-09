@@ -1,3 +1,10 @@
+## 1.0.0-rc.73 - 2026-08-09
+
+- Added step 9.14 with an explicit manual GitHub Actions production-deployment workflow using an immutable image version.
+- Added a dedicated restricted `zip-github-deploy` SSH/sudo path instead of using the operator's personal server account or Docker-group membership.
+- Added a root-owned deployment script that updates the main checkout with `pull --ff-only`, changes only `ZIP_GITHUB_VERSION`, pulls/starts Compose images and waits for backend/frontend health.
+- Added a complete production setup guide for directory ownership, SSH key/host-key verification, GitHub Environment variables/secrets, deployment and safe manual rollback.
+
 ## 1.0.0-rc.72 - 2026-08-09
 
 - Corrected the rc.71 TypeScript build failure in the repository-first Shortcut promotion flow.

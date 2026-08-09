@@ -233,3 +233,19 @@ If no signed artifact is mounted, `/shortcut` stays usable but reports that no i
 Before promoting a deployment, run `bash scripts/verify-phase9-release.sh` and `bash scripts/verify-release.sh`. The signed Shortcut binary is deployment material rather than Git source: when present at `shortcut/releases/zip-github.shortcut`, its bytes/size/SHA must match `shortcut/releases/release-manifest.txt` and it must be readable by the backend runtime user through the read-only mount. The authenticated download intentionally exposes the friendly filename `Skicka till zip-github.shortcut`.
 
 For Work recovery, a Work is not active until its remote GitHub branch has been created/read back at the expected SHA. If a remote Work branch disappears or moves unexpectedly, delivery must fail closed; do not recreate or force-push it as an operational workaround. Use the explicit abandon/archive/restart-work controls instead. Actions diagnostics on the Work page are commit-bound and may be refreshed after reconnect/login.
+
+## GitHub-triggered production deployment (RC73)
+
+Normal production releases should now use the manual **Deploy production** GitHub Actions workflow rather than an operator editing `.env` over SSH. The authoritative bootstrap and operating procedure is `docs/production-deployment.md`.
+
+The supported production ownership model is:
+
+- `/opt/zip-github/app`: owned by `zip-github-deploy`, allowing unprivileged `git fetch/pull`;
+- `/opt/zip-github/app/.env`: `root:zip-github-deploy`, mode `0640`;
+- `/opt/zip-github/bin` and deployment scripts: `root:root`, not writable by the deploy account;
+- `zip-github-deploy`: not a member of the Docker group;
+- GitHub deployment key: forced-command/restricted SSH key, not a general shell credential.
+
+The workflow is manual (`workflow_dispatch`), uses the `production` GitHub Environment and serializes deployments with a concurrency group. It passes only a validated immutable application version to the server. The server updates the deployment checkout, rewrites only `ZIP_GITHUB_VERSION`, pulls the selected images, starts Compose and verifies readiness.
+
+A failed readiness check does not trigger automatic rollback because database migrations are forward-only. Operators should inspect the failed deployment and, when schema compatibility permits, rerun the same workflow with the previous immutable image version.

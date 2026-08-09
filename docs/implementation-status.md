@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0120`
-- Last completed step: `9.13`
+- Repository revision: `r0121`
+- Last completed step: `9.14`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — REPOSITORY-FIRST UX APPLIED`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — REPOSITORY-FIRST UX + GITHUB PRODUCTION DEPLOY APPLIED`
 
 ## Step ledger
 
@@ -98,6 +98,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.11` | Fas 9 — Actions correction | Actions-visibilitet, gemensam Work/commit-vy och utökad feldiagnostik | **DONE** | 2026-08-08 | `docs/step-9.11-report.md` |
 | `9.12` | Fas 9 — Import/review correction | Repository `.gitignore` i importplan och tydligare review-filter | **DONE** | 2026-08-08 | `docs/step-9.12-report.md` |
 | `9.13` | Fas 9 — Repository-first UX | Repositorylista, sökning och lazy intern Project | **DONE** | 2026-08-09 | `docs/step-9.13-report.md` |
+| `9.14` | Fas 9 — Production deployment | Manuell GitHub Actions-deploy med begränsad serveridentitet | **DONE** | 2026-08-09 | `docs/step-9.14-report.md`, `docs/production-deployment.md` |
 
 ## Revision history
 
@@ -108,6 +109,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0118` | 2026-08-09 | `9.13` repository-first UX | Repository list/search replaces manual Project creation; Project is lazily created/reused when Work or Shortcut promotion actually begins | `none` |
 | `r0119` | 2026-08-09 | Frontend CI correction after `9.13` | Repository-list regression now waits for the asynchronously loaded repository entry before filtering; no production behavior changed | `none` |
 | `r0120` | 2026-08-09 | Frontend TypeScript build correction after `9.13` | Staging promotion API now accepts the repository-first target union used by the claim page; added serialization regressions for existing Project and lazy repository bootstrap | `none` |
+| `r0121` | 2026-08-09 | `9.14` GitHub-triggered production deployment | Added manual production deployment workflow, restricted SSH/sudo deployment path and complete server/GitHub setup guide | `none` |
 | `r0115` | 2026-08-08 | Frontend ActionsPanel CI correction after `9.11` | Prevented runtime crash for partial/legacy workflow payloads without `headSha`; no backend behavior or phase state changed | `none` |
 | `r0114` | 2026-08-08 | `9.11` Actions visibility/diagnostics correction | Shared Work/result Actions UI, explicit permission diagnostics, resilient run/jobs/check handling and bounded contextual job logs | `none` |
 | `r0109` | 2026-08-08 | `9.10` final phase-9 E2E/release gate | Cross-step phase-9 release script, signed Shortcut manifest/hash/readability checks, operations/security/API/release documentation audit; active implementation plan complete | `none` |

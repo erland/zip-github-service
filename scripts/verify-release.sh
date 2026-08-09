@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.71"
+expected_version="1.0.0-rc.72"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.71 - 2026-08-09' CHANGELOG.md
+grep -q '## 1.0.0-rc.72 - 2026-08-09' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,8 +23,12 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0119`' docs/implementation-status.md
+grep -q 'Repository revision: `r0120`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
+test -s docs/rc72-frontend-staging-promotion-build-correction.md
+test -s frontend/src/api/staging.test.ts
+grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
+grep -q 'body: JSON.stringify(target)' frontend/src/api/staging.ts
 grep -q 'Last completed step: `9.13`' docs/implementation-status.md
 grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — REPOSITORY-FIRST UX APPLIED`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf

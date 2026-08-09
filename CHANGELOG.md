@@ -1,3 +1,9 @@
+## 1.0.0-rc.72 - 2026-08-09
+
+- Corrected the rc.71 TypeScript build failure in the repository-first Shortcut promotion flow.
+- Frontend staging promotion now accepts either an existing `projectId` or a GitHub installation/repository target and serializes that target directly, matching the backend DTO introduced by step 9.13.
+- Added focused API regressions for both promotion target forms; no backend behavior changed.
+
 ## 1.0.0-rc.71 - 2026-08-09
 
 - Corrected the rc.70 frontend CI race in the repository-list filtering regression.

@@ -1,4 +1,4 @@
-> **Current handoff r0119 / 1.0.0-rc.71:** Phase 9 remains complete. Step 9.13 makes repositories the primary user-facing concept: the start page lists/searches GitHub App repositories, manual Project creation is removed from normal UX, and the internal owner-bound Project is lazily created/reused only when Work or Shortcut promotion begins.
+> **Current handoff r0120 / 1.0.0-rc.72:** Phase 9 remains complete. Step 9.13 makes repositories the primary user-facing concept: the start page lists/searches GitHub App repositories, manual Project creation is removed from normal UX, and the internal owner-bound Project is lazily created/reused only when Work or Shortcut promotion begins.
 
 > **Planning refinement r0105 / 1.0.0-rc.57:** Phase 9.7 now explicitly requires the authenticated Shortcut download to expose `Skicka till zip-github.shortcut` via `Content-Disposition` and requires deployment verification that the backend runtime user can read the signed bind-mounted artifact (avoiding the observed `0600` failure). The same checks are included in the final 9.10 E2E gate. No 9.8 implementation has started.
 
@@ -12,8 +12,10 @@
 Date: 9 August 2026  
 > **rc.71 correction:** Frontend CI exposed a test-only race in the repository-first list regression. The test now waits for the asynchronous repository API result before asserting/filtering. No production behavior changed.
 
-Repository revision: r0119  
-Application version: 1.0.0-rc.71  
+> **rc.72 correction:** The next frontend CI run passed all 51 Vitest tests but `tsc -b` exposed a stale pre-9.13 staging API signature. `promoteStagingImport` now accepts and serializes either an existing Project target or a repository target for lazy bootstrap. Backend behavior is unchanged.
+
+Repository revision: r0120  
+Application version: 1.0.0-rc.72  
 Last completed implementation step: 9.13  
 Current position: implementation plan complete; no NEXT step remains
 

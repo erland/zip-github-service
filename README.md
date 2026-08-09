@@ -52,3 +52,7 @@ The project includes `.github/workflows/ci.yml`. It runs structure/security chec
 - Configuration reference: [`docs/configuration-reference.md`](docs/configuration-reference.md)
 
 The runtime never mounts the Docker socket. GitHub Actions remains responsible for target-project builds and tests.
+
+## Production deployment
+
+Production can be deployed manually from GitHub Actions using the restricted deployment path documented in [`docs/production-deployment.md`](docs/production-deployment.md). The server-side reference scripts live under `ops/production/`.

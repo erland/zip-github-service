@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.72"
+expected_version="1.0.0-rc.73"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.72 - 2026-08-09' CHANGELOG.md
+grep -q '## 1.0.0-rc.73 - 2026-08-09' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,14 +23,14 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0120`' docs/implementation-status.md
+grep -q 'Repository revision: `r0121`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'body: JSON.stringify(target)' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.13`' docs/implementation-status.md
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — REPOSITORY-FIRST UX APPLIED`' docs/implementation-status.md
+grep -q 'Last completed step: `9.14`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — REPOSITORY-FIRST UX + GITHUB PRODUCTION DEPLOY APPLIED`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -398,3 +398,32 @@ printf 'Phase 9 final release assertions verified for %s.\n' "$actual_version"
 
 grep -q 'workflow.headSha || actions.commitSha || commitSha' frontend/src/components/ActionsPanel.tsx
 grep -q 'falls back to the panel commit when a workflow payload has no headSha' frontend/src/components/ActionsPanel.test.tsx
+
+
+# Phase 9 step 9.14 (manual GitHub-triggered production deployment).
+test -s docs/step-9.14-report.md
+test -s docs/production-deployment.md
+test -s .github/workflows/deploy-production.yml
+test -x ops/production/deploy.sh
+test -x ops/production/deploy-ssh-command.sh
+test -s ops/production/zip-github-deploy.sudoers
+grep -Fq '| `9.14` | Fas 9 — Production deployment | Manuell GitHub Actions-deploy med begränsad serveridentitet | **DONE**' docs/implementation-status.md
+grep -q 'workflow_dispatch:' .github/workflows/deploy-production.yml
+! grep -Eq '^  push:|^  pull_request:' .github/workflows/deploy-production.yml
+grep -q 'contents: read' .github/workflows/deploy-production.yml
+grep -q 'group: production-deployment' .github/workflows/deploy-production.yml
+grep -q 'cancel-in-progress: false' .github/workflows/deploy-production.yml
+grep -q 'name: production' .github/workflows/deploy-production.yml
+grep -q 'StrictHostKeyChecking=yes' .github/workflows/deploy-production.yml
+grep -q 'PRODUCTION_SSH_KNOWN_HOSTS' .github/workflows/deploy-production.yml
+! grep -q 'appleboy/' .github/workflows/deploy-production.yml
+grep -Fq '"deploy ${DEPLOY_VERSION}"' .github/workflows/deploy-production.yml
+grep -q 'git -C "$APP_DIR" pull --ff-only' ops/production/deploy.sh
+! grep -q 'git clean' ops/production/deploy.sh
+grep -q 'No automatic rollback was attempted because database migrations are forward-only' ops/production/deploy.sh
+grep -q 'ZIP_GITHUB_VERSION=' ops/production/deploy.sh
+grep -q 'SSH_ORIGINAL_COMMAND' ops/production/deploy-ssh-command.sh
+grep -q 'This SSH key may only run: deploy <version>' ops/production/deploy-ssh-command.sh
+grep -q '^zip-github-deploy ALL=(root) NOPASSWD: /opt/zip-github/bin/deploy.sh \*$' ops/production/zip-github-deploy.sudoers
+grep -q 'restrict,command=' docs/production-deployment.md
+printf 'Phase 9.14 production deployment assertions verified for %s.\n' "$actual_version"

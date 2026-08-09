@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0123`
+- Repository revision: `r0124`
 - Last completed step: `9.16`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — PR LIFECYCLE AND CONTINUED WORK APPLIED`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — 9.16 CI CORRECTION APPLIED`
 
 ## Step ledger
 
@@ -113,6 +113,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0120` | 2026-08-09 | Frontend TypeScript build correction after `9.13` | Staging promotion API now accepts the repository-first target union used by the claim page; added serialization regressions for existing Project and lazy repository bootstrap | `none` |
 | `r0122` | 2026-08-09 | `9.15` user-attributed pull requests | Draft PR lookup/create now uses the authenticated GitHub user access token; commit identity and installation-token Git transport remain unchanged | `none` |
 | `r0123` | 2026-08-09 | `9.16` PR lifecycle and continued Work | Open PR keeps Work active; remote Work HEAD drives Actions/review; GitHub-side overlapping changes are highlighted and acknowledged; merge closes Work | `none` |
+| `r0124` | 2026-08-09 | CI correction after `9.16` | Fixed missing backend DTO import, aligned PR-action test labels with 9.16 UX and added the external-branch API mock to the simplified import-flow E2E; no production behavior change | `none` |
 | `r0121` | 2026-08-09 | `9.14` GitHub-triggered production deployment | Added manual production deployment workflow, restricted SSH/sudo deployment path and complete server/GitHub setup guide | `none` |
 | `r0115` | 2026-08-08 | Frontend ActionsPanel CI correction after `9.11` | Prevented runtime crash for partial/legacy workflow payloads without `headSha`; no backend behavior or phase state changed | `none` |
 | `r0114` | 2026-08-08 | `9.11` Actions visibility/diagnostics correction | Shared Work/result Actions UI, explicit permission diagnostics, resilient run/jobs/check handling and bounded contextual job logs | `none` |

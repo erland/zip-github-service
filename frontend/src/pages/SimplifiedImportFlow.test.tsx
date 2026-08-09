@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   getImportPlan: vi.fn(),
   getImportSelection: vi.fn(),
   getImportPlanApproval: vi.fn(),
+  getExternalBranchChanges: vi.fn(),
   findDelivery: vi.fn(),
   createImportSelection: vi.fn(),
   approveImportPlan: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock('../api/imports', () => ({
   getImportPlan: mocks.getImportPlan,
   getImportSelection: mocks.getImportSelection,
   getImportPlanApproval: mocks.getImportPlanApproval,
+  getExternalBranchChanges: mocks.getExternalBranchChanges,
   findDelivery: mocks.findDelivery,
   createImportSelection: mocks.createImportSelection,
   approveImportPlan: mocks.approveImportPlan,
@@ -92,6 +94,7 @@ beforeEach(() => {
   mocks.getImportPlan.mockReset();
   mocks.getImportSelection.mockReset();
   mocks.getImportPlanApproval.mockReset();
+  mocks.getExternalBranchChanges.mockReset();
   mocks.findDelivery.mockReset();
   mocks.createImportSelection.mockReset();
   mocks.approveImportPlan.mockReset();
@@ -107,6 +110,7 @@ beforeEach(() => {
   mocks.getImportPlan.mockResolvedValue(plan);
   mocks.getImportSelection.mockResolvedValue(null);
   mocks.getImportPlanApproval.mockResolvedValue(null);
+  mocks.getExternalBranchChanges.mockResolvedValue({ branchChanged: false, previousKnownHeadSha: null, reviewBaseHeadSha: plan.baseCommitSha, changedPaths: [] });
   mocks.findDelivery.mockResolvedValue(null);
   mocks.createImportSelection.mockResolvedValue(selection);
   mocks.approveImportPlan.mockResolvedValue(approval);

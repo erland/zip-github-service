@@ -1,8 +1,10 @@
-> **Current handoff r0123 / 1.0.0-rc.75:** Phase 9 remains complete. Step 9.16 keeps Work active through an open PR, refreshes PR state/remote Work HEAD from GitHub, uses current remote HEAD for Actions, and warns when a new ZIP would replace GitHub-side branch changes. Merge closes Work; closed-unmerged Work can continue. Steps 9.13–9.15 remain in force.
+> **Current handoff r0124 / 1.0.0-rc.76:** Phase 9 remains complete. This revision is a CI-only correction after step 9.16: the backend imports the external-branch DTO correctly and frontend regressions match the intended PR action label and mock the new external-branch review API. Step 9.16 production behavior is unchanged.
 
 > **Planning refinement r0105 / 1.0.0-rc.57:** Phase 9.7 now explicitly requires the authenticated Shortcut download to expose `Skicka till zip-github.shortcut` via `Content-Disposition` and requires deployment verification that the backend runtime user can read the signed bind-mounted artifact (avoiding the observed `0600` failure). The same checks are included in the final 9.10 E2E gate. No 9.8 implementation has started.
 
 > **Signed Shortcut integration r0103 / 1.0.0-rc.55:** The operator-provided Apple-signed reference Shortcut is now included in the deployment bundle at `shortcut/releases/zip-github.shortcut` (version 1 / g1, SHA-256 `21a9e220067681994ff42326a0b430261fe84583bfbc614297c634ae752af50a`). The file is gitignored; import review evaluates repository `.gitignore` rules generically and excludes matching untracked files from delivery without a Shortcut-specific hard block. Step 9.7 is now blocked only on deploying this bundle, downloading the artifact through authenticated `/shortcut`, and confirming that exact served copy installs on iOS.
+
+> **rc.76 correction:** GitHub CI for rc.75 exposed one backend compile regression (missing `ExternalBranchChangesResponse` import) and three frontend test regressions (two stale PR-action labels plus one missing `getExternalBranchChanges` mock). All are corrected without changing 9.16 production behavior.
 
 # Continuation handoff — phase 8 and later
 

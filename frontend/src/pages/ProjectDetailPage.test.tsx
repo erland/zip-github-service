@@ -49,7 +49,7 @@ describe('ProjectDetailPage work history', () => {
     expect(screen.queryByText('book.zip')).not.toBeInTheDocument();
     expect(screen.queryByText('older-draft.zip')).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Importhistorik' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Arbetet är klart – skapa pull request' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Skapa pull request' })).toBeDisabled();
   });
 
   it('copies commit-correct condensed Actions failures from the revisitable Work view', async () => {
@@ -108,7 +108,7 @@ describe('ProjectDetailPage state-based Work actions', () => {
     expect(await screen.findByRole('heading', { name: 'repo' })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Ladda upp nästa ZIP' })).toHaveLength(1);
     expect(screen.queryByRole('link', { name: 'Fortsätt arbete' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Arbetet är klart – skapa pull request' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Skapa pull request' })).toBeEnabled();
   });
 });
 

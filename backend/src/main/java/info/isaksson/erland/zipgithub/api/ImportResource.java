@@ -20,6 +20,7 @@ import info.isaksson.erland.zipgithub.api.dto.ImportActionsControlOptionsRespons
 import info.isaksson.erland.zipgithub.api.dto.DispatchWorkflowRequest;
 import info.isaksson.erland.zipgithub.api.dto.RerunWorkflowRequest;
 import info.isaksson.erland.zipgithub.api.dto.ActionsControlOperationResponse;
+import info.isaksson.erland.zipgithub.api.dto.ExternalBranchChangesResponse;
 import info.isaksson.erland.zipgithub.api.error.ApiException;
 import info.isaksson.erland.zipgithub.application.ProjectApplicationService;
 import info.isaksson.erland.zipgithub.security.CurrentUserProvider;

@@ -1,3 +1,10 @@
+## 1.0.0-rc.76 - 2026-08-09
+
+- Corrected CI regressions introduced with step 9.16 without changing production behavior.
+- Backend `ImportResource` now imports the new `ExternalBranchChangesResponse` DTO so the Quarkus module compiles.
+- Project-detail tests now assert the intentional 9.16 action label `Skapa pull request`.
+- Simplified import-flow E2E now mocks the external-branch-change API with a neutral response so review rendering reaches the existing selection/override assertions.
+
 ## 1.0.0-rc.75 - 2026-08-09
 
 - Added step 9.16: a pull request no longer terminates Work; `PR_OPEN` and `PR_CLOSED` remain continuable until merge/abandon.

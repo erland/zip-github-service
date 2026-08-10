@@ -41,6 +41,7 @@ services:
         condition: service_completed_successfully
     environment:
       QUARKUS_HTTP_HOST: 0.0.0.0
+      QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE: ${QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE:-200M}
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-zip_github}
       QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-zip_github}
       QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}

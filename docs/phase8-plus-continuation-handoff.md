@@ -269,3 +269,7 @@ The frontend nginx container now renders `client_max_body_size` from `ZIP_GITHUB
 
 ### r0112 Actions visibility correction
 Work Actions status now preserves successfully fetched workflow runs/jobs if the separate commit check-runs request fails (for example due to Checks permission drift or a transient GitHub error). This was verified against the shape of got-test-repo run `31258714926` at commit `f3689dfd3b5f011e2ba04d56e3a5f50b4bc97e69`.
+
+### r0131 / rc.83 Quarkus upload body-limit correction
+
+Production testing with an 18.7 MB Shortcut staging upload exposed a fourth ingress ceiling: Quarkus HTTP rejected the request before zip-github's own 200 MiB compressed-byte policy ran. `docker-compose.yml` now supplies `QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE` to the backend with a `200M` default. The external reverse proxy, frontend nginx, Quarkus request-body ceiling and `ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES` must remain coordinated; the application-level compressed-byte limit remains authoritative. No schema, authorization or import-policy change is involved.

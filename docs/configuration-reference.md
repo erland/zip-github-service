@@ -26,6 +26,7 @@
 | Variable | Default |
 |---|---:|
 | `ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES` | 200 MiB |
+| `QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE` | `200M` |
 | `ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE` | `200M` |
 | `ZIP_GITHUB_ARCHIVE_MAX_UNCOMPRESSED_BYTES` | 500 MiB |
 | `ZIP_GITHUB_ARCHIVE_MAX_ENTRIES` | 20,000 |
@@ -33,7 +34,7 @@
 | `ZIP_GITHUB_ARCHIVE_MAX_PATH_LENGTH` | 1,024 characters |
 | `ZIP_GITHUB_ARCHIVE_MAX_COMPRESSION_RATIO` | 100:1 |
 
-The external reverse proxy, frontend-container nginx and backend upload limit must all admit the intended request size. `ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE` should be at least as large as `ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES`; the backend byte limit remains authoritative. Changing limits requires matching disk/tmpfs capacity and a security review.
+The external reverse proxy, frontend-container nginx, Quarkus HTTP request-body ceiling and backend upload policy must all admit the intended request size. `ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE` and `QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE` should be at least as large as `ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES`; the zip-github compressed-byte limit remains authoritative. Changing limits requires matching disk/tmpfs capacity and a security review.
 
 ## Backup values
 

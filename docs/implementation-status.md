@@ -1,7 +1,7 @@
 # Implementation status — zip-github
 
 Version 1.0  
-Updated: 9 August 2026
+Updated: 10 August 2026
 
 ## Purpose
 
@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0130`
+- Repository revision: `r0131`
 - Last completed step: `9.18`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.18 COMPLETE — ACTIONS/CHECKS DEDUPLICATED — CI TEST CORRECTED`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.18 COMPLETE — HTTP UPLOAD LIMITS ALIGNED`
 
 ## Step ledger
 
@@ -283,3 +283,4 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0128` | 2026-08-09 | Step 9.16 merge-race correction | Strict PR-state reconciliation before Work reuse and immediately before delivery prevents commits from continuing on a PR branch that GitHub has already merged | `none` |
 | `r0129` | 2026-08-09 | Step 9.18 Actions/check deduplication | Workflow jobs remain primary; matching GitHub Actions checks are suppressed while external and unmatched checks remain under Övriga kontroller | `none` |
 | `r0130` | 2026-08-09 | Step 9.18 frontend CI correction | Test assertions now match the rendered link/app-label DOM structure; production deduplication behavior is unchanged | `none` |
+| `r0131` | 2026-08-10 | Quarkus upload body-limit correction | Compose now aligns Quarkus HTTP max body size with the existing 200 MiB upload/frontend-nginx limits; docs and release gate updated | `none` |

@@ -66,10 +66,11 @@ while retaining the neutral artifact metadata. Only safe metadata is returned to
 
 - `ZIP_GITHUB_UPLOAD_STORAGE_ROOT`
 - `ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES`
+- `QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE` (Quarkus backend HTTP request-body ceiling; defaults to `200M` in Compose)
 - `ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE` (frontend-container proxy request-body limit; defaults to `200M`)
 - `ZIP_GITHUB_UPLOAD_RETENTION_HOURS`
 
-The frontend nginx proxy has a separate request-body ceiling (`ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE`, default `200M`) so proxy and backend limits can be coordinated explicitly.
+Large uploads pass through multiple independent request-body ceilings before zip-github applies its own byte-level policy. The external reverse proxy, frontend nginx and Quarkus HTTP limit must therefore all admit at least `ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES`. The Compose defaults align frontend nginx and Quarkus to `200M`, while `ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES` remains the authoritative application-level compressed-byte limit.
 
 ## Scope boundary
 

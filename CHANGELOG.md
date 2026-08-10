@@ -218,6 +218,13 @@
 
 # Changelog
 
+## 1.0.0-rc.83 - 2026-08-10
+
+- Corrected the container upload ingress chain so Quarkus no longer keeps its lower default HTTP body-size ceiling when zip-github is configured for 200 MiB ZIP uploads.
+- Backend Compose now sets `QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE=${QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE:-200M}`, aligned with frontend nginx and the application-level compressed-upload limit.
+- Added the Quarkus body-size setting to `.env.example`, upload-streaming documentation and the configuration reference.
+- No import, authorization, archive-inspection or delivery policy behavior changed.
+
 ## 1.0.0-rc.53 - 2026-08-08
 
 - Corrected the remaining backend CI regressions discovered in workflow run 31242966490 without changing the phase 9.7 BLOCKED state.

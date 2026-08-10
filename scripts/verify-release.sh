@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.82"
+expected_version="1.0.0-rc.83"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.82 - 2026-08-09' CHANGELOG.md
+grep -q '## 1.0.0-rc.83 - 2026-08-10' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,7 +23,7 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0130`' docs/implementation-status.md
+grep -q 'Repository revision: `r0131`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -44,7 +44,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.18 COMPLETE — ACTIONS/CHECKS DEDUPLICATED — CI TEST CORRECTED`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.18 COMPLETE — HTTP UPLOAD LIMITS ALIGNED`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -218,6 +218,10 @@ grep -q 'readsRecordedApprovalForRecoveryAfterRefresh' backend/src/test/java/inf
 grep -q 'apt-get install -y --no-install-recommends curl git' backend/Dockerfile
 grep -q '^  storage-init:' docker-compose.yml
 grep -q 'condition: service_completed_successfully' docker-compose.yml
+grep -Fq 'QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE: ${QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE:-200M}' docker-compose.yml
+grep -q '^QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE=200M$' .env.example
+grep -q 'QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE' docs/configuration-reference.md
+grep -q 'Quarkus backend HTTP request-body ceiling' docs/upload-streaming.md
 grep -q 'chown -R 10001:10001' docker-compose.yml
 grep -q 'GIT_COMMITTER_NAME' backend/src/main/java/info/isaksson/erland/zipgithub/delivery/GitDeliveryService.java
 grep -q 'authorMode' frontend/src/pages/NewImportPage.tsx

@@ -32,6 +32,7 @@ const repositories = [
 
 beforeEach(() => {
   sessionStorage.clear();
+  localStorage.clear();
   sessionStorage.setItem(STAGING_CLAIM_TOKEN_KEY, 'claim-token');
   mocks.claimStagingImport.mockReset().mockResolvedValue(claimed);
   mocks.getClaimedStagingImport.mockReset().mockResolvedValue(claimed);
@@ -71,4 +72,21 @@ it('reuses an existing internal project when the selected repository already has
   await user.click(screen.getByRole('radio', { name: /first/i }));
   await user.click(screen.getByRole('button', { name: 'Fortsätt till granskning' }));
   expect(mocks.promoteStagingImport).toHaveBeenCalledWith('staging-1', { projectId: 'project-1' });
+});
+
+
+it('searches repositories in the Shortcut flow and keeps the selected repository visible beside the continue action', async () => {
+  const user = userEvent.setup();
+  render(<MemoryRouter initialEntries={['/staging/claim']}><Routes><Route path="/staging/claim" element={<StagingClaimPage />} /></Routes></MemoryRouter>);
+
+  await screen.findByRole('heading', { name: 'Välj repository för ZIP-filen' });
+  const search = screen.getByRole('searchbox', { name: 'Sök repositories' });
+  await user.type(search, 'second');
+  expect(screen.queryByRole('radio', { name: /first/i })).not.toBeInTheDocument();
+  await user.click(screen.getByRole('radio', { name: /second/i }));
+
+  const summary = screen.getByText('Valt repository').closest('.repository-selected-summary');
+  expect(summary).toHaveTextContent('second');
+  expect(summary).toHaveTextContent('erland/second');
+  expect(screen.getByRole('button', { name: 'Fortsätt till granskning' })).toBeEnabled();
 });

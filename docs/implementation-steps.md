@@ -769,3 +769,31 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Lägg regression för ren beskrivningslista, automatisk titel från första committen och bevarande av redan angiven titel.
 
 **Kvalitetsgrind för 9.20:** snabbfyllningen skapar ingen extra rubrik i PR-beskrivningen, en tom titel får ett användbart defaultvärde från första kronologiska Work-committen och explicit användarinmatad titel bevaras alltid.
+
+
+## Steg 9.21 - Gemensam repository-picker och senaste repositories
+
+- Återanvänd samma repository-picker på repository-startsidan och i Shortcut claim-flödet så sökning, sortering och framtida ranking inte divergerar mellan vyerna.
+- Behåll den fullständiga repositorylistan i sin befintliga alfabetiska ordning för scenariot där användaren arbetar med ett nytt repository.
+- Lägg sökning på både repositorynamn och fullständigt `owner/repository` även i Shortcut-flödet.
+- Begränsa repositorylistans visuella höjd och gör listan separat scrollbar så sidans fortsätt-/primäråtgärd inte flyttas långt ned när många repositories finns.
+- Visa högst fem senast använda repositories ovanför den fullständiga listan. I detta steg får recency vara en klient-side convenience och får inte ändra backendbehörighet eller dölja repositories från den fullständiga listan.
+- I Shortcut-flödet ska valt repository alltid sammanfattas direkt ovanför `Fortsätt till granskning`, inklusive fullständigt repositorynamn, så valet är synligt även om den valda raden scrollats ur listan.
+- Auto-scrolla inte sidan efter repositoryval; UI:t ska förbli stabilt.
+- Lägg regression för Shortcut-sökning, recency-sektion och synlig selected-repository summary.
+
+**Kvalitetsgrind för 9.21:** användaren ska kunna hitta ett repository via samma sökbara picker på båda huvudyta och Shortcut claim, långa listor ska scrolla inuti sin egen yta, nyligen använda repositories ska vara snabbåtkomliga utan att den alfabetiska fullistan ändras, och Shortcut-flödet ska alltid visa aktuellt val intill fortsätt-åtgärden.
+
+## Steg 9.22 - Smart Shortcut-förslag av repository
+
+- Bygg vidare på den gemensamma pickern från 9.21 och beräkna ett explicit repositoryförslag när en Shortcut-ZIP ska kopplas till repository.
+- Rankingen ska i första hand använda normaliserad filnamnslikhet mot repositorynamn/fullständigt namn, inklusive vanliga repo-prefix som `roman-`, `bradspel-` och `pwa-` utan att kräva projektspecifik hårdkodning.
+- Använd tidigare originella uploadfilnamn för samma project/repository som stark signal när en ny ZIP har samma stabila namn-prefix men annan revision/version/datum-suffix.
+- Ge nyligen uppdaterade/använda repositories en mindre recency-bonus, men låt aldrig recency slå en tydligt starkare namn-/historikmatch.
+- Normalisera bort vanliga revisions-/release-suffix (`r0042`, `v0.8.8`, `rc.89`, datum, `release`, `repo-cleanup` och liknande) före jämförelse där det kan göras deterministiskt utan att förlora den stabila projektdelen.
+- Ett hög-confidence-förslag ska visas som `Föreslaget repository` med en primär bekräftelseåtgärd och en tydlig `Välj ett annat repository`-väg till 9.21-pickern. Ingen heuristik får fortsätta eller promota importen utan användarens uttryckliga bekräftelse.
+- Vid låg confidence eller flera nära kandidater ska inget repository förväljas; visa i stället recency + sökbar alfabetisk lista.
+- Persistens/serverhistorik som behövs för tidigare uploadfilnamn ska vara användar-/project-isolerad och får inte exponera metadata mellan användare eller otillgängliga repositories.
+- Lägg regression för stark exakt/prefixmatch, tidigare-uploadmatch, flera tvetydiga kandidater, recency som tie-breaker och att förslag aldrig innebär implicit promotion.
+
+**Kvalitetsgrind för 9.22:** Shortcut-flödet ska i återkommande projekt ofta kunna presentera ett trovärdigt repositoryförslag utan sökning, men ett osäkert förslag får aldrig automatiskt välja/promota repository och den fullständiga 9.21-pickern ska alltid finnas som fallback.

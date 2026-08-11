@@ -1,3 +1,10 @@
+## 1.0.0-rc.89 - 2026-08-11
+
+- Step 9.21 adds a shared repository picker to the repository landing page and Shortcut claim flow.
+- Shortcut repository selection now has repository search, a separately scrollable list and an always-visible selected-repository summary above the continue action.
+- Up to five recently used repositories are kept as a client-side convenience and shown above the unchanged searchable/alphabetical full list.
+- Documents Step 9.22 as the next improvement: confidence-ranked Shortcut repository suggestions from ZIP filename, prior upload filenames and repository recency, always requiring user confirmation.
+
 ## 1.0.0-rc.88 - 2026-08-11
 
 - Corrected the Step 9.20 frontend regression test to address the PR title and description by their labels instead of using an ambiguous display-value query that correctly matched both fields.

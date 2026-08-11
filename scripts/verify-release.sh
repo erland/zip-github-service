@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.88"
+expected_version="1.0.0-rc.89"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.88 - 2026-08-11' CHANGELOG.md
+grep -q '## 1.0.0-rc.89 - 2026-08-11' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,13 +23,13 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0136`' docs/implementation-status.md
+grep -q 'Repository revision: `r0137`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'body: JSON.stringify(target)' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.20`' docs/implementation-status.md
+grep -q 'Last completed step: `9.21`' docs/implementation-status.md
 test -s docs/rc78-step-9.17-frontend-ci-correction.md
 test -s docs/rc79-step-9.17-commit-order-ci-correction.md
 test -s docs/rc80-step-9.16-merged-pr-race-correction.md
@@ -45,7 +45,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.20 COMPLETE — SIMPLIFIED COMMIT-DERIVED PR METADATA — CI TEST CORRECTED`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.21 COMPLETE — SHARED SEARCHABLE REPOSITORY PICKER — STEP 9.22 NEXT`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -64,6 +64,18 @@ test -s docs/step-9.18-report.md
 test -s docs/step-9.19-report.md
 test -s docs/step-9.20-report.md
 grep -q '| `9.20` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `9.21` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `9.22` .*\*\*NEXT\*\*' docs/implementation-status.md
+test -s docs/step-9.21-report.md
+test -s frontend/src/components/RepositoryPicker.tsx
+test -s frontend/src/components/RepositoryPicker.test.tsx
+test -s frontend/src/repositories/recentRepositories.ts
+grep -q 'Sök repositories' frontend/src/components/RepositoryPicker.tsx
+grep -q 'Senast använda' frontend/src/components/RepositoryPicker.tsx
+grep -q 'repository-picker-scroll' frontend/src/components/RepositoryPicker.tsx frontend/src/styles/global.css
+grep -q 'Valt repository' frontend/src/pages/StagingClaimPage.tsx
+grep -q 'RepositoryPicker' frontend/src/pages/ProjectListPage.tsx frontend/src/pages/StagingClaimPage.tsx
+grep -q 'Steg 9.22 - Smart Shortcut-förslag av repository' docs/implementation-steps.md
 grep -q 'const commits = history.commits.slice().reverse()' frontend/src/components/PullRequestComposer.tsx
 grep -q 'if (currentTitle.trim()) return currentTitle' frontend/src/components/PullRequestComposer.tsx
 grep -q 'First commit title' frontend/src/components/PullRequestComposer.test.tsx

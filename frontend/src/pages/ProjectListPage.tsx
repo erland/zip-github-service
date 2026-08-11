@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import RepositoryPicker from '../components/RepositoryPicker';
 import { getRepositories, type RepositoryEntry } from '../api/repositories';
 
 export default function ProjectListPage() {
   const [repositories, setRepositories] = useState<RepositoryEntry[]>([]);
-  const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,19 +15,6 @@ export default function ProjectListPage() {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
-
-  const duplicateNames = useMemo(() => {
-    const counts = new Map<string, number>();
-    repositories.forEach((repository) => counts.set(repository.repositoryName.toLowerCase(), (counts.get(repository.repositoryName.toLowerCase()) ?? 0) + 1));
-    return counts;
-  }, [repositories]);
-
-  const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) return repositories;
-    return repositories.filter((repository) => repository.repositoryName.toLowerCase().includes(normalized)
-      || repository.repositoryFullName.toLowerCase().includes(normalized));
-  }, [repositories, query]);
 
   return (
     <section className="page-card" aria-labelledby="repository-list-heading">
@@ -51,28 +37,13 @@ export default function ProjectListPage() {
         </div>
       )}
 
-      {!loading && !error && repositories.length > 0 && <>
-        <label className="repository-search" htmlFor="repository-filter">
-          <span>Sök repositories</span>
-          <input id="repository-filter" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Skriv en del av namnet…" autoComplete="off" />
-        </label>
-        {filtered.length === 0 ? <p className="empty-filter-result">Inga repositories matchar “{query.trim()}”.</p> : (
-          <ul className="repository-list">
-            {filtered.map((repository) => {
-              const target = repository.projectId
-                ? `/projects/${repository.projectId}`
-                : `/repositories/${repository.githubInstallationId}/${repository.githubRepositoryId}`;
-              const duplicate = (duplicateNames.get(repository.repositoryName.toLowerCase()) ?? 0) > 1;
-              return <li key={`${repository.githubInstallationId}:${repository.githubRepositoryId}`}>
-                <Link className="repository-list-link" to={target}>
-                  <strong>{repository.repositoryName}</strong>
-                  {duplicate && <span>{repository.repositoryFullName}</span>}
-                </Link>
-              </li>;
-            })}
-          </ul>
-        )}
-      </>}
+      {!loading && !error && repositories.length > 0 && <RepositoryPicker
+        repositories={repositories}
+        mode="navigate"
+        getTarget={(repository) => repository.projectId
+          ? `/projects/${repository.projectId}`
+          : `/repositories/${repository.githubInstallationId}/${repository.githubRepositoryId}`}
+      />}
     </section>
   );
 }

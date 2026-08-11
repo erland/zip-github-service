@@ -35,7 +35,10 @@ public class ImportComparisonService {
         archiveByPath.keySet().forEach(path -> allPaths.put(path, Boolean.TRUE));
         repositoryByPath.keySet().forEach(path -> allPaths.put(path, Boolean.TRUE));
 
-        GitIgnoreMatcher ignoreMatcher = new GitIgnoreMatcher(repository.gitIgnoreFiles());
+        Map<String, String> prospectiveGitIgnoreFiles = new TreeMap<>(repository.gitIgnoreFiles());
+        prospectiveGitIgnoreFiles.keySet().removeIf(path -> !archiveByPath.containsKey(path));
+        prospectiveGitIgnoreFiles.putAll(archive.gitIgnoreFiles());
+        GitIgnoreMatcher ignoreMatcher = new GitIgnoreMatcher(prospectiveGitIgnoreFiles);
         var result = new ArrayList<ImportComparisonEntry>();
         for (String path : allPaths.keySet()) {
             ArchiveInventoryEntry source = archiveByPath.get(path);

@@ -273,3 +273,18 @@ Work Actions status now preserves successfully fetched workflow runs/jobs if the
 ### r0131 / rc.83 Quarkus upload body-limit correction
 
 Production testing with an 18.7 MB Shortcut staging upload exposed a fourth ingress ceiling: Quarkus HTTP rejected the request before zip-github's own 200 MiB compressed-byte policy ran. `docker-compose.yml` now supplies `QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE` to the backend with a `200M` default. The external reverse proxy, frontend nginx, Quarkus request-body ceiling and `ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES` must remain coordinated; the application-level compressed-byte limit remains authoritative. No schema, authorization or import-policy change is involved.
+
+
+### r0132 / rc.84 — Step 9.19 prospective `.gitignore` and bulk review
+
+A real Fyrens väktare cleanup import exposed that review compared new files against the repository's old `.gitignore`, while workspace Git evaluated the `.gitignore` introduced by the same ZIP. rc.84 inventories normalized ZIP `.gitignore` contents and uses the complete ZIP's prospective rules in comparison, so newly ignored files are informational/non-selectable before approval. Repository ignore rules disappear when the complete ZIP deletes their `.gitignore`. Review also provides category-scoped ordinary mass selection and one explicit bulk override acknowledgement for all overridable entries in the active category; hard blockers remain impossible to select. Existing persisted pre-rc.84 plans are not rewritten and should be cancelled/re-uploaded if they contain additions that the ZIP's own `.gitignore` would ignore.
+
+
+### r0133 / rc.85 — Step 9.19 CI correction
+
+GitHub Actions exposed two fixture/type issues in rc.84 rather than production regressions. Two comparison tests still modeled a repository `.gitignore` while omitting that file from the complete uploaded ZIP, which under 9.19 correctly means the ignore file is deleted; the fixtures now include the `.gitignore` files they intend to preserve. The bulk-review frontend test now types its plan as `ImportPlanResponse`, allowing deletion entries to use the API's legitimate `null` archive metadata. No production behavior changed.
+
+
+### r0134 / rc.86 — Step 9.19 frontend build correction
+
+GitHub Actions showed that rc.85 fixed nullable deletion metadata but TypeScript still widened literal fields such as `status`, `severity` and `blockerType` to plain `string` for review entries appended through array spreads. The test now imports `ImportPlanEntry` and routes appended fixtures through a typed helper, preserving the API union types. All 58 Vitest runtime tests had already passed in rc.85; this is test-only typing and changes no production behavior.

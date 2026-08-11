@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.83"
+expected_version="1.0.0-rc.86"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.83 - 2026-08-10' CHANGELOG.md
+grep -q '## 1.0.0-rc.86 - 2026-08-11' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,13 +23,13 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0131`' docs/implementation-status.md
+grep -q 'Repository revision: `r0134`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'body: JSON.stringify(target)' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.18`' docs/implementation-status.md
+grep -q 'Last completed step: `9.19`' docs/implementation-status.md
 test -s docs/rc78-step-9.17-frontend-ci-correction.md
 test -s docs/rc79-step-9.17-commit-order-ci-correction.md
 test -s docs/rc80-step-9.16-merged-pr-race-correction.md
@@ -44,7 +44,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.18 COMPLETE — HTTP UPLOAD LIMITS ALIGNED`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.19 COMPLETE — PROSPECTIVE GITIGNORE + BULK REVIEW`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -60,6 +60,20 @@ grep -q '| `9.16` .*\*\*DONE\*\*' docs/implementation-status.md
 test -s docs/step-9.16-report.md
 test -s docs/step-9.17-report.md
 test -s docs/step-9.18-report.md
+test -s docs/step-9.19-report.md
+test -s docs/rc85-step-9.19-ci-correction.md
+test -s docs/rc86-step-9.19-frontend-build-correction.md
+grep -q 'const plan: ImportPlanResponse' frontend/src/pages/ImportReviewPage.test.tsx
+grep -q 'function planEntry(entry: ImportPlanEntry): ImportPlanEntry' frontend/src/pages/ImportReviewPage.test.tsx
+grep -q 'new ArchiveInventoryEntry(".gitignore", 40, "eeee", true)' backend/src/test/java/info/isaksson/erland/zipgithub/comparison/ImportComparisonServiceTest.java
+
+grep -q '| `9.19` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q 'prospectiveGitIgnoreFiles' backend/src/main/java/info/isaksson/erland/zipgithub/comparison/ImportComparisonService.java
+grep -q 'gitIgnoreFiles' backend/src/main/java/info/isaksson/erland/zipgithub/archive/ArchiveInventory.java
+grep -q 'Missing expected paths' backend/src/main/java/info/isaksson/erland/zipgithub/workspace/ImportWorkspaceService.java
+grep -q 'Massval för vald kategori' frontend/src/pages/ImportReviewPage.tsx
+grep -q 'bulk-approves and selects every overridable entry' frontend/src/pages/ImportReviewPage.test.tsx
+grep -q 'usesGitignoreFromUploadedZipForProspectiveUntrackedFiles' backend/src/test/java/info/isaksson/erland/zipgithub/comparison/ImportComparisonServiceTest.java
 grep -q '| `9.18` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q 'Övriga kontroller' frontend/src/components/ActionsPanel.tsx frontend/src/components/ActionsPanel.test.tsx
 grep -q 'isDuplicateGitHubActionsCheck' frontend/src/components/ActionsPanel.tsx

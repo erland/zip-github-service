@@ -2,10 +2,10 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ImportSelectionResponse } from '../api/imports';
+import type { ImportPlanEntry, ImportPlanResponse, ImportSelectionResponse } from '../api/imports';
 import ImportReviewPage from './ImportReviewPage';
 
-const plan = {
+const plan: ImportPlanResponse = {
   id: 'plan-1', importId: 'import-1', sourceUploadSha256: 'a'.repeat(64), baseCommitSha: 'b'.repeat(40),
   policyVersion: 'mvp-4', planDigestSha256: 'c'.repeat(64), status: 'READY', approvable: true,
   added: 1, modified: 1, unchanged: 1, ignored: 1, blocked: 1, hardBlocked: 0, overridableBlocked: 1,
@@ -18,6 +18,10 @@ const plan = {
     { path: '__MACOSX/._README.md', status: 'IGNORED', comparisonStatus: null, severity: 'NONE', blockerType: 'NONE', policyCode: 'TRANSPORT_NOISE', message: 'Transport metadata is ignored.', archiveSizeBytes: null, archiveSha256: null, repositorySizeBytes: null, repositorySha256: null, textCandidate: false },
   ],
 };
+
+function planEntry(entry: ImportPlanEntry): ImportPlanEntry {
+  return entry;
+}
 
 const selection: ImportSelectionResponse = {
   id: 'selection-1', importId: 'import-1', planId: 'plan-1', planDigestSha256: plan.planDigestSha256,
@@ -170,10 +174,43 @@ describe('ImportReviewPage', () => {
     expect(body.selectedPaths).toEqual(['docs/new.md']);
   });
 
+  it('bulk-approves and selects every overridable entry in the active category without including hard blockers', async () => {
+    const user = userEvent.setup();
+    const bulkPlan = { ...plan, blocked: 4, hardBlocked: 1, overridableBlocked: 3, entries: [
+      ...plan.entries,
+      planEntry({ path: 'output/old-a.pdf', status: 'BLOCKED', comparisonStatus: 'WOULD_DELETE', severity: 'BLOCKING', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'DELETION_REQUIRES_OVERRIDE', message: 'Deletion requires override.', archiveSizeBytes: null, archiveSha256: null, repositorySizeBytes: 100, repositorySha256: '8'.repeat(64), textCandidate: false }),
+      planEntry({ path: 'release/old-b.zip', status: 'BLOCKED', comparisonStatus: 'WOULD_DELETE', severity: 'BLOCKING', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'DELETION_REQUIRES_OVERRIDE', message: 'Deletion requires override.', archiveSizeBytes: null, archiveSha256: null, repositorySizeBytes: 100, repositorySha256: '9'.repeat(64), textCandidate: false }),
+      planEntry({ path: '.git/config', status: 'BLOCKED', comparisonStatus: 'MODIFIED', severity: 'BLOCKING', blockerType: 'HARD_BLOCKED', policyCode: 'GIT_METADATA_PROTECTED', message: 'Never deliver Git metadata.', archiveSizeBytes: 15, archiveSha256: '7'.repeat(64), repositorySizeBytes: null, repositorySha256: null, textCandidate: true }),
+    ] };
+    const bulkSelection = { ...selection, selectionDigestSha256: 'e'.repeat(64), selectedPaths: ['.github/workflows/ci.yml', 'README.md', 'docs/new.md', 'output/old-a.pdf', 'release/old-b.zip'], overrides: [
+      { path: '.github/workflows/ci.yml', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'GITHUB_WORKFLOW_PROTECTED', acknowledgement: 'User explicitly approved this policy override in the review UI.' },
+      { path: 'output/old-a.pdf', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'DELETION_REQUIRES_OVERRIDE', acknowledgement: 'User explicitly approved this policy override in the review UI.' },
+      { path: 'release/old-b.zip', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'DELETION_REQUIRES_OVERRIDE', acknowledgement: 'User explicitly approved this policy override in the review UI.' },
+    ] };
+    const fetchMock = installHappyPath(bulkPlan, bulkSelection);
+    renderPage();
+    await screen.findByText('README.md');
+    await user.click(screen.getByRole('button', { name: /Blockerade \(4\)/ }));
+    const bulkOverride = screen.getByRole('checkbox', { name: /godkänna och välja alla 3 överstyrbara förändringar/i });
+    await user.click(bulkOverride);
+    expect(screen.getByRole('checkbox', { name: 'Exkludera .github/workflows/ci.yml' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Exkludera output/old-a.pdf' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Exkludera release/old-b.zip' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Inkludera .git/config' })).toBeDisabled();
+    await user.type(screen.getByRole('textbox', { name: 'Meddelande' }), 'Remove generated repository artifacts');
+    await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));
+    await screen.findByText('Importresultat');
+    const selectionCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/selection') && (init as RequestInit | undefined)?.method === 'POST');
+    const body = JSON.parse(String((selectionCall?.[1] as RequestInit).body));
+    expect(body.selectedPaths).toEqual(['.github/workflows/ci.yml', 'README.md', 'docs/new.md', 'output/old-a.pdf', 'release/old-b.zip']);
+    expect(body.selectedPaths).not.toContain('.git/config');
+    expect(body.overrides).toHaveLength(3);
+  });
+
   it('submits explicit override audit and never includes a hard blocker', async () => {
     const user = userEvent.setup();
     const mixedPlan = { ...plan, blocked: 2, hardBlocked: 1, overridableBlocked: 1, entries: [...plan.entries,
-      { path: '.git/config', status: 'BLOCKED', comparisonStatus: 'MODIFIED', severity: 'BLOCKING', blockerType: 'HARD_BLOCKED', policyCode: 'GIT_METADATA_PROTECTED', message: 'Never deliver Git metadata.', archiveSizeBytes: 15, archiveSha256: '7'.repeat(64), repositorySizeBytes: null, repositorySha256: null, textCandidate: true }] };
+      planEntry({ path: '.git/config', status: 'BLOCKED', comparisonStatus: 'MODIFIED', severity: 'BLOCKING', blockerType: 'HARD_BLOCKED', policyCode: 'GIT_METADATA_PROTECTED', message: 'Never deliver Git metadata.', archiveSizeBytes: 15, archiveSha256: '7'.repeat(64), repositorySizeBytes: null, repositorySha256: null, textCandidate: true })] };
     const mixedSelection = { ...selection, selectionDigestSha256: 'f'.repeat(64), selectedPaths: ['.github/workflows/ci.yml', 'docs/new.md'], overrides: [{ path: '.github/workflows/ci.yml', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'GITHUB_WORKFLOW_PROTECTED', acknowledgement: 'User explicitly approved this policy override in the review UI.' }] };
     const fetchMock = installHappyPath(mixedPlan, mixedSelection);
     renderPage(); await screen.findByText('README.md');

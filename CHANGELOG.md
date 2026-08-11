@@ -1,3 +1,21 @@
+## 1.0.0-rc.86 - 2026-08-11
+
+- Corrected the remaining Step 9.19 frontend TypeScript fixture widening: newly appended review-plan entries are now explicitly checked as `ImportPlanEntry`, preserving literal union types through array spreads.
+- GitHub Actions had already shown all 58 frontend runtime tests passing in rc.85; this correction only addresses the `tsc -b` build error and does not change production behavior.
+
+## 1.0.0-rc.85 - 2026-08-11
+
+- Corrected step 9.19 CI fixtures after the complete-ZIP prospective `.gitignore` change: repository ignore tests now include the `.gitignore` files they intend to preserve, and the bulk-review frontend test uses the API plan type so deletion metadata may legitimately be `null`.
+- No production behavior change from rc.84.
+
+## 1.0.0-rc.84 - 2026-08-11
+
+- Added step 9.19 to make import review use the complete uploaded ZIP's prospective `.gitignore`, so new files ignored by rules introduced in the same ZIP are classified as `IGNORED` before selection/approval.
+- Removed stale repository `.gitignore` rules from prospective comparison when the complete ZIP deletes that `.gitignore`.
+- Added category-scoped bulk selection in review, including one explicit bulk override acknowledgement for all overridable entries in the active category while hard blockers remain impossible to select.
+- Improved workspace mismatch diagnostics with explicit missing and unexpected path lists.
+- Added backend and frontend regressions for prospective `.gitignore`, deleted `.gitignore`, bulk deletion override and hard-blocker exclusion.
+
 ## 1.0.0-rc.82 - 2026-08-09
 
 - Corrected the Step 9.18 frontend regression test to assert the visible CodeQL and Dependency review rows without assuming the link text and app label are one DOM text node.

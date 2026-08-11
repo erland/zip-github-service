@@ -204,6 +204,37 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
   setExternalChangesAcknowledged: (value: boolean) => void;
 }) {
   const selectedExternalOverlap = [...selectedPaths].filter((path) => externalChangedPaths.has(path));
+  const ordinaryBulkPaths = entries
+    .filter((entry) => entry.blockerType === 'NONE' && (entry.status === 'ADDED' || entry.status === 'MODIFIED'))
+    .map((entry) => entry.path);
+  const overridableBulkPaths = entries
+    .filter((entry) => entry.blockerType === 'OVERRIDABLE_BLOCKED')
+    .map((entry) => entry.path);
+  const allOrdinaryBulkSelected = ordinaryBulkPaths.length > 0 && ordinaryBulkPaths.every((path) => selectedPaths.has(path));
+  const allOverridableBulkSelected = overridableBulkPaths.length > 0
+    && overridableBulkPaths.every((path) => overridePaths.has(path) && selectedPaths.has(path));
+
+  function toggleOrdinaryBulkSelection() {
+    if (selectionLocked || ordinaryBulkPaths.length === 0) return;
+    const next = new Set(selectedPaths);
+    if (allOrdinaryBulkSelected) ordinaryBulkPaths.forEach((path) => next.delete(path));
+    else ordinaryBulkPaths.forEach((path) => next.add(path));
+    setSelectedPaths(next);
+  }
+
+  function toggleOverridableBulkSelection() {
+    if (selectionLocked || overridableBulkPaths.length === 0) return;
+    const nextSelected = new Set(selectedPaths);
+    const nextOverrides = new Set(overridePaths);
+    if (allOverridableBulkSelected) {
+      overridableBulkPaths.forEach((path) => { nextSelected.delete(path); nextOverrides.delete(path); });
+    } else {
+      overridableBulkPaths.forEach((path) => { nextSelected.add(path); nextOverrides.add(path); });
+    }
+    setOverridePaths(nextOverrides);
+    setSelectedPaths(nextSelected);
+  }
+
   return (
     <>
       {externalChanges?.branchChanged && <aside className="status-message status-message--warning" aria-label="GitHub-branchen har ändrats">
@@ -266,8 +297,19 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
         <span>{entries.length} filposter visas</span>
       </div>
       {entries.length === 0 ? <p className="empty-state">Inga filer matchar det valda filtret.</p> : (
-        <ReviewFileTree entries={entries} selectedPaths={selectedPaths} onSelectedPathsChange={setSelectedPaths}
-          overridePaths={overridePaths} onOverridePathsChange={setOverridePaths} externalChangedPaths={externalChangedPaths} locked={selectionLocked} />
+        <>
+          {(ordinaryBulkPaths.length > 0 || overridableBulkPaths.length > 0) && <div className="review-bulk-actions" aria-label="Massval för vald kategori">
+            {ordinaryBulkPaths.length > 0 && <button className="button button--secondary" type="button" disabled={selectionLocked} onClick={toggleOrdinaryBulkSelection}>
+              {allOrdinaryBulkSelected ? `Avmarkera alla vanliga förändringar (${ordinaryBulkPaths.length})` : `Välj alla vanliga förändringar (${ordinaryBulkPaths.length})`}
+            </button>}
+            {overridableBulkPaths.length > 0 && <label className="checkbox-row status-message status-message--warning">
+              <input type="checkbox" checked={allOverridableBulkSelected} disabled={selectionLocked} onChange={toggleOverridableBulkSelection} />
+              Jag förstår risken och vill {allOverridableBulkSelected ? 'ta bort godkännandet för' : 'godkänna och välja'} alla {overridableBulkPaths.length} överstyrbara förändringar i denna kategori.
+            </label>}
+          </div>}
+          <ReviewFileTree entries={entries} selectedPaths={selectedPaths} onSelectedPathsChange={setSelectedPaths}
+            overridePaths={overridePaths} onOverridePathsChange={setOverridePaths} externalChangedPaths={externalChangedPaths} locked={selectionLocked} />
+        </>
       )}
 
 

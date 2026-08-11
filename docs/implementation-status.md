@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0134`
-- Last completed step: `9.19`
+- Repository revision: `r0135`
+- Last completed step: `9.20`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.19 COMPLETE — PROSPECTIVE GITIGNORE + BULK REVIEW`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.20 COMPLETE — SIMPLIFIED COMMIT-DERIVED PR METADATA`
 
 ## Step ledger
 
@@ -104,6 +104,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.17` | Fas 9 — produktionshärdning och arbetsflöde | Explicit commit- och PR-metadata | **DONE** | 2026-08-09 | `docs/step-9.17-report.md` |
 | `9.18` | Fas 9 — Actions presentation | Deduplicerad workflow-jobb/check-presentation | **DONE** | 2026-08-09 | `docs/step-9.18-report.md` |
 | `9.19` | Fas 9 — Import/review consistency | Prospektiv `.gitignore` och kategori-massval | **DONE** | 2026-08-11 | `docs/step-9.19-report.md` |
+| `9.20` | Fas 9 — PR UX | Förenkla commit-derived PR title/description | **DONE** | 2026-08-11 | `docs/step-9.20-report.md`, `frontend/src/components/PullRequestComposer.tsx` |
 
 ## Revision history
 
@@ -288,3 +289,5 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0133` | 2026-08-11 | `9.19` CI correction | Corrected backend complete-ZIP `.gitignore` fixtures and frontend nullable deletion metadata typing; no production behavior change | `none` |
 | `r0134` | 2026-08-11 | `9.19` frontend build correction | Typed appended review-plan fixture entries as `ImportPlanEntry` so literal union values remain valid through array spreads; no production behavior change | `none` |
 | `r0132` | 2026-08-11 | `9.19` prospective gitignore + bulk review | Uploaded `.gitignore` rules now drive new-file ignore classification; category bulk override handles large deletion sets while hard blockers stay excluded | `none` |
+
+| `r0135` | 2026-08-11 | `9.20` simplified commit-derived PR metadata | Commit fill now emits only the chronological list and fills a blank PR title from the first commit subject without overwriting user input | `none` |

@@ -757,3 +757,15 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Lägg regression för ZIP som både inför `__pycache__/`/`*.pyc` i `.gitignore` och innehåller sådana nya filer, för borttagen repository-`.gitignore`, samt för massgodkännande av många deletions där en hårt blockerad path finns i samma kategori.
 
 **Kvalitetsgrind för 9.19:** review-planen och den slutliga Git-committen använder samma prospektiva ignore-semantik för den kompletta ZIP:en. En fil som ZIP:ens egen `.gitignore` gör ignorerad kan inte hamna i selectionen, workspace-mismatch är diagnostiskt, och användaren kan godkänna stora grupper av överstyrbara exempelvis borttagningar med ett enda uttryckligt kategori-godkännande utan att hårt blockerade paths kan läcka in.
+
+
+## Steg 9.20 - Förenklad PR-metadata från commitmeddelanden
+
+- Behåll `Fyll från commitmeddelanden` som frivillig hjälp och samma säkra Work-commitkälla från steg 9.17.
+- PR-beskrivningen ska fyllas med endast den kronologiska Markdown-listan av Workens commitmeddelanden. Lägg inte till någon genererad rubrik som `Ingående commits`.
+- Om PR-titeln är tom när snabbfyllningen används ska den sättas till första commitmeddelandets första rad i samma kronologiska lista, begränsad till PR-titelns befintliga maxlängd.
+- Om användaren redan har angett en icke-tom PR-titel får snabbfyllningen aldrig skriva över den.
+- Beskrivning och eventuell automatiskt satt titel ska fortsatt vara fullt redigerbara innan PR skapas. Backendvalidering och användarattribuerad PR-create ändras inte.
+- Lägg regression för ren beskrivningslista, automatisk titel från första committen och bevarande av redan angiven titel.
+
+**Kvalitetsgrind för 9.20:** snabbfyllningen skapar ingen extra rubrik i PR-beskrivningen, en tom titel får ett användbart defaultvärde från första kronologiska Work-committen och explicit användarinmatad titel bevaras alltid.

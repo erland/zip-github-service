@@ -1,3 +1,9 @@
+## 1.0.0-rc.87 - 2026-08-11
+
+- Added step 9.20 to simplify commit-derived pull request metadata: `Fyll från commitmeddelanden` now produces only the chronological Markdown bullet list, without an `Ingående commits` heading.
+- When the PR title is still blank, the helper now fills it from the first chronological Work commit's subject line; an already entered title is preserved unchanged.
+- Added focused frontend regressions for both automatic-title and preserve-existing-title behavior.
+
 ## 1.0.0-rc.86 - 2026-08-11
 
 - Corrected the remaining Step 9.19 frontend TypeScript fixture widening: newly appended review-plan entries are now explicitly checked as `ImportPlanEntry`, preserving literal union types through array spreads.

@@ -1,3 +1,5 @@
+> **Current handoff r0135 / 1.0.0-rc.87:** Phase 9 remains complete. Step 9.20 simplifies `Fyll från commitmeddelanden`: the PR description is now only the chronological Markdown commit list, and a blank PR title is initialized from the first chronological commit subject while any existing user title is preserved.
+
 > **Current handoff r0130 / 1.0.0-rc.82:** Phase 9 remains complete. This is a test-only correction after step 9.18: Actions/check deduplication production behavior is unchanged; the frontend regression now asserts linked check names and adjacent app labels using their actual DOM structure.
 
 > **Current handoff r0129 / 1.0.0-rc.81:** Phase 9 remains complete. Step 9.18 deduplicates GitHub Actions presentation: workflow runs/jobs remain primary, matching GitHub Actions checks are suppressed, and only external or unmatched checks remain under `Övriga kontroller`. No GitHub workflow configuration, backend Actions collection, 9.16 lifecycle behavior or 9.17 metadata behavior changed.

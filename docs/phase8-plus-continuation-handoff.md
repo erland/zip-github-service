@@ -273,3 +273,8 @@ Work Actions status now preserves successfully fetched workflow runs/jobs if the
 ### r0131 / rc.83 Quarkus upload body-limit correction
 
 Production testing with an 18.7 MB Shortcut staging upload exposed a fourth ingress ceiling: Quarkus HTTP rejected the request before zip-github's own 200 MiB compressed-byte policy ran. `docker-compose.yml` now supplies `QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE` to the backend with a `200M` default. The external reverse proxy, frontend nginx, Quarkus request-body ceiling and `ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES` must remain coordinated; the application-level compressed-byte limit remains authoritative. No schema, authorization or import-policy change is involved.
+
+
+### r0132 / rc.84 — Step 9.19 prospective `.gitignore` and bulk review
+
+A real Fyrens väktare cleanup import exposed that review compared new files against the repository's old `.gitignore`, while workspace Git evaluated the `.gitignore` introduced by the same ZIP. rc.84 inventories normalized ZIP `.gitignore` contents and uses the complete ZIP's prospective rules in comparison, so newly ignored files are informational/non-selectable before approval. Repository ignore rules disappear when the complete ZIP deletes their `.gitignore`. Review also provides category-scoped ordinary mass selection and one explicit bulk override acknowledgement for all overridable entries in the active category; hard blockers remain impossible to select. Existing persisted pre-rc.84 plans are not rewritten and should be cancelled/re-uploaded if they contain additions that the ZIP's own `.gitignore` would ignore.

@@ -1,7 +1,7 @@
 # Implementation status — zip-github
 
 Version 1.0  
-Updated: 10 August 2026
+Updated: 11 August 2026
 
 ## Purpose
 
@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0131`
-- Last completed step: `9.18`
+- Repository revision: `r0132`
+- Last completed step: `9.19`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.18 COMPLETE — HTTP UPLOAD LIMITS ALIGNED`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.19 COMPLETE — PROSPECTIVE GITIGNORE + BULK REVIEW`
 
 ## Step ledger
 
@@ -103,6 +103,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.16` | Fas 9 — PR-livscykel | Fortsatt Work under öppen PR, remote HEAD och extern-ändringsvarning | **DONE** | 2026-08-09 | `docs/step-9.16-report.md` |
 | `9.17` | Fas 9 — produktionshärdning och arbetsflöde | Explicit commit- och PR-metadata | **DONE** | 2026-08-09 | `docs/step-9.17-report.md` |
 | `9.18` | Fas 9 — Actions presentation | Deduplicerad workflow-jobb/check-presentation | **DONE** | 2026-08-09 | `docs/step-9.18-report.md` |
+| `9.19` | Fas 9 — Import/review consistency | Prospektiv `.gitignore` och kategori-massval | **DONE** | 2026-08-11 | `docs/step-9.19-report.md` |
 
 ## Revision history
 
@@ -284,3 +285,4 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0129` | 2026-08-09 | Step 9.18 Actions/check deduplication | Workflow jobs remain primary; matching GitHub Actions checks are suppressed while external and unmatched checks remain under Övriga kontroller | `none` |
 | `r0130` | 2026-08-09 | Step 9.18 frontend CI correction | Test assertions now match the rendered link/app-label DOM structure; production deduplication behavior is unchanged | `none` |
 | `r0131` | 2026-08-10 | Quarkus upload body-limit correction | Compose now aligns Quarkus HTTP max body size with the existing 200 MiB upload/frontend-nginx limits; docs and release gate updated | `none` |
+| `r0132` | 2026-08-11 | `9.19` prospective gitignore + bulk review | Uploaded `.gitignore` rules now drive new-file ignore classification; category bulk override handles large deletion sets while hard blockers stay excluded | `none` |

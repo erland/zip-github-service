@@ -3,10 +3,12 @@ package info.isaksson.erland.zipgithub.archive;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -42,6 +44,7 @@ public class ArchiveInventoryService {
         String wrapper = ArchiveNormalization.detectSingleWrapper(filePaths);
 
         Map<String, ArchiveInventoryEntry> files = new LinkedHashMap<>();
+        Map<String, String> gitIgnoreFiles = new LinkedHashMap<>();
         List<String> ignored = new ArrayList<>();
         try (InputStream input = new BufferedInputStream(Files.newInputStream(zipFile));
              ZipInputStream zip = new ZipInputStream(input)) {
@@ -57,9 +60,10 @@ public class ArchiveInventoryService {
                     drain(zip);
                     continue;
                 }
-                HashedContent hashed = hash(zip);
+                HashedContent hashed = hash(zip, isGitIgnorePath(normalized));
                 files.put(normalized, new ArchiveInventoryEntry(
                         normalized, hashed.size(), hashed.sha256(), hashed.textCandidate()));
+                if (hashed.capturedText() != null) gitIgnoreFiles.put(normalized, hashed.capturedText());
             }
         }
 
@@ -67,14 +71,18 @@ public class ArchiveInventoryService {
                 .sorted(Comparator.comparing(ArchiveInventoryEntry::path))
                 .toList();
         ignored.sort(String::compareTo);
-        return new ArchiveInventory(wrapper, ignored, sortedFiles);
+        return new ArchiveInventory(wrapper, ignored, sortedFiles, gitIgnoreFiles);
     }
 
     private static boolean isIgnored(String original, String normalized) {
         return ArchiveNormalization.isTransportNoise(original) || ROOT_NOISE.contains(normalized);
     }
 
-    private static HashedContent hash(InputStream input) throws IOException {
+    private static boolean isGitIgnorePath(String normalized) {
+        return ".gitignore".equals(normalized) || normalized.endsWith("/.gitignore");
+    }
+
+    private static HashedContent hash(InputStream input, boolean captureText) throws IOException {
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("SHA-256");
@@ -82,11 +90,13 @@ public class ArchiveInventoryService {
             throw new IllegalStateException("SHA-256 is unavailable", exception);
         }
         byte[] buffer = new byte[BUFFER_SIZE];
+        ByteArrayOutputStream captured = captureText ? new ByteArrayOutputStream() : null;
         long size = 0;
         boolean textCandidate = true;
         int read;
         while ((read = input.read(buffer)) != -1) {
             digest.update(buffer, 0, read);
+            if (captured != null) captured.write(buffer, 0, read);
             size += read;
             if (textCandidate) {
                 for (int i = 0; i < read; i++) {
@@ -97,7 +107,8 @@ public class ArchiveInventoryService {
                 }
             }
         }
-        return new HashedContent(size, HexFormat.of().formatHex(digest.digest()), textCandidate);
+        String capturedText = captured == null ? null : captured.toString(StandardCharsets.UTF_8);
+        return new HashedContent(size, HexFormat.of().formatHex(digest.digest()), textCandidate, capturedText);
     }
 
     private static void drain(InputStream input) throws IOException {
@@ -107,6 +118,6 @@ public class ArchiveInventoryService {
         }
     }
 
-    private record HashedContent(long size, String sha256, boolean textCandidate) {
+    private record HashedContent(long size, String sha256, boolean textCandidate, String capturedText) {
     }
 }

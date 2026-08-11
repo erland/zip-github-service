@@ -98,6 +98,9 @@ dd { margin: .25rem 0 0; overflow-wrap: anywhere; }
 .filter-button--active { background: #e9f0fb; border-color: #2457a6; color: #173f7a; font-weight: 800; }
 .review-list-heading { align-items: center; display: flex; justify-content: space-between; }
 .review-list-heading h2 { margin-bottom: .5rem; }
+.review-bulk-actions { display: grid; gap: .65rem; margin: .5rem 0 1rem; }
+.review-bulk-actions .button { justify-self: start; }
+.review-bulk-actions .checkbox-row { margin: 0; }
 .review-file-list { display: grid; gap: .7rem; list-style: none; margin: 0; padding: 0; }
 .review-file { border: 1px solid #dce1e8; border-left-width: .35rem; border-radius: .7rem; padding: .9rem; }
 .review-file--added { border-left-color: #27844f; }

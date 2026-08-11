@@ -1,3 +1,11 @@
+## 1.0.0-rc.84 - 2026-08-11
+
+- Added step 9.19 to make import review use the complete uploaded ZIP's prospective `.gitignore`, so new files ignored by rules introduced in the same ZIP are classified as `IGNORED` before selection/approval.
+- Removed stale repository `.gitignore` rules from prospective comparison when the complete ZIP deletes that `.gitignore`.
+- Added category-scoped bulk selection in review, including one explicit bulk override acknowledgement for all overridable entries in the active category while hard blockers remain impossible to select.
+- Improved workspace mismatch diagnostics with explicit missing and unexpected path lists.
+- Added backend and frontend regressions for prospective `.gitignore`, deleted `.gitignore`, bulk deletion override and hard-blocker exclusion.
+
 ## 1.0.0-rc.82 - 2026-08-09
 
 - Corrected the Step 9.18 frontend regression test to assert the visible CodeQL and Dependency review rows without assuming the link text and app label are one DOM text node.

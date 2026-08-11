@@ -747,3 +747,13 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 
 **Kvalitetsgrind för 9.18:** samma GitHub Actions-jobb visas högst en gång i Actions-panelen när dess workflow-jobb finns tillgängligt. Ingen check från annan app eller omatchad GitHub Actions-check får försvinna, och `Övriga kontroller` visas endast när det faktiskt finns ytterligare kontroller.
 
+## Steg 9.19 - Prospektiv `.gitignore` och massval i review
+
+- Behandla varje uppladdad ZIP som den kompletta tänkta repositorybilden även för `.gitignore`: jämförelsen ska använda `.gitignore`-filer från ZIP:en där de finns, ta bort repository-regler vars `.gitignore` saknas i ZIP:en och endast falla tillbaka på befintliga repository-regler för `.gitignore`-filer som fortsatt finns.
+- Nya ZIP-filer som matchar den prospektiva `.gitignore` ska klassificeras `IGNORED` redan i jämförelse/importplan, vara icke-valbara och aldrig nå approval/workspace/delivery. Tracked repositoryfiler ska fortsatt behandlas som tracked även om den nya `.gitignore` matchar dem.
+- Behåll exakt selection/workspace-invariant. Om den ändå bryts ska felet lista saknade respektive oväntade paths i stället för endast ett generiskt mismatch-meddelande.
+- Lägg kategori-/filterbaserat massval i review för vanliga valbara förändringar. Massval ska endast påverka poster i den aktiva kategorin och får aldrig inkludera hårt blockerade paths.
+- För överstyrbara poster ska ett enda uttryckligt massgodkännande kunna lägga till eller ta bort både override-audit och selection för samtliga överstyrbara poster i den aktiva kategorin. Detta ska ge samma auditsemantik som individuella overrides, inte kringgå blockerpolicyn.
+- Lägg regression för ZIP som både inför `__pycache__/`/`*.pyc` i `.gitignore` och innehåller sådana nya filer, för borttagen repository-`.gitignore`, samt för massgodkännande av många deletions där en hårt blockerad path finns i samma kategori.
+
+**Kvalitetsgrind för 9.19:** review-planen och den slutliga Git-committen använder samma prospektiva ignore-semantik för den kompletta ZIP:en. En fil som ZIP:ens egen `.gitignore` gör ignorerad kan inte hamna i selectionen, workspace-mismatch är diagnostiskt, och användaren kan godkänna stora grupper av överstyrbara exempelvis borttagningar med ett enda uttryckligt kategori-godkännande utan att hårt blockerade paths kan läcka in.

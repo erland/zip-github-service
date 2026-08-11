@@ -233,7 +233,14 @@ public class ImportWorkspaceService {
         parseNulPaths(runPlain(workspace, "git", "diff", "--name-only", "--no-renames", "-z")).forEach(changed::add);
         parseNulPaths(runPlain(workspace, "git", "ls-files", "--others", "--exclude-standard", "-z")).forEach(changed::add);
         if (!changed.equals(expected.keySet())) {
-            throw new ImportWorkspaceException("Local Git diff does not match the approved selection.");
+            Set<String> missing = new java.util.TreeSet<>(expected.keySet());
+            missing.removeAll(changed);
+            Set<String> unexpected = new java.util.TreeSet<>(changed);
+            unexpected.removeAll(expected.keySet());
+            StringBuilder message = new StringBuilder("Local Git diff does not match the approved selection.");
+            if (!missing.isEmpty()) message.append(" Missing expected paths: ").append(String.join(", ", missing)).append('.');
+            if (!unexpected.isEmpty()) message.append(" Unexpected paths: ").append(String.join(", ", unexpected)).append('.');
+            throw new ImportWorkspaceException(message.toString());
         }
         for (ImmutableImportPlanEntry entry : expected.values()) {
             Path file = workspace.resolve(entry.path()).normalize();

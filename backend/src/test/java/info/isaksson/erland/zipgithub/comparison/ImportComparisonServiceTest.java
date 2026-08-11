@@ -93,4 +93,39 @@ class ImportComparisonServiceTest {
         assertEquals(ImportFileStatus.ADDED, byPath.get("build/keep.txt").status());
     }
 
+    @Test
+    void usesGitignoreFromUploadedZipForProspectiveUntrackedFiles() {
+        UUID importId = UUID.randomUUID();
+        var archive = new ArchiveInventory(null, List.of(), List.of(
+                new ArchiveInventoryEntry(".gitignore", 24, "aaaa", true),
+                new ArchiveInventoryEntry("scripts/__pycache__/build.cpython-313.pyc", 10, "bbbb", false),
+                new ArchiveInventoryEntry("src/new.txt", 3, "cccc", true)),
+                Map.of(".gitignore", "__pycache__/\n*.pyc\n"));
+        var snapshot = new RepositorySnapshot(importId, "owner/repo", "main", "f".repeat(40), List.of(), Map.of(), Instant.EPOCH);
+
+        var byPath = new ImportComparisonService().compare(archive, snapshot).entries().stream()
+                .collect(java.util.stream.Collectors.toMap(ImportComparisonEntry::path, e -> e));
+
+        assertEquals(ImportFileStatus.ADDED, byPath.get(".gitignore").status());
+        assertEquals(ImportFileStatus.IGNORED, byPath.get("scripts/__pycache__/build.cpython-313.pyc").status());
+        assertEquals(ImportFileStatus.ADDED, byPath.get("src/new.txt").status());
+    }
+
+    @Test
+    void removesRepositoryGitignoreRulesWhenCompleteZipDeletesThatGitignore() {
+        UUID importId = UUID.randomUUID();
+        var archive = new ArchiveInventory(null, List.of(), List.of(
+                new ArchiveInventoryEntry("generated/new.txt", 3, "aaaa", true)));
+        var snapshot = new RepositorySnapshot(importId, "owner/repo", "main", "f".repeat(40), List.of(
+                new RepositorySnapshotEntry(".gitignore", "100644", "blob", "1".repeat(40), 11, "bbbb")),
+                Map.of(".gitignore", "generated/\n"), Instant.EPOCH);
+
+        var byPath = new ImportComparisonService().compare(archive, snapshot).entries().stream()
+                .collect(java.util.stream.Collectors.toMap(ImportComparisonEntry::path, e -> e));
+
+        assertEquals(ImportFileStatus.WOULD_DELETE, byPath.get(".gitignore").status());
+        assertEquals(ImportFileStatus.ADDED, byPath.get("generated/new.txt").status(),
+                "a .gitignore deleted by the complete ZIP must not keep hiding new paths");
+    }
+
 }

@@ -22,8 +22,14 @@ export default function PullRequestComposer({ projectId, onCreated, onCancel }: 
         throw new Error('Commitmeddelandena kunde inte hämtas säkert från GitHub. Skriv PR-beskrivningen manuellt.');
       }
       if (history.commits.length === 0) throw new Error('Det finns inga Work-commits att lägga in i beskrivningen.');
-      const text = ['## Ingående commits', '', ...history.commits.slice().reverse().map(commit => `- ${commit.message.trim().replace(/\n/g, '\n  ')}`)].join('\n');
+      const commits = history.commits.slice().reverse();
+      const text = commits.map(commit => `- ${commit.message.trim().replace(/\n/g, '\n  ')}`).join('\n');
       setDescription(text.slice(0, 65536));
+      setTitle(currentTitle => {
+        if (currentTitle.trim()) return currentTitle;
+        const firstCommitLine = commits[0].message.trim().split('\n', 1)[0]?.trim() ?? '';
+        return firstCommitLine.slice(0, 256);
+      });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Commitmeddelandena kunde inte hämtas.');
     } finally { setFilling(false); }

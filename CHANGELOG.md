@@ -1,3 +1,8 @@
+## 1.0.0-rc.88 - 2026-08-11
+
+- Corrected the Step 9.20 frontend regression test to address the PR title and description by their labels instead of using an ambiguous display-value query that correctly matched both fields.
+- No production behavior changes from rc.87.
+
 ## 1.0.0-rc.87 - 2026-08-11
 
 - Added step 9.20 to simplify commit-derived pull request metadata: `Fyll från commitmeddelanden` now produces only the chronological Markdown bullet list, without an `Ingående commits` heading.

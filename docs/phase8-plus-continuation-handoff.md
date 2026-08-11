@@ -1,3 +1,5 @@
+> **Current handoff r0136 / 1.0.0-rc.88:** Phase 9 remains complete. Step 9.20 behavior is unchanged; rc.88 only corrects the PR-composer regression test to query title and description by labels after GitHub CI showed one ambiguous display-value match.
+
 > **Current handoff r0135 / 1.0.0-rc.87:** Phase 9 remains complete. Step 9.20 simplifies `Fyll från commitmeddelanden`: the PR description is now only the chronological Markdown commit list, and a blank PR title is initialized from the first chronological commit subject while any existing user title is preserved.
 
 > **Current handoff r0130 / 1.0.0-rc.82:** Phase 9 remains complete. This is a test-only correction after step 9.18: Actions/check deduplication production behavior is unchanged; the frontend regression now asserts linked check names and adjacent app labels using their actual DOM structure.

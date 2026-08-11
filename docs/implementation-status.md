@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0135`
+- Repository revision: `r0136`
 - Last completed step: `9.20`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.20 COMPLETE — SIMPLIFIED COMMIT-DERIVED PR METADATA`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.20 COMPLETE — SIMPLIFIED COMMIT-DERIVED PR METADATA — CI TEST CORRECTED`
 
 ## Step ledger
 
@@ -290,4 +290,5 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0134` | 2026-08-11 | `9.19` frontend build correction | Typed appended review-plan fixture entries as `ImportPlanEntry` so literal union values remain valid through array spreads; no production behavior change | `none` |
 | `r0132` | 2026-08-11 | `9.19` prospective gitignore + bulk review | Uploaded `.gitignore` rules now drive new-file ignore classification; category bulk override handles large deletion sets while hard blockers stay excluded | `none` |
 
+| `r0136` | 2026-08-11 | `9.20` frontend CI test correction | Label-scoped PR composer assertions remove the ambiguous display-value match; no production behavior change | `none` |
 | `r0135` | 2026-08-11 | `9.20` simplified commit-derived PR metadata | Commit fill now emits only the chronological list and fills a blank PR title from the first commit subject without overwriting user input | `none` |

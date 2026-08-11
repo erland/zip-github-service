@@ -22,7 +22,7 @@ it('fills a plain chronological commit list and uses the first commit subject as
   render(<PullRequestComposer projectId="p1" onCreated={() => undefined} onCancel={() => undefined} />);
   await user.click(screen.getByRole('button', { name: 'Fyll från commitmeddelanden' }));
 
-  expect(await screen.findByDisplayValue(/First commit title/)).toHaveValue('- First commit title\n  first body line\n- Second commit\n  with body');
+  expect(await screen.findByLabelText('Beskrivning')).toHaveValue('- First commit title\n  first body line\n- Second commit\n  with body');
   expect(screen.getByLabelText('Titel')).toHaveValue('First commit title');
 });
 
@@ -37,6 +37,6 @@ it('does not replace a PR title already entered by the user when filling from co
   await user.type(screen.getByLabelText('Titel'), 'My custom PR title');
   await user.click(screen.getByRole('button', { name: 'Fyll från commitmeddelanden' }));
 
-  expect(await screen.findByDisplayValue(/Second commit/)).toHaveValue('- First commit title\n  first body line\n- Second commit\n  with body');
+  expect(await screen.findByLabelText('Beskrivning')).toHaveValue('- First commit title\n  first body line\n- Second commit\n  with body');
   expect(screen.getByLabelText('Titel')).toHaveValue('My custom PR title');
 });

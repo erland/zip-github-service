@@ -2,7 +2,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ImportPlanResponse, ImportSelectionResponse } from '../api/imports';
+import type { ImportPlanEntry, ImportPlanResponse, ImportSelectionResponse } from '../api/imports';
 import ImportReviewPage from './ImportReviewPage';
 
 const plan: ImportPlanResponse = {
@@ -18,6 +18,10 @@ const plan: ImportPlanResponse = {
     { path: '__MACOSX/._README.md', status: 'IGNORED', comparisonStatus: null, severity: 'NONE', blockerType: 'NONE', policyCode: 'TRANSPORT_NOISE', message: 'Transport metadata is ignored.', archiveSizeBytes: null, archiveSha256: null, repositorySizeBytes: null, repositorySha256: null, textCandidate: false },
   ],
 };
+
+function planEntry(entry: ImportPlanEntry): ImportPlanEntry {
+  return entry;
+}
 
 const selection: ImportSelectionResponse = {
   id: 'selection-1', importId: 'import-1', planId: 'plan-1', planDigestSha256: plan.planDigestSha256,
@@ -174,9 +178,9 @@ describe('ImportReviewPage', () => {
     const user = userEvent.setup();
     const bulkPlan = { ...plan, blocked: 4, hardBlocked: 1, overridableBlocked: 3, entries: [
       ...plan.entries,
-      { path: 'output/old-a.pdf', status: 'BLOCKED', comparisonStatus: 'WOULD_DELETE', severity: 'BLOCKING', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'DELETION_REQUIRES_OVERRIDE', message: 'Deletion requires override.', archiveSizeBytes: null, archiveSha256: null, repositorySizeBytes: 100, repositorySha256: '8'.repeat(64), textCandidate: false },
-      { path: 'release/old-b.zip', status: 'BLOCKED', comparisonStatus: 'WOULD_DELETE', severity: 'BLOCKING', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'DELETION_REQUIRES_OVERRIDE', message: 'Deletion requires override.', archiveSizeBytes: null, archiveSha256: null, repositorySizeBytes: 100, repositorySha256: '9'.repeat(64), textCandidate: false },
-      { path: '.git/config', status: 'BLOCKED', comparisonStatus: 'MODIFIED', severity: 'BLOCKING', blockerType: 'HARD_BLOCKED', policyCode: 'GIT_METADATA_PROTECTED', message: 'Never deliver Git metadata.', archiveSizeBytes: 15, archiveSha256: '7'.repeat(64), repositorySizeBytes: null, repositorySha256: null, textCandidate: true },
+      planEntry({ path: 'output/old-a.pdf', status: 'BLOCKED', comparisonStatus: 'WOULD_DELETE', severity: 'BLOCKING', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'DELETION_REQUIRES_OVERRIDE', message: 'Deletion requires override.', archiveSizeBytes: null, archiveSha256: null, repositorySizeBytes: 100, repositorySha256: '8'.repeat(64), textCandidate: false }),
+      planEntry({ path: 'release/old-b.zip', status: 'BLOCKED', comparisonStatus: 'WOULD_DELETE', severity: 'BLOCKING', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'DELETION_REQUIRES_OVERRIDE', message: 'Deletion requires override.', archiveSizeBytes: null, archiveSha256: null, repositorySizeBytes: 100, repositorySha256: '9'.repeat(64), textCandidate: false }),
+      planEntry({ path: '.git/config', status: 'BLOCKED', comparisonStatus: 'MODIFIED', severity: 'BLOCKING', blockerType: 'HARD_BLOCKED', policyCode: 'GIT_METADATA_PROTECTED', message: 'Never deliver Git metadata.', archiveSizeBytes: 15, archiveSha256: '7'.repeat(64), repositorySizeBytes: null, repositorySha256: null, textCandidate: true }),
     ] };
     const bulkSelection = { ...selection, selectionDigestSha256: 'e'.repeat(64), selectedPaths: ['.github/workflows/ci.yml', 'README.md', 'docs/new.md', 'output/old-a.pdf', 'release/old-b.zip'], overrides: [
       { path: '.github/workflows/ci.yml', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'GITHUB_WORKFLOW_PROTECTED', acknowledgement: 'User explicitly approved this policy override in the review UI.' },
@@ -206,7 +210,7 @@ describe('ImportReviewPage', () => {
   it('submits explicit override audit and never includes a hard blocker', async () => {
     const user = userEvent.setup();
     const mixedPlan = { ...plan, blocked: 2, hardBlocked: 1, overridableBlocked: 1, entries: [...plan.entries,
-      { path: '.git/config', status: 'BLOCKED', comparisonStatus: 'MODIFIED', severity: 'BLOCKING', blockerType: 'HARD_BLOCKED', policyCode: 'GIT_METADATA_PROTECTED', message: 'Never deliver Git metadata.', archiveSizeBytes: 15, archiveSha256: '7'.repeat(64), repositorySizeBytes: null, repositorySha256: null, textCandidate: true }] };
+      planEntry({ path: '.git/config', status: 'BLOCKED', comparisonStatus: 'MODIFIED', severity: 'BLOCKING', blockerType: 'HARD_BLOCKED', policyCode: 'GIT_METADATA_PROTECTED', message: 'Never deliver Git metadata.', archiveSizeBytes: 15, archiveSha256: '7'.repeat(64), repositorySizeBytes: null, repositorySha256: null, textCandidate: true })] };
     const mixedSelection = { ...selection, selectionDigestSha256: 'f'.repeat(64), selectedPaths: ['.github/workflows/ci.yml', 'docs/new.md'], overrides: [{ path: '.github/workflows/ci.yml', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'GITHUB_WORKFLOW_PROTECTED', acknowledgement: 'User explicitly approved this policy override in the review UI.' }] };
     const fetchMock = installHappyPath(mixedPlan, mixedSelection);
     renderPage(); await screen.findByText('README.md');

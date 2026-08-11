@@ -283,3 +283,8 @@ A real Fyrens väktare cleanup import exposed that review compared new files aga
 ### r0133 / rc.85 — Step 9.19 CI correction
 
 GitHub Actions exposed two fixture/type issues in rc.84 rather than production regressions. Two comparison tests still modeled a repository `.gitignore` while omitting that file from the complete uploaded ZIP, which under 9.19 correctly means the ignore file is deleted; the fixtures now include the `.gitignore` files they intend to preserve. The bulk-review frontend test now types its plan as `ImportPlanResponse`, allowing deletion entries to use the API's legitimate `null` archive metadata. No production behavior changed.
+
+
+### r0134 / rc.86 — Step 9.19 frontend build correction
+
+GitHub Actions showed that rc.85 fixed nullable deletion metadata but TypeScript still widened literal fields such as `status`, `severity` and `blockerType` to plain `string` for review entries appended through array spreads. The test now imports `ImportPlanEntry` and routes appended fixtures through a typed helper, preserving the API union types. All 58 Vitest runtime tests had already passed in rc.85; this is test-only typing and changes no production behavior.

@@ -1,3 +1,8 @@
+## 1.0.0-rc.86 - 2026-08-11
+
+- Corrected the remaining Step 9.19 frontend TypeScript fixture widening: newly appended review-plan entries are now explicitly checked as `ImportPlanEntry`, preserving literal union types through array spreads.
+- GitHub Actions had already shown all 58 frontend runtime tests passing in rc.85; this correction only addresses the `tsc -b` build error and does not change production behavior.
+
 ## 1.0.0-rc.85 - 2026-08-11
 
 - Corrected step 9.19 CI fixtures after the complete-ZIP prospective `.gitignore` change: repository ignore tests now include the `.gitignore` files they intend to preserve, and the bulk-review frontend test uses the API plan type so deletion metadata may legitimately be `null`.

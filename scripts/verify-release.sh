@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.85"
+expected_version="1.0.0-rc.86"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.85 - 2026-08-11' CHANGELOG.md
+grep -q '## 1.0.0-rc.86 - 2026-08-11' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,7 +23,7 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0133`' docs/implementation-status.md
+grep -q 'Repository revision: `r0134`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -62,7 +62,9 @@ test -s docs/step-9.17-report.md
 test -s docs/step-9.18-report.md
 test -s docs/step-9.19-report.md
 test -s docs/rc85-step-9.19-ci-correction.md
+test -s docs/rc86-step-9.19-frontend-build-correction.md
 grep -q 'const plan: ImportPlanResponse' frontend/src/pages/ImportReviewPage.test.tsx
+grep -q 'function planEntry(entry: ImportPlanEntry): ImportPlanEntry' frontend/src/pages/ImportReviewPage.test.tsx
 grep -q 'new ArchiveInventoryEntry(".gitignore", 40, "eeee", true)' backend/src/test/java/info/isaksson/erland/zipgithub/comparison/ImportComparisonServiceTest.java
 
 grep -q '| `9.19` .*\*\*DONE\*\*' docs/implementation-status.md

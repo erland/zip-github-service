@@ -796,4 +796,6 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Persistens/serverhistorik som behövs för tidigare uploadfilnamn ska vara användar-/project-isolerad och får inte exponera metadata mellan användare eller otillgängliga repositories.
 - Lägg regression för stark exakt/prefixmatch, tidigare-uploadmatch, flera tvetydiga kandidater, recency som tie-breaker och att förslag aldrig innebär implicit promotion.
 
+**Status:** DONE i r0138 / 1.0.0-rc.90. Se `docs/step-9.22-report.md`.
+
 **Kvalitetsgrind för 9.22:** Shortcut-flödet ska i återkommande projekt ofta kunna presentera ett trovärdigt repositoryförslag utan sökning, men ett osäkert förslag får aldrig automatiskt välja/promota repository och den fullständiga 9.21-pickern ska alltid finnas som fallback.

@@ -418,6 +418,10 @@ code, pre, .repository-name, .review-file__path { overflow-wrap: anywhere; word-
 .repository-picker-scroll .repository-list { margin: 0; }
 .repository-picker-scroll .choice-list { margin: 0; }
 .repository-choice-list .choice-row.is-selected { background: #eef3fb; border-color: #7e8ba0; }
+.repository-suggestion { background: #f7f9fc; border: 1px solid #cfd8e8; border-radius: .9rem; margin-top: 1.25rem; padding: 1rem 1.1rem; }
+.repository-suggestion h2 { margin: .15rem 0 .35rem; }
+.repository-suggestion p { margin: .45rem 0; }
+.repository-suggestion-return { margin-top: 1rem; }
 .repository-selected-summary { background: #f7f9fc; border: 1px solid #dce1e8; border-radius: .75rem; display: grid; gap: .15rem; margin: 1rem 0; padding: .85rem 1rem; }
 .repository-selected-summary > span { color: #5d6878; font-size: .82rem; font-weight: 700; text-transform: uppercase; }
 .repository-selected-summary small { color: #5d6878; overflow-wrap: anywhere; }

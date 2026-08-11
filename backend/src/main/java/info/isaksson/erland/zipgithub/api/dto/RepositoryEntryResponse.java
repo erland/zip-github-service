@@ -1,5 +1,6 @@
 package info.isaksson.erland.zipgithub.api.dto;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public record RepositoryEntryResponse(
@@ -10,4 +11,6 @@ public record RepositoryEntryResponse(
         boolean privateRepository,
         String defaultBranch,
         String htmlUrl,
-        UUID projectId) {}
+        UUID projectId,
+        String lastSourceFilename,
+        Instant lastUsedAt) {}

@@ -1,3 +1,8 @@
+## 1.0.0-rc.85 - 2026-08-11
+
+- Corrected step 9.19 CI fixtures after the complete-ZIP prospective `.gitignore` change: repository ignore tests now include the `.gitignore` files they intend to preserve, and the bulk-review frontend test uses the API plan type so deletion metadata may legitimately be `null`.
+- No production behavior change from rc.84.
+
 ## 1.0.0-rc.84 - 2026-08-11
 
 - Added step 9.19 to make import review use the complete uploaded ZIP's prospective `.gitignore`, so new files ignored by rules introduced in the same ZIP are classified as `IGNORED` before selection/approval.

@@ -60,10 +60,12 @@ class ImportComparisonServiceTest {
     void marksOnlyUntrackedZipPathsMatchingRepositoryGitignoreAsIgnored() {
         UUID importId = UUID.randomUUID();
         var archive = new ArchiveInventory(null, List.of(), List.of(
+                new ArchiveInventoryEntry(".gitignore", 40, "eeee", true),
                 new ArchiveInventoryEntry("shortcut/releases/zip-github.shortcut", 20, "aaaa", false),
                 new ArchiveInventoryEntry("generated/cache.bin", 5, "bbbb", false),
                 new ArchiveInventoryEntry("tracked.log", 4, "cccc", true),
-                new ArchiveInventoryEntry("keep.log", 3, "dddd", true)));
+                new ArchiveInventoryEntry("keep.log", 3, "dddd", true)),
+                Map.of(".gitignore", "/shortcut/releases/*.shortcut\n*.log\n!keep.log\ngenerated/\n"));
         var snapshot = new RepositorySnapshot(importId, "owner/repo", "main", "f".repeat(40), List.of(
                 new RepositorySnapshotEntry(".gitignore", "100644", "blob", "1".repeat(40), 40, "eeee"),
                 new RepositorySnapshotEntry("tracked.log", "100644", "blob", "2".repeat(40), 4, "ffff")),
@@ -82,8 +84,11 @@ class ImportComparisonServiceTest {
     void nestedGitignoreOverridesParentForItsSubtree() {
         UUID importId = UUID.randomUUID();
         var archive = new ArchiveInventory(null, List.of(), List.of(
+                new ArchiveInventoryEntry(".gitignore", 8, "c", true),
+                new ArchiveInventoryEntry("build/.gitignore", 10, "d", true),
                 new ArchiveInventoryEntry("build/drop.txt", 1, "a", true),
-                new ArchiveInventoryEntry("build/keep.txt", 1, "b", true)));
+                new ArchiveInventoryEntry("build/keep.txt", 1, "b", true)),
+                Map.of(".gitignore", "build/*\n", "build/.gitignore", "!keep.txt\n"));
         var snapshot = new RepositorySnapshot(importId, "owner/repo", "main", "f".repeat(40), List.of(),
                 Map.of(".gitignore", "build/*\n", "build/.gitignore", "!keep.txt\n"), Instant.EPOCH);
 

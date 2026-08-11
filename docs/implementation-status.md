@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0132`
+- Repository revision: `r0133`
 - Last completed step: `9.19`
 - Next step: `none` — implementation plan complete
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 9 COMPLETE — STEP 9.19 COMPLETE — PROSPECTIVE GITIGNORE + BULK REVIEW`
@@ -285,4 +285,5 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0129` | 2026-08-09 | Step 9.18 Actions/check deduplication | Workflow jobs remain primary; matching GitHub Actions checks are suppressed while external and unmatched checks remain under Övriga kontroller | `none` |
 | `r0130` | 2026-08-09 | Step 9.18 frontend CI correction | Test assertions now match the rendered link/app-label DOM structure; production deduplication behavior is unchanged | `none` |
 | `r0131` | 2026-08-10 | Quarkus upload body-limit correction | Compose now aligns Quarkus HTTP max body size with the existing 200 MiB upload/frontend-nginx limits; docs and release gate updated | `none` |
+| `r0133` | 2026-08-11 | `9.19` CI correction | Corrected backend complete-ZIP `.gitignore` fixtures and frontend nullable deletion metadata typing; no production behavior change | `none` |
 | `r0132` | 2026-08-11 | `9.19` prospective gitignore + bulk review | Uploaded `.gitignore` rules now drive new-file ignore classification; category bulk override handles large deletion sets while hard blockers stay excluded | `none` |

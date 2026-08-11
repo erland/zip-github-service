@@ -2,10 +2,10 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ImportSelectionResponse } from '../api/imports';
+import type { ImportPlanResponse, ImportSelectionResponse } from '../api/imports';
 import ImportReviewPage from './ImportReviewPage';
 
-const plan = {
+const plan: ImportPlanResponse = {
   id: 'plan-1', importId: 'import-1', sourceUploadSha256: 'a'.repeat(64), baseCommitSha: 'b'.repeat(40),
   policyVersion: 'mvp-4', planDigestSha256: 'c'.repeat(64), status: 'READY', approvable: true,
   added: 1, modified: 1, unchanged: 1, ignored: 1, blocked: 1, hardBlocked: 0, overridableBlocked: 1,

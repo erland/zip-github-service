@@ -5,6 +5,7 @@ import { getRepositories, type RepositoryEntry } from '../api/repositories';
 import { prepareImportReview } from '../api/imports';
 import { claimStagingImport, getClaimedStagingImport, promoteStagingImport, type ClaimedStagingImport } from '../api/staging';
 import { markRepositoryRecent, repositoryKey } from '../repositories/recentRepositories';
+import { suggestRepository } from '../repositories/repositorySuggestion';
 import { STAGING_CLAIM_TOKEN_KEY } from '../staging/claimToken';
 
 const STAGING_CLAIMED_ID_KEY = 'zipgithub.staging.claimed-id';
@@ -22,7 +23,9 @@ export default function StagingClaimPage() {
   const [repositories, setRepositories] = useState<RepositoryEntry[]>([]);
   const [selectedRepositoryKey, setSelectedRepositoryKey] = useState('');
   const [promoting, setPromoting] = useState(false);
+  const [showRepositoryPicker, setShowRepositoryPicker] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const suggestion = useMemo(() => claimed ? suggestRepository(claimed.originalFilename, repositories) : null, [claimed, repositories]);
   const selectedRepository = useMemo(
     () => repositories.find((repository) => repositoryKey(repository) === selectedRepositoryKey) ?? null,
     [repositories, selectedRepositoryKey],
@@ -48,7 +51,10 @@ export default function StagingClaimPage() {
         if (cancelled) return;
         setClaimed(value);
         setRepositories(availableRepositories);
-        if (availableRepositories.length === 1) setSelectedRepositoryKey(repositoryKey(availableRepositories[0]));
+        if (availableRepositories.length === 1) {
+          setSelectedRepositoryKey(repositoryKey(availableRepositories[0]));
+          setShowRepositoryPicker(false);
+        }
         setState('success');
       } catch (reason: unknown) {
         if (cancelled) return;
@@ -59,6 +65,10 @@ export default function StagingClaimPage() {
     void load();
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (suggestion?.confidence === 'high' && !selectedRepositoryKey && repositories.length > 1) setShowRepositoryPicker(false);
+  }, [suggestion, selectedRepositoryKey, repositories.length]);
 
   async function promote() {
     if (!claimed || !selectedRepository || promoting) return;
@@ -92,7 +102,19 @@ export default function StagingClaimPage() {
     <p className="lead">Uppladdningen är privat bunden till din användare. zip-github förbereder repositoryt automatiskt när du fortsätter.</p>
     {claimed && <dl className="detail-list"><div><dt>Fil</dt><dd>{claimed.originalFilename}</dd></div><div><dt>Storlek</dt><dd>{formatBytes(claimed.sizeBytes)}</dd></div><div><dt>SHA-256</dt><dd><code>{claimed.sha256}</code></dd></div><div><dt>Giltig till</dt><dd>{new Date(claimed.expiresAt).toLocaleString('sv-SE')}</dd></div></dl>}
     {repositories.length > 0 ? <>
-      <RepositoryPicker repositories={repositories} mode="select" selectedRepositoryKey={selectedRepositoryKey} onSelect={(repository) => setSelectedRepositoryKey(repositoryKey(repository))} />
+      {suggestion?.confidence === 'high' && !selectedRepository && !showRepositoryPicker && <section className="repository-suggestion" aria-labelledby="suggested-repository-heading">
+        <p className="eyebrow">Föreslaget repository</p>
+        <h2 id="suggested-repository-heading">{suggestion.repository.repositoryName}</h2>
+        <p><code>{suggestion.repository.repositoryFullName}</code></p>
+        <p>{suggestion.reason}</p>
+        <div className="result-primary-action">
+          <button className="button button--primary" type="button" onClick={() => setSelectedRepositoryKey(repositoryKey(suggestion.repository))}>Använd detta repository</button>
+          <button className="button button--secondary" type="button" onClick={() => setShowRepositoryPicker(true)}>Välj ett annat repository</button>
+        </div>
+      </section>}
+      {(showRepositoryPicker || !suggestion || suggestion.confidence !== 'high') && <RepositoryPicker repositories={repositories} mode="select" selectedRepositoryKey={selectedRepositoryKey} onSelect={(repository) => setSelectedRepositoryKey(repositoryKey(repository))} />}
+      {suggestion?.confidence === 'high' && showRepositoryPicker && <button className="button button--secondary repository-suggestion-return" type="button" onClick={() => setShowRepositoryPicker(false)}>Visa föreslaget repository</button>}
+      {suggestion?.confidence === 'high' && selectedRepository && !showRepositoryPicker && <button className="button button--secondary repository-suggestion-return" type="button" onClick={() => setShowRepositoryPicker(true)}>Välj ett annat repository</button>}
       <div className="repository-selected-summary" aria-live="polite">
         <span>Valt repository</span>
         {selectedRepository ? <><strong>{selectedRepository.repositoryName}</strong><small>{selectedRepository.repositoryFullName}</small></> : <em>Välj ett repository ovan.</em>}

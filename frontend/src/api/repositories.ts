@@ -9,6 +9,8 @@ export type RepositoryEntry = {
   defaultBranch: string;
   htmlUrl: string;
   projectId: string | null;
+  lastSourceFilename?: string | null;
+  lastUsedAt?: string | null;
 };
 
 export type RepositoryWorkResponse = {

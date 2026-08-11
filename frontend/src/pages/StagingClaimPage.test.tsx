@@ -90,3 +90,34 @@ it('searches repositories in the Shortcut flow and keeps the selected repository
   expect(summary).toHaveTextContent('erland/second');
   expect(screen.getByRole('button', { name: 'Fortsätt till granskning' })).toBeEnabled();
 });
+
+
+it('shows a high-confidence Shortcut repository suggestion without implicitly selecting or promoting it', async () => {
+  mocks.claimStagingImport.mockResolvedValue({ ...claimed, originalFilename: 'fyrens-vaktare-v0.8.8.zip' });
+  mocks.getRepositories.mockResolvedValue([
+    repositories[0],
+    { ...repositories[1], repositoryName: 'bradspel-fyrens-vaktare', repositoryFullName: 'erland/bradspel-fyrens-vaktare' },
+  ]);
+  const user = userEvent.setup();
+  render(<MemoryRouter initialEntries={['/staging/claim']}><Routes><Route path="/staging/claim" element={<StagingClaimPage />} /></Routes></MemoryRouter>);
+
+  expect(await screen.findByText('Föreslaget repository')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'bradspel-fyrens-vaktare' })).toBeInTheDocument();
+  expect(screen.queryByRole('radio', { name: /bradspel-fyrens-vaktare/i })).not.toBeInTheDocument();
+  expect(mocks.promoteStagingImport).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button', { name: 'Använd detta repository' }));
+  expect(screen.getByText('Valt repository').closest('.repository-selected-summary')).toHaveTextContent('bradspel-fyrens-vaktare');
+  expect(mocks.promoteStagingImport).not.toHaveBeenCalled();
+});
+
+it('falls back to the searchable picker when the Shortcut filename is ambiguous', async () => {
+  mocks.claimStagingImport.mockResolvedValue({ ...claimed, originalFilename: 'granslinjen-r0042.zip' });
+  mocks.getRepositories.mockResolvedValue([
+    { ...repositories[0], repositoryName: 'roman-granslinjen', repositoryFullName: 'erland/roman-granslinjen' },
+    { ...repositories[1], repositoryName: 'bradspel-granslinjen', repositoryFullName: 'erland/bradspel-granslinjen' },
+  ]);
+  render(<MemoryRouter initialEntries={['/staging/claim']}><Routes><Route path="/staging/claim" element={<StagingClaimPage />} /></Routes></MemoryRouter>);
+
+  expect(await screen.findByRole('searchbox', { name: 'Sök repositories' })).toBeInTheDocument();
+  expect(screen.queryByText('Föreslaget repository')).not.toBeInTheDocument();
+});

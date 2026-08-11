@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0137`
-- Last completed step: `9.21`
-- Next step: `9.22` — Smart Shortcut repository suggestion
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.21 COMPLETE — SHARED SEARCHABLE REPOSITORY PICKER — STEP 9.22 NEXT`
+- Repository revision: `r0138`
+- Last completed step: `9.22`
+- Next step: `none` — implementation plan complete
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.22 COMPLETE — SMART SHORTCUT REPOSITORY SUGGESTION`
 
 ## Step ledger
 
@@ -106,7 +106,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.19` | Fas 9 — Import/review consistency | Prospektiv `.gitignore` och kategori-massval | **DONE** | 2026-08-11 | `docs/step-9.19-report.md` |
 | `9.20` | Fas 9 — PR UX | Förenkla commit-derived PR title/description | **DONE** | 2026-08-11 | `docs/step-9.20-report.md`, `frontend/src/components/PullRequestComposer.tsx` |
 | `9.21` | Fas 9 — Repository selection UX | Gemensam sökbar repository-picker, senaste repositories och separat scroll | **DONE** | 2026-08-11 | `docs/step-9.21-report.md`, `frontend/src/components/RepositoryPicker.tsx` |
-| `9.22` | Fas 9 — Shortcut repository suggestion | Smart förslag från ZIP-namn, uploadhistorik och recency | **NEXT** | — | `docs/implementation-steps.md` |
+| `9.22` | Fas 9 — Shortcut repository suggestion | Smart förslag från ZIP-namn, uploadhistorik och recency | **DONE** | 2026-08-11 | `docs/step-9.22-report.md`, `frontend/src/repositories/repositorySuggestion.ts` |
 
 ## Revision history
 
@@ -292,6 +292,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0134` | 2026-08-11 | `9.19` frontend build correction | Typed appended review-plan fixture entries as `ImportPlanEntry` so literal union values remain valid through array spreads; no production behavior change | `none` |
 | `r0132` | 2026-08-11 | `9.19` prospective gitignore + bulk review | Uploaded `.gitignore` rules now drive new-file ignore classification; category bulk override handles large deletion sets while hard blockers stay excluded | `none` |
 
+| `r0138` | 2026-08-11 | `9.22` smart Shortcut repository suggestion | Confidence-ranked explicit repository suggestion from normalized filename, prior upload filename and recency, with the shared picker as fallback | `none` |
 | `r0137` | 2026-08-11 | `9.21` shared repository picker | Searchable shared picker on landing/Shortcut, bounded scrolling, recent repositories and selected-repository summary | `9.22` |
 | `r0136` | 2026-08-11 | `9.20` frontend CI test correction | Label-scoped PR composer assertions remove the ambiguous display-value match; no production behavior change | `none` |
 | `r0135` | 2026-08-11 | `9.20` simplified commit-derived PR metadata | Commit fill now emits only the chronological list and fills a blank PR title from the first commit subject without overwriting user input | `none` |

@@ -1,3 +1,10 @@
+## 1.0.0-rc.90 - 2026-08-11
+
+- Completes Step 9.22 with conservative Shortcut repository suggestions based on normalized ZIP/repository names, the authenticated user’s latest upload filename for an existing project, and a smaller recency bonus.
+- High-confidence suggestions require explicit `Använd detta repository` confirmation and never implicitly promote an upload; ambiguous cases fall back to the shared searchable Step 9.21 picker.
+- Repository catalog responses now include user/project-isolated `lastSourceFilename` and `lastUsedAt` metadata used only for suggestion ranking.
+- Added regressions for normalization, direct/history matching, ambiguity, recency tie-breaking and explicit Shortcut confirmation.
+
 ## 1.0.0-rc.89 - 2026-08-11
 
 - Step 9.21 adds a shared repository picker to the repository landing page and Shortcut claim flow.

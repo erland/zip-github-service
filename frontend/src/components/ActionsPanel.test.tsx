@@ -89,3 +89,48 @@ it('omits the extra-check section when every check is the GitHub Actions represe
   expect(screen.getAllByText('Backend tests and package')).toHaveLength(1);
   expect(screen.queryByRole('heading', { name:'Övriga kontroller' })).not.toBeInTheDocument();
 });
+
+
+it('groups push and pull_request runs for the same workflow and commit without losing their individual status', () => {
+  const commitSha = 'c'.repeat(40);
+  const actions: ImportActionsStatusResponse = {
+    importId:'i-grouped-runs', repositoryFullName:'erland/example', commitSha, state:'failure', terminal:true,
+    detailsUrl:'https://github.com/erland/example/actions', diagnosticCode:null, diagnosticMessage:null, checkedAt:'2026-08-13T18:00:00Z', checks:[],
+    workflows:[
+      { id:301, workflowId:44, workflowPath:'.github/workflows/ci.yml', headBranch:'zip-github/work-3', headSha:commitSha,
+        name:'CI', state:'success', terminal:true, event:'push', htmlUrl:'https://github.com/erland/example/actions/runs/301', createdAt:'2026-08-13T17:58:00Z', updatedAt:'2026-08-13T17:59:00Z',
+        jobs:[{ id:311, name:'Backend tests', state:'success', terminal:true, htmlUrl:null, startedAt:null, completedAt:null }] },
+      { id:302, workflowId:44, workflowPath:'.github/workflows/ci.yml', headBranch:'zip-github/work-3', headSha:commitSha,
+        name:'CI', state:'failure', terminal:true, event:'pull_request', htmlUrl:'https://github.com/erland/example/actions/runs/302', createdAt:'2026-08-13T17:59:00Z', updatedAt:'2026-08-13T18:00:00Z',
+        jobs:[{ id:312, name:'Backend tests', state:'failure', terminal:true, htmlUrl:null, startedAt:null, completedAt:null }] },
+    ],
+  };
+
+  render(<ActionsPanel actions={actions} details={null} fallbackUrl={actions.detailsUrl} repositoryFullName="erland/example" branchName="zip-github/work-3" commitSha={commitSha} />);
+
+  expect(screen.getAllByText('CI')).toHaveLength(1);
+  expect(screen.getByText('2 GitHub-körningar', { exact:false })).toBeInTheDocument();
+  expect(screen.getAllByText('Misslyckad').length).toBeGreaterThan(0);
+  expect(screen.getByText('Visa 2 separata körningar')).toBeInTheDocument();
+  expect(screen.getByText('push')).toBeInTheDocument();
+  expect(screen.getByText('pull_request')).toBeInTheDocument();
+});
+
+it('does not group different workflows that happen to share the same display name', () => {
+  const commitSha = 'd'.repeat(40);
+  const actions: ImportActionsStatusResponse = {
+    importId:'i-distinct-workflows', repositoryFullName:'erland/example', commitSha, state:'success', terminal:true,
+    detailsUrl:'https://github.com/erland/example/actions', diagnosticCode:null, diagnosticMessage:null, checkedAt:'2026-08-13T18:01:00Z', checks:[],
+    workflows:[
+      { id:401, workflowId:51, workflowPath:'.github/workflows/ci-a.yml', headBranch:'zip-github/work-4', headSha:commitSha,
+        name:'CI', state:'success', terminal:true, event:'push', htmlUrl:null, createdAt:null, updatedAt:null, jobs:[] },
+      { id:402, workflowId:52, workflowPath:'.github/workflows/ci-b.yml', headBranch:'zip-github/work-4', headSha:commitSha,
+        name:'CI', state:'success', terminal:true, event:'push', htmlUrl:null, createdAt:null, updatedAt:null, jobs:[] },
+    ],
+  };
+
+  render(<ActionsPanel actions={actions} details={null} fallbackUrl={actions.detailsUrl} repositoryFullName="erland/example" branchName="zip-github/work-4" commitSha={commitSha} />);
+
+  expect(screen.getAllByText('CI')).toHaveLength(2);
+  expect(screen.queryByText(/GitHub-körningar/)).not.toBeInTheDocument();
+});

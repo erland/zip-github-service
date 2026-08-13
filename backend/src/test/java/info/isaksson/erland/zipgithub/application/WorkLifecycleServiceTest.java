@@ -1,5 +1,6 @@
 package info.isaksson.erland.zipgithub.application;
 
+import info.isaksson.erland.zipgithub.api.dto.CreateImportRequest;
 import info.isaksson.erland.zipgithub.api.dto.ProjectResponse;
 import info.isaksson.erland.zipgithub.api.error.ApiException;
 import info.isaksson.erland.zipgithub.github.GitHubBranchClient;

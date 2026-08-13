@@ -1,3 +1,11 @@
+## 1.0.0-rc.99 - 2026-08-13
+
+### Fixed
+
+- Corrects Step 9.27 frontend regressions found by GitHub CI: staging serialization tests now expect the explicit `confirmOpenPullRequest: false` field and the simplified import-flow mock exposes `getProjectWork`.
+- Corrects Step 9.27 backend test compilation by importing `CreateImportRequest` in `WorkLifecycleServiceTest`.
+- No production behavior changed; this is a focused CI/test correction after rc.98.
+
 ## 1.0.0-rc.98 - 2026-08-13
 
 ### Added

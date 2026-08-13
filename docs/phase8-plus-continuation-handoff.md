@@ -1,3 +1,5 @@
+> **Current handoff r0147 / 1.0.0-rc.99:** Focused Step 9.27 CI/test correction after rc.98. Frontend staging expectations include the explicit confirmation flag, the simplified import-flow mock exposes `getProjectWork`, and the backend lifecycle test imports `CreateImportRequest`. No production behavior changed; no next implementation step is currently defined.
+
 > **Current handoff r0146 / 1.0.0-rc.98:** Step 9.27 requires explicit confirmation before a new web or Shortcut ZIP extends a strictly reconciled Work with an open PR. If the PR has already merged, the existing terminal Work logic starts a fresh Work from the current default branch. No next implementation step is currently defined.
 
 > **Current handoff r0144 / 1.0.0-rc.96:** Step 9.25 behavior is unchanged; rc.96 corrects the frontend CI regression test by explicitly importing the Vitest lifecycle/assertion functions used by `MaintenancePage.test.tsx`. No next implementation step is currently defined.

@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0146`
+- Repository revision: `r0147`
 - Last completed step: `9.27`
 - Next step: `none` — implementation plan complete
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.27 COMPLETE — OPEN-PR CONTINUATION CONFIRMATION`
@@ -120,6 +120,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0143` | 2026-08-13 | `9.25` safe orphaned Work branch cleanup | Global fail-closed preview + explicit revalidated bulk deletion across visible GitHub App repositories; bounded pagination avoids the former 100-repository truncation | `none — define next step before further product work` |
 | `r0145` | 2026-08-13 | `9.26` grouped workflow-run presentation | Same workflow/commit is shown once with all actual GitHub runs preserved as expandable details; 9.27 is NEXT | `9.27` |
 | `r0146` | 2026-08-13 | `9.27` open-PR continuation confirmation | Web and Shortcut imports require explicit confirmation before extending a strictly reconciled PR_OPEN Work; merged PRs still start fresh Work | `none` |
+| `r0147` | 2026-08-13 | `9.27` CI/test correction | Updated stale frontend mocks/serialization expectations and imported `CreateImportRequest` in the backend lifecycle regression; no production behavior changed | `none` |
 | `r0144` | 2026-08-13 | `9.25` frontend CI correction | Explicit Vitest lifecycle/assertion imports for the new maintenance page regression; no product behavior change | `none — define next step before further product work` |
 | `r0141` | 2026-08-13 | Backend CI correction after `9.24` | Added the missing `ImmutableImportPlanEntry` import required by the Step 9.24 blocker-decision delivery guard; no production behavior changed | `9.25` |
 | `r0142` | 2026-08-13 | Backend test CI correction after `9.24` | Updated the remaining `AlternativeZipIngestionRegressionTest` factory calls to the `selection-2` blocker-decision signature; no production behavior changed | `9.25` |

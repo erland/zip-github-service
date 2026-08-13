@@ -8,6 +8,7 @@ import info.isaksson.erland.zipgithub.domain.model.ImportAuditMetadata;
 import info.isaksson.erland.zipgithub.domain.model.ImportSource;
 import info.isaksson.erland.zipgithub.snapshot.RepositorySnapshot;
 import info.isaksson.erland.zipgithub.plan.ImmutableImportPlan;
+import info.isaksson.erland.zipgithub.plan.ImmutableImportPlanEntry;
 import info.isaksson.erland.zipgithub.plan.ImportPlanApproval;
 import info.isaksson.erland.zipgithub.plan.CommitMessagePolicy;
 import info.isaksson.erland.zipgithub.selection.ApprovedSelection;

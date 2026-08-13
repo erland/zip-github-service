@@ -1,3 +1,9 @@
+## 1.0.0-rc.93 - 2026-08-13
+
+- Corrects the Step 9.24 backend compilation failure by importing `ImmutableImportPlanEntry` in `ProjectApplicationService`.
+- No production behavior or blocker-decision semantics change from rc.92; this is a focused CI/build correction.
+- Step 9.25 remains `NEXT`.
+
 ## 1.0.0-rc.92 - 2026-08-13
 
 - Completes Step 9.24 with explicit decisions for every blocking review entry before an import can be approved or delivered.

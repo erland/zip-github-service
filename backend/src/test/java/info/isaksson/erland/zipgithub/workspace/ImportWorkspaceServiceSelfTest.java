@@ -2,6 +2,7 @@ package info.isaksson.erland.zipgithub.workspace;
 
 import info.isaksson.erland.zipgithub.plan.ImmutableImportPlan;
 import info.isaksson.erland.zipgithub.plan.ImmutableImportPlanEntry;
+import info.isaksson.erland.zipgithub.selection.ApprovedBlockerDecision;
 import info.isaksson.erland.zipgithub.selection.ApprovedSelection;
 import info.isaksson.erland.zipgithub.selection.ApprovedSelectionOverride;
 
@@ -72,7 +73,7 @@ public final class ImportWorkspaceServiceSelfTest {
             ImmutableImportPlan plan = new ImmutableImportPlan(UUID.randomUUID(), importId, UUID.randomUUID(),
                     "a".repeat(64), base, "mvp-1", "b".repeat(64), "READY", true, entries, Instant.now());
             ApprovedSelection selection = new ApprovedSelection(UUID.randomUUID(), importId, plan.id(), plan.ownerUserId(),
-                    plan.planDigestSha256(), plan.baseCommitSha(), "selection-1", "c".repeat(64),
+                    plan.planDigestSha256(), plan.baseCommitSha(), "selection-2", "c".repeat(64),
                     List.of(".github/workflows/ci.yml", "README.md", "obsolete.txt"),
                     List.of(".git/config", "ignored.txt", "keep.txt", "src/App.txt"),
                     List.of(
@@ -80,6 +81,11 @@ public final class ImportWorkspaceServiceSelfTest {
                                     "GITHUB_WORKFLOW_PROTECTED", "Explicit workflow approval"),
                             new ApprovedSelectionOverride("obsolete.txt", "OVERRIDABLE_BLOCKED",
                                     "DELETION_REQUIRES_APPROVAL", "Explicit deletion approval")
+                    ),
+                    List.of(
+                            new ApprovedBlockerDecision(".github/workflows/ci.yml", "OVERRIDABLE_BLOCKED", "INCLUDE_OVERRIDE"),
+                            new ApprovedBlockerDecision(".git/config", "HARD_BLOCKED", "ACKNOWLEDGE_EXCLUSION"),
+                            new ApprovedBlockerDecision("obsolete.txt", "OVERRIDABLE_BLOCKED", "INCLUDE_OVERRIDE")
                     ), Instant.now());
             ImportWorkspaceService service = new ImportWorkspaceService(id -> "", root.resolve("workspaces"),
                     Clock.fixed(Instant.parse("2026-08-06T20:00:00Z"), ZoneOffset.UTC));

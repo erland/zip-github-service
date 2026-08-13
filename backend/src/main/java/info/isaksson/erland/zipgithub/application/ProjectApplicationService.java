@@ -700,6 +700,7 @@ public class ProjectApplicationService {
                     "The submitted plan digest does not match the immutable plan currently stored for this import.");
         }
         ApprovedSelection selection = getImportSelection(ownerUserId, importId);
+        validateBlockerDecisions(plan, selection);
         if (submittedSelectionDigest == null || !submittedSelectionDigest.matches("[0-9a-f]{64}")) {
             throw ApiException.badRequest("INVALID_SELECTION_DIGEST",
                     "selectionDigestSha256 must be a lower-case SHA-256.");
@@ -749,6 +750,7 @@ public class ProjectApplicationService {
     public ApprovedSelection recordImportSelection(UUID ownerUserId, UUID importId, ApprovedSelection selection) {
         requireMutableImport(ownerUserId, importId);
         ImmutableImportPlan plan = getImportPlan(ownerUserId, importId);
+        validateBlockerDecisions(plan, selection);
         if (!selection.importId().equals(importId)
                 || !selection.ownerUserId().equals(ownerUserId)
                 || !selection.planId().equals(plan.id())
@@ -794,6 +796,10 @@ public class ProjectApplicationService {
             throw ApiException.conflict("IMPORT_NOT_APPROVED",
                     "The source upload, repository snapshot, immutable plan, selection and exact approval are required.");
         }
+        // Step 9.24 fail-safe: even an older persisted approval may not resume delivery if its
+        // selection predates complete explicit blocker decisions. The user must start/review a
+        // fresh import rather than silently delivering a selection that no longer meets policy.
+        validateBlockerDecisions(plan, selection);
         if (!approval.planDigestSha256().equals(plan.planDigestSha256())
                 || !approval.selectionDigestSha256().equals(selection.selectionDigestSha256())
                 || !selection.planDigestSha256().equals(plan.planDigestSha256())
@@ -1017,6 +1023,40 @@ public class ProjectApplicationService {
         boolean duplicate = projects.values().stream().anyMatch(project -> project.ownerUserId.equals(ownerUserId)
                 && !project.response.id().equals(excludedId) && project.response.name().equalsIgnoreCase(name));
         if (duplicate) throw ApiException.conflict("PROJECT_NAME_EXISTS", "A project with this name already exists.");
+    }
+
+    private static void validateBlockerDecisions(ImmutableImportPlan plan, ApprovedSelection selection) {
+        Map<String, info.isaksson.erland.zipgithub.selection.ApprovedBlockerDecision> decisions = new HashMap<>();
+        for (var decision : selection.blockerDecisions()) {
+            if (decisions.putIfAbsent(decision.path(), decision) != null) {
+                throw ApiException.conflict("BLOCKER_DECISIONS_INCOMPLETE", "The immutable selection contains duplicate blocker decisions.");
+            }
+        }
+        Set<String> selected = new HashSet<>(selection.selectedPaths());
+        Set<String> overridePaths = selection.overrides().stream().map(info.isaksson.erland.zipgithub.selection.ApprovedSelectionOverride::path).collect(java.util.stream.Collectors.toSet());
+        Set<String> blockerPaths = new HashSet<>();
+        for (ImmutableImportPlanEntry entry : plan.entries()) {
+            if ("NONE".equals(entry.blockerType())) continue;
+            blockerPaths.add(entry.path());
+            var decision = decisions.get(entry.path());
+            if (decision == null || !entry.blockerType().equals(decision.blockerType())) {
+                throw ApiException.conflict("BLOCKER_DECISIONS_INCOMPLETE", "Every blocking path must have an explicit immutable decision before approval.");
+            }
+            if ("HARD_BLOCKED".equals(entry.blockerType())) {
+                if (selected.contains(entry.path()) || overridePaths.contains(entry.path()) || !"ACKNOWLEDGE_EXCLUSION".equals(decision.decision())) {
+                    throw ApiException.conflict("BLOCKER_DECISIONS_INCOMPLETE", "Hard-blocked paths must be acknowledged and excluded.");
+                }
+            } else if (selected.contains(entry.path())) {
+                if (!overridePaths.contains(entry.path()) || !"INCLUDE_OVERRIDE".equals(decision.decision())) {
+                    throw ApiException.conflict("BLOCKER_DECISIONS_INCOMPLETE", "Selected overridable paths require an explicit include decision and override audit.");
+                }
+            } else if (overridePaths.contains(entry.path()) || !"EXCLUDE".equals(decision.decision())) {
+                throw ApiException.conflict("BLOCKER_DECISIONS_INCOMPLETE", "Excluded overridable paths require an explicit exclusion decision.");
+            }
+        }
+        if (!decisions.keySet().equals(blockerPaths)) {
+            throw ApiException.conflict("BLOCKER_DECISIONS_INCOMPLETE", "Blocker decisions must match the immutable plan exactly.");
+        }
     }
 
     private static String normalizeBranch(String branch) {

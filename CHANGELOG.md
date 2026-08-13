@@ -1,3 +1,12 @@
+## 1.0.0-rc.92 - 2026-08-13
+
+- Completes Step 9.24 with explicit decisions for every blocking review entry before an import can be approved or delivered.
+- Overridable blockers now require an explicit `Ta inte med` or `Godkänn och ta med` decision; hard blockers require an explicit acknowledgement that they will be omitted and remain impossible to select.
+- Adds category-level explicit exclusion for overridable blockers while preserving the existing explicit bulk override action.
+- Upgrades immutable import selections to `selection-2`; blocker decisions are persisted, included in the selection digest and returned by the API.
+- Backend validation rejects missing, inconsistent or legacy blocker-decision coverage before selection storage/approval and again before delivery resume, preserving the exact-selection invariant even for manipulated or legacy clients.
+- Adds focused backend/frontend regressions and release-gate assertions for blocker decisions. Step 9.25 is now `NEXT`.
+
 ## 1.0.0-rc.91 - 2026-08-13
 
 - Completes Step 9.23 by correcting the active frontend browser title from the legacy `zip-buildserver` name to `zip-GitHub`.

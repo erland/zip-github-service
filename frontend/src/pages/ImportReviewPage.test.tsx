@@ -25,8 +25,8 @@ function planEntry(entry: ImportPlanEntry): ImportPlanEntry {
 
 const selection: ImportSelectionResponse = {
   id: 'selection-1', importId: 'import-1', planId: 'plan-1', planDigestSha256: plan.planDigestSha256,
-  baseCommitSha: plan.baseCommitSha, selectionVersion: 'selection-1', selectionDigestSha256: 'd'.repeat(64),
-  selectedPaths: ['README.md', 'docs/new.md'], excludedPaths: [], overrides: [], createdAt: '2026-08-06T20:29:00Z',
+  baseCommitSha: plan.baseCommitSha, selectionVersion: 'selection-2', selectionDigestSha256: 'd'.repeat(64),
+  selectedPaths: ['README.md', 'docs/new.md'], excludedPaths: [], overrides: [], blockerDecisions: [], createdAt: '2026-08-06T20:29:00Z',
 };
 const approval = {
   importId: 'import-1', planId: 'plan-1', planDigestSha256: plan.planDigestSha256,
@@ -66,6 +66,11 @@ function renderPage() {
   );
 }
 
+async function excludeBaseBlocker(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: /Blockerade/ }));
+  await user.click(screen.getByRole('radio', { name: 'Ta inte med' }));
+}
+
 function installHappyPath(fetchPlan = plan, createdSelection: ImportSelectionResponse = selection) {
   const mock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
@@ -85,7 +90,7 @@ describe('ImportReviewPage', () => {
   it('shows plan summary and changed files by default', async () => {
     renderPage();
     expect(await screen.findByRole('heading', { name: 'Granska förändringar' })).toBeInTheDocument();
-    expect(await screen.findByText('Urvalet kan godkännas')).toBeInTheDocument();
+    expect(await screen.findByText('1 blockerande förändring kräver beslut')).toBeInTheDocument();
     expect(screen.getByText('README.md')).toBeInTheDocument();
     expect(screen.getByTitle('docs/new.md')).toBeInTheDocument();
     expect(screen.queryByTitle('.github/workflows/ci.yml')).not.toBeInTheDocument();
@@ -109,6 +114,7 @@ describe('ImportReviewPage', () => {
     await user.type(screen.getByRole('textbox', { name: 'Meddelande' }), 'Preserve reviewed external changes');
     expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeDisabled();
     await user.click(screen.getByRole('checkbox', { name: /Jag förstår att 1 vald sökväg ersätter ändringar/ }));
+    await excludeBaseBlocker(user);
     expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeEnabled();
     await user.click(screen.getByRole('button', { name: /Externa ändringar \(1\)/ }));
     expect(screen.getByText('README.md')).toBeInTheDocument();
@@ -167,11 +173,13 @@ describe('ImportReviewPage', () => {
     renderPage(); await screen.findByText('README.md');
     await user.type(screen.getByRole('textbox', { name: 'Meddelande' }), 'Deliver selected documentation change');
     await user.click(screen.getByRole('checkbox', { name: 'Exkludera README.md' }));
+    await excludeBaseBlocker(user);
     await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));
     expect(await screen.findByText('Importresultat')).toBeInTheDocument();
     const selectionCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/selection') && (init as RequestInit | undefined)?.method === 'POST');
     const body = JSON.parse(String((selectionCall?.[1] as RequestInit).body));
     expect(body.selectedPaths).toEqual(['docs/new.md']);
+    expect(body.blockerDecisions).toEqual([{ path: '.github/workflows/ci.yml', decision: 'EXCLUDE' }]);
   });
 
   it('bulk-approves and selects every overridable entry in the active category without including hard blockers', async () => {
@@ -197,6 +205,7 @@ describe('ImportReviewPage', () => {
     expect(screen.getByRole('checkbox', { name: 'Exkludera output/old-a.pdf' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Exkludera release/old-b.zip' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Inkludera .git/config' })).toBeDisabled();
+    await user.click(screen.getByRole('checkbox', { name: 'Jag har sett att denna hårt blockerade förändring inte kommer att tas med' }));
     await user.type(screen.getByRole('textbox', { name: 'Meddelande' }), 'Remove generated repository artifacts');
     await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));
     await screen.findByText('Importresultat');
@@ -204,7 +213,11 @@ describe('ImportReviewPage', () => {
     const body = JSON.parse(String((selectionCall?.[1] as RequestInit).body));
     expect(body.selectedPaths).toEqual(['.github/workflows/ci.yml', 'README.md', 'docs/new.md', 'output/old-a.pdf', 'release/old-b.zip']);
     expect(body.selectedPaths).not.toContain('.git/config');
+    expect(body.blockerDecisions).toContainEqual({ path: '.github/workflows/ci.yml', decision: 'INCLUDE_OVERRIDE' });
+    expect(body.blockerDecisions).toContainEqual({ path: '.git/config', decision: 'ACKNOWLEDGE_EXCLUSION' });
     expect(body.overrides).toHaveLength(3);
+    expect(body.blockerDecisions).toHaveLength(4);
+    expect(body.blockerDecisions).toContainEqual({ path: '.git/config', decision: 'ACKNOWLEDGE_EXCLUSION' });
   });
 
   it('submits explicit override audit and never includes a hard blocker', async () => {
@@ -218,7 +231,8 @@ describe('ImportReviewPage', () => {
     await user.click(screen.getByRole('checkbox', { name: 'Exkludera README.md' }));
     await user.click(screen.getByRole('button', { name: /Blockerade/ }));
     expect(screen.getByRole('checkbox', { name: 'Inkludera .git/config' })).toBeDisabled();
-    await user.click(screen.getByRole('checkbox', { name: 'Jag förstår risken och vill ta med denna blockerade förändring' }));
+    await user.click(screen.getByRole('radio', { name: 'Jag förstår risken – godkänn och ta med' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Jag har sett att denna hårt blockerade förändring inte kommer att tas med' }));
     await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));
     expect(await screen.findByText('Importresultat')).toBeInTheDocument();
     const selectionCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/selection') && (init as RequestInit | undefined)?.method === 'POST');
@@ -226,10 +240,14 @@ describe('ImportReviewPage', () => {
     expect(body.selectedPaths).toEqual(['.github/workflows/ci.yml', 'docs/new.md']);
     expect(body.overrides).toEqual([{ path: '.github/workflows/ci.yml', acknowledgement: 'User explicitly approved this policy override in the review UI.' }]);
     expect(body.selectedPaths).not.toContain('.git/config');
+    expect(body.blockerDecisions).toContainEqual({ path: '.github/workflows/ci.yml', decision: 'INCLUDE_OVERRIDE' });
+    expect(body.blockerDecisions).toContainEqual({ path: '.git/config', decision: 'ACKNOWLEDGE_EXCLUSION' });
   });
 
   it('disables approval when the user deselects every committable change', async () => {
     const user = userEvent.setup(); renderPage(); await screen.findByText('README.md');
+    await excludeBaseBlocker(user);
+    await user.click(screen.getByRole('button', { name: /Förändringar/ }));
     await user.click(screen.getByRole('checkbox', { name: 'Exkludera README.md' }));
     await user.click(screen.getByRole('checkbox', { name: 'Exkludera docs/new.md' }));
     expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeDisabled();
@@ -240,7 +258,7 @@ describe('ImportReviewPage', () => {
     const user = userEvent.setup(); renderPage(); await screen.findByText('README.md');
     await user.click(screen.getByRole('button', { name: /Blockerade/ }));
     expect(screen.getByRole('checkbox', { name: 'Inkludera .github/workflows/ci.yml' })).toBeDisabled();
-    await user.click(screen.getByRole('checkbox', { name: 'Jag förstår risken och vill ta med denna blockerade förändring' }));
+    await user.click(screen.getByRole('radio', { name: 'Jag förstår risken – godkänn och ta med' }));
     expect(screen.getByRole('checkbox', { name: 'Exkludera .github/workflows/ci.yml' })).toBeChecked();
   });
 
@@ -305,6 +323,7 @@ describe('ImportReviewPage', () => {
     const field = await screen.findByRole('textbox', { name: 'Meddelande' });
     expect(field).toHaveValue('');
     await user.type(field, 'Preserve executable script modes');
+    await excludeBaseBlocker(user);
     await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));
     await screen.findByText('Importresultat');
     const approvalCall = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/plan/approval') && (init as RequestInit | undefined)?.method === 'POST');
@@ -315,6 +334,7 @@ describe('ImportReviewPage', () => {
   it('does not allow approval with a blank commit message', async () => {
     const user = userEvent.setup(); renderPage();
     const field = await screen.findByRole('textbox', { name: 'Meddelande' });
+    await excludeBaseBlocker(user);
     await user.clear(field);
     expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeDisabled();
   });

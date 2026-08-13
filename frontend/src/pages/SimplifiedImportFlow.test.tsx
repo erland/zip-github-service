@@ -61,9 +61,10 @@ const plan = {
 };
 const selection = {
   id: 'selection-1', importId: 'import-1', planId: 'plan-1', planDigestSha256: plan.planDigestSha256,
-  baseCommitSha: plan.baseCommitSha, selectionVersion: 'selection-1', selectionDigestSha256: 'd'.repeat(64),
+  baseCommitSha: plan.baseCommitSha, selectionVersion: 'selection-2', selectionDigestSha256: 'd'.repeat(64),
   selectedPaths: ['.github/workflows/changed.yml'], excludedPaths: ['README.md'],
   overrides: [{ path: '.github/workflows/changed.yml', blockerType: 'OVERRIDABLE_BLOCKED', policyCode: 'GITHUB_WORKFLOW_PROTECTED', acknowledgement: 'User explicitly approved this policy override in the review UI.' }],
+  blockerDecisions: [{ path: '.github/workflows/changed.yml', blockerType: 'OVERRIDABLE_BLOCKED', decision: 'INCLUDE_OVERRIDE' as const }],
   createdAt: '2026-08-07T18:01:00Z',
 };
 const approval = { importId: 'import-1', planId: 'plan-1', planDigestSha256: plan.planDigestSha256,
@@ -145,7 +146,7 @@ describe('simplified import flow E2E regression', () => {
 
     await user.click(screen.getByRole('button', { name: /Blockerade \(1\)/ }));
     expect(screen.getByTitle('.github/workflows/changed.yml')).toBeInTheDocument();
-    await user.click(screen.getByRole('checkbox', { name: 'Jag förstår risken och vill ta med denna blockerade förändring' }));
+    await user.click(screen.getByRole('radio', { name: 'Jag förstår risken – godkänn och ta med' }));
     await user.type(screen.getByRole('textbox', { name: 'Meddelande' }), 'Apply reviewed ZIP changes');
     await user.click(screen.getByRole('button', { name: 'Godkänn valda förändringar' }));
 
@@ -153,6 +154,7 @@ describe('simplified import flow E2E regression', () => {
     expect(mocks.createImportSelection).toHaveBeenCalledWith(
       'import-1', plan.planDigestSha256, plan.baseCommitSha,
       ['.github/workflows/changed.yml'], ['.github/workflows/changed.yml'],
+      [{ path: '.github/workflows/changed.yml', decision: 'INCLUDE_OVERRIDE' }],
     );
     expect(mocks.approveImportPlan).toHaveBeenCalledTimes(1);
     expect(mocks.prepareImportWorkspace).toHaveBeenCalledTimes(1);

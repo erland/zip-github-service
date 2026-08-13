@@ -56,6 +56,8 @@ export type ImportPlanApprovalResponse = {
   approvedAt: string;
 };
 
+export type BlockerDecision = 'EXCLUDE' | 'INCLUDE_OVERRIDE' | 'ACKNOWLEDGE_EXCLUSION';
+
 export type ImportSelectionResponse = {
   id: string;
   importId: string;
@@ -67,6 +69,7 @@ export type ImportSelectionResponse = {
   selectedPaths: string[];
   excludedPaths: string[];
   overrides: Array<{ path: string; blockerType: string; policyCode: string; acknowledgement: string }>;
+  blockerDecisions: Array<{ path: string; blockerType: string; decision: BlockerDecision }>;
   createdAt: string;
 };
 
@@ -128,7 +131,7 @@ export async function getImportPlan(importId: string): Promise<ImportPlanRespons
 }
 
 export async function createImportSelection(importId: string, planDigestSha256: string, baseCommitSha: string,
-  selectedPaths: string[], overridePaths: string[]): Promise<ImportSelectionResponse> {
+  selectedPaths: string[], overridePaths: string[], blockerDecisions: Array<{ path: string; decision: BlockerDecision }>): Promise<ImportSelectionResponse> {
   return requestJson(`/api/imports/${encodeURIComponent(importId)}/selection`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -140,6 +143,7 @@ export async function createImportSelection(importId: string, planDigestSha256: 
         path,
         acknowledgement: 'User explicitly approved this policy override in the review UI.',
       })),
+      blockerDecisions,
     }),
   });
 }

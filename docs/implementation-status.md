@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0139`
-- Last completed step: `9.23`
-- Next step: `9.24` — explicit blocker decisions
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.23 COMPLETE — PRODUCT NAMING CLEANUP`
+- Repository revision: `r0140`
+- Last completed step: `9.24`
+- Next step: `9.25` — safe orphaned Work branch cleanup
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.24 COMPLETE — EXPLICIT BLOCKER DECISIONS`
 
 ## Step ledger
 
@@ -108,13 +108,14 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.21` | Fas 9 — Repository selection UX | Gemensam sökbar repository-picker, senaste repositories och separat scroll | **DONE** | 2026-08-11 | `docs/step-9.21-report.md`, `frontend/src/components/RepositoryPicker.tsx` |
 | `9.22` | Fas 9 — Shortcut repository suggestion | Smart förslag från ZIP-namn, uploadhistorik och recency | **DONE** | 2026-08-11 | `docs/step-9.22-report.md`, `frontend/src/repositories/repositorySuggestion.ts` |
 | `9.23` | Fas 9 — Product naming cleanup | Korrekt produktnamn i aktiv webbklient/browser title | **DONE** | 2026-08-13 | `docs/step-9.23-report.md`, `frontend/index.html` |
-| `9.24` | Fas 9 — Review safety | Explicita beslut för blockerande review-poster | **NEXT** | — | — |
-| `9.25` | Fas 9 — Work branch maintenance | Säker global städning av föräldralösa Work-brancher | **PENDING** | — | — |
+| `9.24` | Fas 9 — Review safety | Explicita beslut för blockerande review-poster | **DONE** | 2026-08-13 | `docs/step-9.24-report.md`, `frontend/src/pages/ImportReviewPage.tsx`, `backend/src/main/java/info/isaksson/erland/zipgithub/selection/ImportSelectionFactory.java` |
+| `9.25` | Fas 9 — Work branch maintenance | Säker global städning av föräldralösa Work-brancher | **NEXT** | — | — |
 
 ## Revision history
 
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
+| `r0140` | 2026-08-13 | `9.24` explicit blocker decisions | UI requires explicit include/exclude/acknowledge decisions; immutable `selection-2` persists decisions in its digest; backend rejects incomplete/inconsistent blocker coverage | `9.25` |
 | `r0139` | 2026-08-13 | `9.23` product naming cleanup | Active browser title corrected to `zip-GitHub`; legacy/migration references preserved; release regression added | `9.24` |
 | `r0116` | 2026-08-08 | `9.12` gitignore/review UX correction | Repository `.gitignore` now classifies untracked ZIP paths as non-selectable warnings, removes Shortcut filename special-casing and simplifies duplicated review summary/filter affordances | `none` |
 | `r0117` | 2026-08-08 | Frontend review CI correction after `9.12` | Removed disabled checkbox affordance from ignored rows and aligned E2E filter assertions with counted labels; no backend behavior changed | `none` |

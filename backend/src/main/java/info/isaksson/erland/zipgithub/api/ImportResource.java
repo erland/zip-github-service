@@ -224,10 +224,13 @@ public class ImportResource {
         var requestedOverrides = request == null || request.overrides() == null ? java.util.List.<ImportSelectionFactory.RequestedOverride>of()
                 : request.overrides().stream().map(item -> new ImportSelectionFactory.RequestedOverride(
                         item.path(), item.acknowledgement())).toList();
+        var requestedBlockerDecisions = request == null || request.blockerDecisions() == null ? java.util.List.<ImportSelectionFactory.RequestedBlockerDecision>of()
+                : request.blockerDecisions().stream().map(item -> new ImportSelectionFactory.RequestedBlockerDecision(
+                        item.path(), item.decision())).toList();
         var created = importSelections.create(ownerUserId, plan,
                 request == null ? null : request.planDigestSha256(),
                 request == null ? null : request.baseCommitSha(),
-                request == null ? null : request.selectedPaths(), requestedOverrides, java.time.Instant.now());
+                request == null ? null : request.selectedPaths(), requestedOverrides, requestedBlockerDecisions, java.time.Instant.now());
         var stored = service.recordImportSelection(ownerUserId, importId, created);
         return Response.status(existing.isPresent() ? Response.Status.OK : Response.Status.CREATED)
                 .entity(toSelectionResponse(stored)).build();
@@ -470,6 +473,8 @@ public class ImportResource {
                 selection.selectionDigestSha256(), selection.selectedPaths(), selection.excludedPaths(),
                 selection.overrides().stream().map(item -> new ImportSelectionResponse.Override(
                         item.path(), item.blockerType(), item.policyCode(), item.acknowledgement())).toList(),
+                selection.blockerDecisions().stream().map(item -> new ImportSelectionResponse.BlockerDecision(
+                        item.path(), item.blockerType(), item.decision())).toList(),
                 selection.createdAt());
     }
 

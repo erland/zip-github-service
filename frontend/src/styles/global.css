@@ -432,3 +432,23 @@ code, pre, .repository-name, .review-file__path { overflow-wrap: anywhere; word-
   .repository-picker-scroll { max-height: 48vh; }
 }
 .sr-only { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
+
+/* Step 9.24: explicit blocking-entry decisions. */
+fieldset.review-tree__override {
+  border: 0;
+  display: block;
+  margin-inline: 0;
+  min-width: 0;
+}
+fieldset.review-tree__override legend {
+  color: #7a3e00;
+  font-size: .9rem;
+  font-weight: 700;
+  margin-bottom: .3rem;
+}
+fieldset.review-tree__override label {
+  align-items: flex-start;
+  display: flex;
+  gap: .45rem;
+  margin: .25rem 0;
+}

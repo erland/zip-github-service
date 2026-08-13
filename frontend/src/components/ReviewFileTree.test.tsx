@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { ImportPlanEntry } from '../api/imports';
+import type { BlockerDecision, ImportPlanEntry } from '../api/imports';
 import { defaultSelectedPaths, ReviewFileTree } from './ReviewFileTree';
 
 const entries: ImportPlanEntry[] = [
@@ -61,7 +61,8 @@ describe('ReviewFileTree', () => {
     render(<OverrideHarness />);
     const blocked = screen.getByRole('checkbox', { name: 'Inkludera .github/workflows/build.yml' });
     expect(blocked).toBeDisabled();
-    await user.click(screen.getAllByRole('checkbox', { name: 'Jag förstår risken och vill ta med denna blockerade förändring' })[0]);
+    const include = screen.getAllByRole('radio', { name: 'Jag förstår risken – godkänn och ta med' })[0];
+    await user.click(include);
     expect(screen.getByRole('checkbox', { name: 'Exkludera .github/workflows/build.yml' })).toBeChecked();
   });
 
@@ -76,7 +77,7 @@ describe('ReviewFileTree', () => {
     const gitCheckbox = screen.getByRole('checkbox', { name: 'Inkludera .git/config' });
     expect(gitCheckbox).toBeDisabled();
 
-    const overrideBoxes = screen.getAllByRole('checkbox', { name: 'Jag förstår risken och vill ta med denna blockerade förändring' });
+    const overrideBoxes = screen.getAllByRole('radio', { name: 'Jag förstår risken – godkänn och ta med' });
     await user.click(overrideBoxes[0]);
     expect(screen.getByRole('checkbox', { name: 'Exkludera .github/workflows/build.yml' })).toBeChecked();
 
@@ -85,12 +86,21 @@ describe('ReviewFileTree', () => {
     expect(gitCheckbox).not.toBeChecked();
   });
 
+  it('requires an explicit acknowledgement for a hard blocker without ever selecting it', async () => {
+    const user = userEvent.setup();
+    render(<OverrideHarness />);
+    const hard = screen.getByRole('checkbox', { name: 'Inkludera .git/config' });
+    expect(hard).toBeDisabled();
+    await user.click(screen.getByRole('checkbox', { name: 'Jag har sett att denna hårt blockerade förändring inte kommer att tas med' }));
+    expect(hard).not.toBeChecked();
+  });
+
   it('labels deletion and blocker status in the tree', () => {
     render(<Harness />);
     const oldDirectory = screen.getByRole('button', { name: 'Fäll ihop old' }).closest('li');
     expect(oldDirectory).not.toBeNull();
     expect(within(oldDirectory as HTMLElement).getByText('Borttagen')).toBeInTheDocument();
-    expect(within(oldDirectory as HTMLElement).getByText('Kräver override')).toBeInTheDocument();
+    expect(within(oldDirectory as HTMLElement).getByText('Kräver beslut')).toBeInTheDocument();
   });
 });
 
@@ -102,8 +112,9 @@ function Harness() {
 function OverrideHarness() {
   const [selected, setSelected] = useState(() => defaultSelectedPaths(entries));
   const [overrides, setOverrides] = useState<Set<string>>(new Set());
+  const [decisions, setDecisions] = useState<Map<string, BlockerDecision>>(new Map());
   return <ReviewFileTree entries={entries} selectedPaths={selected} onSelectedPathsChange={setSelected}
-    overridePaths={overrides} onOverridePathsChange={setOverrides} />;
+    overridePaths={overrides} onOverridePathsChange={setOverrides} blockerDecisions={decisions} onBlockerDecisionsChange={setDecisions} />;
 }
 
 

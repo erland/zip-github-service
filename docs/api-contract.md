@@ -157,7 +157,7 @@ Request:
 }
 ```
 
-The server requires ownership and exact equality with both the stored plan digest and immutable selection digest. Interactive commit messages normalize CRLF/CR to LF, trim surrounding whitespace, reject empty/whitespace-only values, reject control characters other than LF, and are capped at 500 characters. A plan containing blockers may still be approved when the immutable selection contains at least one valid selected change and every selected overridable blocker has its explicit audit record. Repeating the same approval including the same normalized commit message is idempotent; a different message conflicts with the already recorded approval.
+The server requires ownership and exact equality with both the stored plan digest and immutable selection digest. Interactive commit messages normalize CRLF/CR to LF, trim surrounding whitespace, reject empty/whitespace-only values, reject control characters other than LF, and are capped at 500 characters. A plan containing blockers may still be approved only when the immutable selection contains at least one valid selected change and every blocker in the plan has a complete, internally consistent explicit decision record. Selected overridable blockers also require their override audit record; hard blockers can only be acknowledged as excluded. Repeating the same approval including the same normalized commit message is idempotent; a different message conflicts with the already recorded approval.
 
 `GET /api/imports/{importId}/plan/approval` returns the owner-scoped recorded approval including `commitMessage`, or `404` if no approval exists. This is a recovery/readback endpoint: it never creates or changes an approval. Legacy persisted approvals that predate step 9.5 receive the deterministic previous message `Apply approved ZIP import <importId>` during hydration; new interactive approvals never rely on that fallback.
 
@@ -230,6 +230,16 @@ Request:
       "path": ".github/workflows/ci.yml",
       "acknowledgement": "I understand that this changes repository automation."
     }
+  ],
+  "blockerDecisions": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "decision": "INCLUDE_OVERRIDE"
+    },
+    {
+      "path": ".git/config",
+      "decision": "ACKNOWLEDGE_EXCLUSION"
+    }
   ]
 }
 ```
@@ -241,10 +251,13 @@ The backend validates all selection identity and policy rules server-side:
 - every path must occur in the plan and may appear only once,
 - `HARD_BLOCKED` paths can never be selected,
 - ordinary selectable paths must be `ADDED` or `MODIFIED`,
-- selecting an `OVERRIDABLE_BLOCKED` path requires an explicit per-path acknowledgement,
-- overrides for excluded, unknown or non-overridable paths are rejected.
+- every `OVERRIDABLE_BLOCKED` path requires an explicit decision: `EXCLUDE` when omitted or `INCLUDE_OVERRIDE` when selected,
+- selecting an `OVERRIDABLE_BLOCKED` path also requires its explicit per-path override acknowledgement,
+- every `HARD_BLOCKED` path requires `ACKNOWLEDGE_EXCLUSION` and can never be selected,
+- overrides for excluded, unknown or non-overridable paths are rejected,
+- blocker decisions for unknown, ordinary or mismatched blocker paths are rejected.
 
-The server computes `excludedPaths` from the complete plan and creates a deterministic `selectionDigestSha256` using selection version `selection-1`. The digest binds the owner, import, plan identity, base SHA, selected paths, excluded paths and override audit entries. Repeating the identical selection is idempotent; attempting to replace it with a different selection returns `409 IMPORT_SELECTION_IMMUTABLE`.
+The server computes `excludedPaths` from the complete plan and creates a deterministic `selectionDigestSha256` using selection version `selection-2`. The digest binds the owner, import, plan identity, base SHA, selected paths, excluded paths, override audit entries **and the complete blocker-decision set**. Repeating the identical selection is idempotent; attempting to replace it with a different selection returns `409 IMPORT_SELECTION_IMMUTABLE`.
 
 Response: `201 Created` for the first immutable selection and `200 OK` for an identical replay.
 
@@ -258,7 +271,8 @@ As of step 7.9 the immutable selection is the exact delivery contract. Plan appr
 ### Selection delivery invariants
 
 - `.git/**` can appear in a plan for transparency but is never valid in `selectedPaths`.
-- `.github/**` and `WOULD_DELETE` require explicit per-path acknowledgement and the acknowledgement is part of the immutable selection digest.
+- Every blocker in the complete plan must have an explicit immutable decision before approval: overridable blockers are either excluded or included with override, while hard blockers are acknowledged as excluded.
+- `.github/**` and `WOULD_DELETE` selected for delivery require explicit per-path override acknowledgement; both override audit and blocker decisions are part of the immutable selection digest.
 - Empty selections are rejected.
 - Workspace preparation applies only `selectedPaths`; selected deletions are removed explicitly.
 - The complete Git diff must equal the selected path set before delivery.

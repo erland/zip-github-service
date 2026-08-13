@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { approveImportPlan, cancelImport, createImportSelection, deliverImport, findDelivery, getExternalBranchChanges, getImportPlan, getImportPlanApproval, getImportSelection, ExternalBranchChangesResponse, ImportPlanApprovalResponse, ImportPlanEntry, ImportPlanResponse, prepareImportWorkspace } from '../api/imports';
+import { approveImportPlan, cancelImport, createImportSelection, deliverImport, findDelivery, getExternalBranchChanges, getImportPlan, getImportPlanApproval, getImportSelection, BlockerDecision, ExternalBranchChangesResponse, ImportPlanApprovalResponse, ImportPlanEntry, ImportPlanResponse, prepareImportWorkspace } from '../api/imports';
 import { defaultSelectedPaths, ReviewFileTree } from '../components/ReviewFileTree';
 
 type ReviewFilter = 'CHANGES' | 'EXTERNAL' | 'BLOCKED' | 'WARNINGS' | 'UNCHANGED' | 'IGNORED' | 'ALL';
@@ -28,6 +28,7 @@ export default function ImportReviewPage() {
   const [delivering, setDelivering] = useState(false);
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [overridePaths, setOverridePaths] = useState<Set<string>>(new Set());
+  const [blockerDecisions, setBlockerDecisions] = useState<Map<string, BlockerDecision>>(new Map());
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [commitMessage, setCommitMessage] = useState('');
@@ -61,6 +62,7 @@ export default function ImportReviewPage() {
         if (existingSelection) {
           setSelectedPaths(new Set(existingSelection.selectedPaths));
           setOverridePaths(new Set(existingSelection.overrides.map((item) => item.path)));
+          setBlockerDecisions(new Map((existingSelection.blockerDecisions ?? []).map((item) => [item.path, item.decision])));
           setSelectionDigest(existingSelection.selectionDigestSha256);
         } else {
           setSelectedPaths(defaultSelectedPaths(loadedPlan.entries));
@@ -85,7 +87,8 @@ export default function ImportReviewPage() {
 
   async function approveAndDeliver() {
     const selectedExternalOverlap = [...selectedPaths].some((path) => overlappingExternalPaths.has(path));
-    if (!importId || !projectId || !plan || approving || delivering || selectedPaths.size === 0 || (selectedExternalOverlap && !externalChangesAcknowledged)) return;
+    const unresolvedBlockers = (plan?.entries ?? []).filter((entry) => entry.blockerType !== 'NONE' && !blockerDecisions.has(entry.path)).length;
+    if (!importId || !projectId || !plan || approving || delivering || selectedPaths.size === 0 || unresolvedBlockers > 0 || (selectedExternalOverlap && !externalChangesAcknowledged)) return;
     setApproving(true);
     setDelivering(false);
     setError('');
@@ -93,7 +96,8 @@ export default function ImportReviewPage() {
       let digest = selectionDigest;
       if (!digest) {
         const selection = await createImportSelection(importId, plan.planDigestSha256, plan.baseCommitSha,
-          [...selectedPaths].sort(), [...overridePaths].filter((path) => selectedPaths.has(path)).sort());
+          [...selectedPaths].sort(), [...overridePaths].filter((path) => selectedPaths.has(path)).sort(),
+          [...blockerDecisions.entries()].map(([path, decision]) => ({ path, decision })).sort((a, b) => a.path.localeCompare(b.path)));
         digest = selection.selectionDigestSha256;
         setSelectionDigest(digest);
       }
@@ -167,7 +171,7 @@ export default function ImportReviewPage() {
         approving={approving} approval={approval} approveAndDeliver={approveAndDeliver}
         delivering={delivering} retryApprovedDelivery={retryApprovedDelivery}
         selectedPaths={selectedPaths} setSelectedPaths={setSelectedPaths}
-        overridePaths={overridePaths} setOverridePaths={setOverridePaths} selectionLocked={Boolean(selectionDigest)}
+        overridePaths={overridePaths} setOverridePaths={setOverridePaths} blockerDecisions={blockerDecisions} setBlockerDecisions={setBlockerDecisions} selectionLocked={Boolean(selectionDigest)}
         cancelConfirm={cancelConfirm} setCancelConfirm={setCancelConfirm} cancelling={cancelling}
         confirmCancelImport={confirmCancelImport}
         commitMessage={commitMessage} setCommitMessage={setCommitMessage} externalChanges={externalChanges} externalChangedPaths={overlappingExternalPaths} externalChangesAcknowledged={externalChangesAcknowledged} setExternalChangesAcknowledged={setExternalChangesAcknowledged} />}
@@ -176,7 +180,7 @@ export default function ImportReviewPage() {
 }
 
 function ReviewContent({ plan, filter, setFilter, entries, approving, approval, approveAndDeliver, delivering, retryApprovedDelivery,
-  selectedPaths, setSelectedPaths, overridePaths, setOverridePaths, selectionLocked, cancelConfirm, setCancelConfirm, cancelling, confirmCancelImport,
+  selectedPaths, setSelectedPaths, overridePaths, setOverridePaths, blockerDecisions, setBlockerDecisions, selectionLocked, cancelConfirm, setCancelConfirm, cancelling, confirmCancelImport,
   commitMessage, setCommitMessage, externalChanges, externalChangedPaths, externalChangesAcknowledged, setExternalChangesAcknowledged }: {
   plan: ImportPlanResponse;
   filter: ReviewFilter;
@@ -191,6 +195,8 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
   setSelectedPaths: (paths: Set<string>) => void;
   overridePaths: ReadonlySet<string>;
   setOverridePaths: (paths: Set<string>) => void;
+  blockerDecisions: ReadonlyMap<string, BlockerDecision>;
+  setBlockerDecisions: (decisions: Map<string, BlockerDecision>) => void;
   selectionLocked: boolean;
   cancelConfirm: boolean;
   setCancelConfirm: (value: boolean) => void;
@@ -204,6 +210,7 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
   setExternalChangesAcknowledged: (value: boolean) => void;
 }) {
   const selectedExternalOverlap = [...selectedPaths].filter((path) => externalChangedPaths.has(path));
+  const unresolvedBlockers = plan.entries.filter((entry) => entry.blockerType !== 'NONE' && !blockerDecisions.has(entry.path));
   const ordinaryBulkPaths = entries
     .filter((entry) => entry.blockerType === 'NONE' && (entry.status === 'ADDED' || entry.status === 'MODIFIED'))
     .map((entry) => entry.path);
@@ -231,8 +238,27 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
     } else {
       overridableBulkPaths.forEach((path) => { nextSelected.add(path); nextOverrides.add(path); });
     }
+    const nextDecisions = new Map(blockerDecisions);
+    overridableBulkPaths.forEach((path) => nextDecisions.set(path, allOverridableBulkSelected ? 'EXCLUDE' : 'INCLUDE_OVERRIDE'));
+    setBlockerDecisions(nextDecisions);
     setOverridePaths(nextOverrides);
     setSelectedPaths(nextSelected);
+  }
+
+
+  function excludeAllOverridableInCategory() {
+    if (selectionLocked || overridableBulkPaths.length === 0) return;
+    const nextSelected = new Set(selectedPaths);
+    const nextOverrides = new Set(overridePaths);
+    const nextDecisions = new Map(blockerDecisions);
+    overridableBulkPaths.forEach((path) => {
+      nextSelected.delete(path);
+      nextOverrides.delete(path);
+      nextDecisions.set(path, 'EXCLUDE');
+    });
+    setSelectedPaths(nextSelected);
+    setOverridePaths(nextOverrides);
+    setBlockerDecisions(nextDecisions);
   }
 
   return (
@@ -245,9 +271,9 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
         {externalChanges.previousKnownHeadSha && externalChanges.reviewBaseHeadSha && <p><code>{externalChanges.previousKnownHeadSha.slice(0,12)}</code> → <code>{externalChanges.reviewBaseHeadSha.slice(0,12)}</code></p>}
       </aside>}
 
-      <div className={`review-decision ${selectedPaths.size > 0 ? 'review-decision--ready' : 'review-decision--blocked'}`} role="status">
+      <div className={`review-decision ${selectedPaths.size > 0 && unresolvedBlockers.length === 0 ? 'review-decision--ready' : 'review-decision--blocked'}`} role="status">
         <div>
-          <strong>{selectedPaths.size > 0 ? 'Urvalet kan godkännas' : 'Välj minst en förändring'}</strong>
+          <strong>{unresolvedBlockers.length > 0 ? `${unresolvedBlockers.length} blockerande förändring${unresolvedBlockers.length === 1 ? '' : 'ar'} kräver beslut` : selectedPaths.size > 0 ? 'Urvalet kan godkännas' : 'Välj minst en förändring'}</strong>
           <p>{plan.blocked > 0
             ? `${plan.blocked} blockerande post${plan.blocked === 1 ? '' : 'er'} finns i planen. Överstyrbara poster kan tas med efter ett uttryckligt riskgodkännande; hårt blockerade poster kan aldrig levereras.`
             : 'Inga blockerande policyträffar hittades.'}</p>
@@ -302,13 +328,14 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
             {ordinaryBulkPaths.length > 0 && <button className="button button--secondary" type="button" disabled={selectionLocked} onClick={toggleOrdinaryBulkSelection}>
               {allOrdinaryBulkSelected ? `Avmarkera alla vanliga förändringar (${ordinaryBulkPaths.length})` : `Välj alla vanliga förändringar (${ordinaryBulkPaths.length})`}
             </button>}
+            {overridableBulkPaths.length > 0 && <button className="button button--secondary" type="button" disabled={selectionLocked} onClick={excludeAllOverridableInCategory}>Ta inte med alla överstyrbara i denna kategori ({overridableBulkPaths.length})</button>}
             {overridableBulkPaths.length > 0 && <label className="checkbox-row status-message status-message--warning">
               <input type="checkbox" checked={allOverridableBulkSelected} disabled={selectionLocked} onChange={toggleOverridableBulkSelection} />
               Jag förstår risken och vill {allOverridableBulkSelected ? 'ta bort godkännandet för' : 'godkänna och välja'} alla {overridableBulkPaths.length} överstyrbara förändringar i denna kategori.
             </label>}
           </div>}
           <ReviewFileTree entries={entries} selectedPaths={selectedPaths} onSelectedPathsChange={setSelectedPaths}
-            overridePaths={overridePaths} onOverridePathsChange={setOverridePaths} externalChangedPaths={externalChangedPaths} locked={selectionLocked} />
+            overridePaths={overridePaths} onOverridePathsChange={setOverridePaths} blockerDecisions={blockerDecisions} onBlockerDecisionsChange={setBlockerDecisions} externalChangedPaths={externalChangedPaths} locked={selectionLocked} />
         </>
       )}
 
@@ -353,7 +380,7 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
               <div><dt>Base ref</dt><dd><code>{plan.baseCommitSha}</code></dd></div>
               <div><dt>Valda filer</dt><dd>{selectedPaths.size}</dd></div>
             </dl>
-            <button className="button" type="button" disabled={selectedPaths.size === 0 || commitMessage.trim().length === 0 || approving || delivering || (selectedExternalOverlap.length > 0 && !externalChangesAcknowledged)}
+            <button className="button" type="button" disabled={selectedPaths.size === 0 || unresolvedBlockers.length > 0 || commitMessage.trim().length === 0 || approving || delivering || (selectedExternalOverlap.length > 0 && !externalChangesAcknowledged)}
               onClick={approveAndDeliver}>
               {approving ? 'Godkänner…' : delivering ? 'Skapar commit på arbetsbranchen…' : 'Godkänn valda förändringar'}
             </button>

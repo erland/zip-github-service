@@ -888,7 +888,7 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 
 - Tillåt att ett repository kopplas till zip-GitHub även när GitHubs konfigurerade default branch ännu saknar ref, men endast när GitHub samtidigt verifierar att repositoryt saknar alla branches. En saknad branch i ett icke-tomt repository ska fortsatt vara ett fel.
 - Mutera inte repositoryt bara för att användaren listar eller väljer det. Bootstrap får ske först när användaren faktiskt startar ett Work eller första importen behöver ett Work.
-- Eftersom Work/snapshot/delivery-modellen kräver en låst base commit ska ett helt tomt repository initieras med exakt en tom root commit på repositoryts konfigurerade default branch. Bootstrap-committen får inte lägga till README, `.gitignore` eller andra filer.
+- Eftersom GitHub inte stödjer skapande av refs via Git Database API i ett helt tomt repository ska bootstrap följa GitHubs dokumenterade Contents API-väg: skapa en intern `.zip-github-bootstrap`-markör på default branch och ta bort den omedelbart. Default branch ska därefter ha ett tomt aktuellt tree innan vanlig Work-provisionering fortsätter; markören får aldrig finnas kvar i repositoryts aktuella innehåll.
 - Skapa därefter ordinarie `zip-github/work-*` från bootstrap-SHA:n och behåll befintlig snapshot, exact-selection, parent-verifiering, non-force push och PR-livscykel oförändrade.
 - Fail closed: bootstrap får endast ske när installations-token-scopad branch-listning fortfarande är tom. Om repositoryt har någon branch men default branch saknas ska zip-GitHub inte försöka reparera historiken automatiskt.
 - Hantera ett smalt race där någon annan initierar default branch mellan tomhetskontrollen och bootstrap: acceptera endast racet om den konfigurerade default branchen därefter kan resolve:as normalt; annars rapporteras bootstrap-fel.
@@ -896,6 +896,6 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 
 **Status:** DONE (2026-08-13, r0149 / 1.0.0-rc.101). Se `docs/step-9.29-report.md`.
 
-**Runtimekorrigering:** r0150/rc.102 normaliserade saknad default branch. r0151/rc.103 flyttar bootstrap före project-persistens i `Starta arbete`, verifierar branchen på nytt efter bootstrap och mappar bootstrapfel till explicita API-fel.
+**Runtimekorrigeringar:** r0150/rc.102 normaliserade saknad default branch. r0151/rc.103 flyttade bootstrap före project-persistens. r0152/rc.104 byter den första initieringen till GitHubs dokumenterade Contents API create/delete-sekvens och mappar även oväntade repository-startfel explicit.
 
 **Kvalitetsgrind för 9.29:** ett helt nytt GitHub-repository ska kunna ta emot sin första ZIP via samma säkra Work/review/PR-flöde som andra repositories. Bootstrap får inte introducera något filinnehåll utanför användarens godkända ZIP och får aldrig användas som generell reparation av en saknad branch i ett redan initierat repository.

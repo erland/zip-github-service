@@ -2,6 +2,7 @@ package info.isaksson.erland.zipgithub.api;
 
 import info.isaksson.erland.zipgithub.api.dto.RepositoryEntryResponse;
 import info.isaksson.erland.zipgithub.api.dto.RepositoryWorkResponse;
+import info.isaksson.erland.zipgithub.api.error.ApiException;
 import info.isaksson.erland.zipgithub.application.ProjectApplicationService;
 import info.isaksson.erland.zipgithub.github.GitHubInstallationAccess;
 import info.isaksson.erland.zipgithub.github.GitHubProjectCatalog;
@@ -51,10 +52,17 @@ public class RepositoryResource {
     @Path("/{installationId}/{repositoryId}/work")
     public RepositoryWorkResponse startWork(@PathParam("installationId") long installationId,
                                             @PathParam("repositoryId") long repositoryId) {
-        var session = currentUser.requireSession();
-        GitHubInstallationAccess.requireVisible(installationId, catalog.listUserInstallations(session.githubUserAccessToken()));
-        var project = projects.ensureProjectForRepositoryReadyForWork(session.userId(), session.githubUserAccessToken(), installationId, repositoryId);
-        var work = projects.startWork(session.userId(), project.id(), null);
-        return new RepositoryWorkResponse(project, ProjectResource.workResponse(work));
+        try {
+            var session = currentUser.requireSession();
+            GitHubInstallationAccess.requireVisible(installationId, catalog.listUserInstallations(session.githubUserAccessToken()));
+            var project = projects.ensureProjectForRepositoryReadyForWork(session.userId(), session.githubUserAccessToken(), installationId, repositoryId);
+            var work = projects.startWork(session.userId(), project.id(), null);
+            return new RepositoryWorkResponse(project, ProjectResource.workResponse(work));
+        } catch (ApiException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw ApiException.badGateway("REPOSITORY_WORK_START_FAILED",
+                    "Could not prepare the GitHub repository or start its Work branch.");
+        }
     }
 }

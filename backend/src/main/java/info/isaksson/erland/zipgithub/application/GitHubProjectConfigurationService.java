@@ -26,16 +26,41 @@ public class GitHubProjectConfigurationService {
                 .filter(item -> item.id() == repositoryId)
                 .findFirst()
                 .orElseThrow(() -> ApiException.notFound("GITHUB_REPOSITORY_NOT_FOUND", "The GitHub repository was not found."));
-        String selectedBranch = branch == null || branch.isBlank() ? repository.defaultBranch() : branch.trim();
+        boolean explicitBranch = branch != null && !branch.isBlank();
+        String reportedDefaultBranch = usableBranch(repository.defaultBranch());
+        Boolean hasBranches = null;
+        String selectedBranch;
+        if (explicitBranch) {
+            selectedBranch = branch.trim();
+        } else if (reportedDefaultBranch != null) {
+            selectedBranch = reportedDefaultBranch;
+        } else {
+            hasBranches = catalog.repositoryHasBranches(userAccessToken, repository.fullName());
+            if (hasBranches) {
+                throw ApiException.badGateway("GITHUB_DEFAULT_BRANCH_UNAVAILABLE",
+                        "GitHub did not report a usable default branch for the initialized repository.");
+            }
+            // A brand-new GitHub repository may have no default_branch value until its first commit.
+            // Use a deterministic bootstrap branch without persisting a blank value to PostgreSQL.
+            selectedBranch = "main";
+        }
         if (!catalog.branchExists(userAccessToken, repository.fullName(), selectedBranch)) {
-            boolean emptyRepository = selectedBranch.equals(repository.defaultBranch())
-                    && !catalog.repositoryHasBranches(userAccessToken, repository.fullName());
-            if (!emptyRepository) {
+            if (hasBranches == null) hasBranches = catalog.repositoryHasBranches(userAccessToken, repository.fullName());
+            boolean defaultChoice = reportedDefaultBranch != null
+                    ? selectedBranch.equals(reportedDefaultBranch)
+                    : selectedBranch.equals("main");
+            if (hasBranches || !defaultChoice) {
                 throw ApiException.badRequest("GITHUB_BRANCH_NOT_FOUND", "The selected branch does not exist in the repository.");
             }
         }
         return new VerifiedRepository(installationId, installation.accountLogin(), installation.repositorySelection(),
                 repository.id(), repository.fullName(), repository.privateRepository(), selectedBranch);
+    }
+
+    private static String usableBranch(String value) {
+        if (value == null) return null;
+        String normalized = value.trim();
+        return normalized.isEmpty() || "null".equalsIgnoreCase(normalized) ? null : normalized;
     }
 
     public record VerifiedRepository(long installationId, String installationAccountLogin, String repositorySelection,

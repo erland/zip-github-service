@@ -38,6 +38,37 @@ class GitHubProjectConfigurationServiceTest {
         assertEquals("GITHUB_BRANCH_NOT_FOUND", error.code());
     }
 
+    @Test
+    void fallsBackToMainWhenAnEmptyRepositoryHasNoReportedDefaultBranch() {
+        GitHubProjectConfigurationService service = new GitHubProjectConfigurationService();
+        service.catalog = new FakeCatalog() {
+            @Override public List<GitHubAppClient.GitHubRepository> listUserInstallationRepositories(String token, long id) {
+                return List.of(new GitHubAppClient.GitHubRepository(20L, "erland/empty", true, "", "url"));
+            }
+            @Override public boolean branchExists(String token, String repo, String branch) { return false; }
+            @Override public boolean repositoryHasBranches(String token, String repo) { return false; }
+        };
+
+        var verified = service.verify("token", 10L, 20L, null);
+
+        assertEquals("main", verified.defaultBranch());
+    }
+
+    @Test
+    void rejectsMissingDefaultBranchMetadataForAnInitializedRepository() {
+        GitHubProjectConfigurationService service = new GitHubProjectConfigurationService();
+        service.catalog = new FakeCatalog() {
+            @Override public List<GitHubAppClient.GitHubRepository> listUserInstallationRepositories(String token, long id) {
+                return List.of(new GitHubAppClient.GitHubRepository(20L, "erland/broken", true, "", "url"));
+            }
+            @Override public boolean repositoryHasBranches(String token, String repo) { return true; }
+        };
+
+        ApiException error = assertThrows(ApiException.class, () -> service.verify("token", 10L, 20L, null));
+
+        assertEquals("GITHUB_DEFAULT_BRANCH_UNAVAILABLE", error.code());
+    }
+
     private static class FakeCatalog implements GitHubProjectCatalog {
         public List<GitHubAppClient.GitHubInstallation> listUserInstallations(String token) {
             return List.of(new GitHubAppClient.GitHubInstallation(10L, 1L, "erland", "User", "selected", null));

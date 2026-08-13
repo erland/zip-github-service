@@ -62,7 +62,7 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
                         repo.path("id").asLong(),
                         repo.path("full_name").asText(),
                         repo.path("private").asBoolean(),
-                        repo.path("default_branch").asText(),
+                        repo.path("default_branch").isTextual() ? repo.path("default_branch").asText() : "",
                         repo.path("html_url").asText()));
             }
             if (!repositories.isArray() || repositories.size() < 100) return List.copyOf(result);

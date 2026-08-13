@@ -1,3 +1,15 @@
+
+## 1.0.0-rc.103 - 2026-08-13
+
+### Fixed
+
+Repository revision: `r0151`
+
+- Corrects step 9.29 empty-repository startup: `Starta arbete` now bootstraps a truly empty GitHub repository before the internal project row is persisted.
+- Re-verifies the selected default branch after bootstrap so persistent project/work state only sees a normal initialized repository.
+- Maps bootstrap/state failures to explicit API problem codes instead of leaking them to the generic `INTERNAL_ERROR` mapper.
+- Adds regression coverage for successful pre-persistence bootstrap and explicit bootstrap failure mapping.
+
 ## 1.0.0-rc.102 - 2026-08-13
 
 ### Fixed

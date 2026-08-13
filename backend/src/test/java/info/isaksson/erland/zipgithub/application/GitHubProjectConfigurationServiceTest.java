@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import info.isaksson.erland.zipgithub.api.error.ApiException;
 import info.isaksson.erland.zipgithub.github.GitHubAppClient;
 import info.isaksson.erland.zipgithub.github.GitHubProjectCatalog;
+import info.isaksson.erland.zipgithub.github.GitRepositoryBootstrapService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -67,6 +68,54 @@ class GitHubProjectConfigurationServiceTest {
         ApiException error = assertThrows(ApiException.class, () -> service.verify("token", 10L, 20L, null));
 
         assertEquals("GITHUB_DEFAULT_BRANCH_UNAVAILABLE", error.code());
+    }
+
+    @Test
+    void bootstrapsEmptyRepositoryBeforeWorkVerificationAndThenRequiresTheBranch() {
+        GitHubProjectConfigurationService service = new GitHubProjectConfigurationService();
+        final boolean[] bootstrapped = { false };
+        service.catalog = new FakeCatalog() {
+            @Override public List<GitHubAppClient.GitHubRepository> listUserInstallationRepositories(String token, long id) {
+                return List.of(new GitHubAppClient.GitHubRepository(20L, "erland/empty", true, "", "url"));
+            }
+            @Override public boolean branchExists(String token, String repo, String branch) { return bootstrapped[0]; }
+            @Override public boolean repositoryHasBranches(String token, String repo) { return bootstrapped[0]; }
+        };
+        service.repositoryBootstrap = new GitRepositoryBootstrapService() {
+            @Override public String bootstrapEmptyRepository(long installationId, String repositoryFullName, String defaultBranch) {
+                assertEquals(10L, installationId);
+                assertEquals("erland/empty", repositoryFullName);
+                assertEquals("main", defaultBranch);
+                bootstrapped[0] = true;
+                return "0123456789012345678901234567890123456789";
+            }
+        };
+
+        var verified = service.verifyForWorkStart("token", 10L, 20L);
+
+        assertTrue(bootstrapped[0]);
+        assertEquals("main", verified.defaultBranch());
+    }
+
+    @Test
+    void mapsEmptyRepositoryBootstrapFailureToAnExplicitApiError() {
+        GitHubProjectConfigurationService service = new GitHubProjectConfigurationService();
+        service.catalog = new FakeCatalog() {
+            @Override public List<GitHubAppClient.GitHubRepository> listUserInstallationRepositories(String token, long id) {
+                return List.of(new GitHubAppClient.GitHubRepository(20L, "erland/empty", true, "", "url"));
+            }
+            @Override public boolean branchExists(String token, String repo, String branch) { return false; }
+            @Override public boolean repositoryHasBranches(String token, String repo) { return false; }
+        };
+        service.repositoryBootstrap = new GitRepositoryBootstrapService() {
+            @Override public String bootstrapEmptyRepository(long installationId, String repositoryFullName, String defaultBranch) {
+                throw new IllegalStateException("simulated push rejection");
+            }
+        };
+
+        ApiException error = assertThrows(ApiException.class, () -> service.verifyForWorkStart("token", 10L, 20L));
+
+        assertEquals("EMPTY_REPOSITORY_BOOTSTRAP_FAILED", error.code());
     }
 
     private static class FakeCatalog implements GitHubProjectCatalog {

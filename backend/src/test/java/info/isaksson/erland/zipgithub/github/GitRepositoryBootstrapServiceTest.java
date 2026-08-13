@@ -48,4 +48,30 @@ class GitRepositoryBootstrapServiceTest {
             server.stop(0);
         }
     }
+    @Test
+    void preservesSafeGithubStatusAndMessageForBootstrapFailure() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/repos/erland/repo-fleet/contents/.zip-github-bootstrap", exchange -> {
+            byte[] response = "{\"message\":\"Resource not accessible by integration\"}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(403, response.length);
+            exchange.getResponseBody().write(response);
+            exchange.close();
+        });
+        server.start();
+        try {
+            GitRepositoryBootstrapService service = new GitRepositoryBootstrapService();
+            service.mapper = new ObjectMapper();
+            URI base = URI.create("http://127.0.0.1:" + server.getAddress().getPort());
+
+            GitRepositoryBootstrapService.GitHubContentsBootstrapException error =
+                    assertThrows(GitRepositoryBootstrapService.GitHubContentsBootstrapException.class,
+                            () -> service.bootstrapEmptyRepository(base, "erland/repo-fleet", "token", "main"));
+
+            assertEquals(403, error.statusCode());
+            assertEquals("Resource not accessible by integration", error.githubMessage());
+        } finally {
+            server.stop(0);
+        }
+    }
+
 }

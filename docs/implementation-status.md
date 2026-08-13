@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0154`
+- Repository revision: `r0155`
 - Last completed step: `9.29`
 - Next step: `none` — implementation plan complete
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.29 COMPLETE — EMPTY REPOSITORY STARTUP CONTENTS-API CORRECTED — RC.104 PACKAGING CORRECTED`

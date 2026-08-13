@@ -19,7 +19,7 @@ class WorkBranchMaintenanceServiceTest {
     private final GitHubPullRequestClient pullRequests = mock(GitHubPullRequestClient.class);
     private final WorkPersistenceStore workStore = mock(WorkPersistenceStore.class);
     private WorkBranchMaintenanceService service;
-    private final GitHubAppClient.GitHubInstallation installation = new GitHubAppClient.GitHubInstallation(10, 1, "owner", "User", "all", null);
+    private final GitHubAppClient.GitHubInstallation installation = new GitHubAppClient.GitHubInstallation(10, 1, "owner", "User", "all", null, "write");
     private final GitHubAppClient.GitHubRepository repository = new GitHubAppClient.GitHubRepository(20, "owner/repo", false, "main", "https://github.com/owner/repo");
     private final String workBranch = "zip-github/work-123e4567-e89b-12d3-a456-426614174000";
 

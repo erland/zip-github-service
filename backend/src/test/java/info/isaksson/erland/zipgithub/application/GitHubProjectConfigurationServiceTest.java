@@ -98,6 +98,27 @@ class GitHubProjectConfigurationServiceTest {
     }
 
     @Test
+    void requiresContentsWriteBeforeBootstrappingAnEmptyRepository() {
+        GitHubProjectConfigurationService service = new GitHubProjectConfigurationService();
+        service.catalog = new FakeCatalog() {
+            @Override public List<GitHubAppClient.GitHubInstallation> listUserInstallations(String token) {
+                return List.of(new GitHubAppClient.GitHubInstallation(
+                        10L, 1L, "erland", "User", "selected", null, "read"));
+            }
+            @Override public List<GitHubAppClient.GitHubRepository> listUserInstallationRepositories(String token, long id) {
+                return List.of(new GitHubAppClient.GitHubRepository(20L, "erland/empty", true, "main", "url"));
+            }
+            @Override public boolean branchExists(String token, String repo, String branch) { return false; }
+            @Override public boolean repositoryHasBranches(String token, String repo) { return false; }
+        };
+
+        ApiException error = assertThrows(ApiException.class, () -> service.verifyForWorkStart("token", 10L, 20L));
+
+        assertEquals("GITHUB_CONTENTS_WRITE_PERMISSION_REQUIRED", error.code());
+        assertEquals(403, error.status());
+    }
+
+    @Test
     void mapsEmptyRepositoryBootstrapFailureToAnExplicitApiError() {
         GitHubProjectConfigurationService service = new GitHubProjectConfigurationService();
         service.catalog = new FakeCatalog() {
@@ -120,7 +141,7 @@ class GitHubProjectConfigurationServiceTest {
 
     private static class FakeCatalog implements GitHubProjectCatalog {
         public List<GitHubAppClient.GitHubInstallation> listUserInstallations(String token) {
-            return List.of(new GitHubAppClient.GitHubInstallation(10L, 1L, "erland", "User", "selected", null));
+            return List.of(new GitHubAppClient.GitHubInstallation(10L, 1L, "erland", "User", "selected", null, "write"));
         }
         public List<GitHubAppClient.GitHubRepository> listUserInstallationRepositories(String token, long id) {
             return List.of(new GitHubAppClient.GitHubRepository(20L, "erland/example", true, "main", "url"));

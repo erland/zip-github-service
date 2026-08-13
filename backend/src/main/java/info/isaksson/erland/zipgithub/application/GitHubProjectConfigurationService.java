@@ -82,24 +82,45 @@ public class GitHubProjectConfigurationService {
             throw ApiException.conflict("GITHUB_DEFAULT_BRANCH_MISSING",
                     "The repository is initialized but its configured default branch does not exist.");
         }
+
+        GitHubAppClient.GitHubInstallation installation = catalog.listUserInstallations(userAccessToken).stream()
+                .filter(item -> item.id() == verified.installationId())
+                .findFirst()
+                .orElseThrow(() -> ApiException.notFound("GITHUB_INSTALLATION_NOT_FOUND",
+                        "The GitHub App installation was not found."));
+        if (!installation.contentsWritable()) {
+            throw ApiException.forbidden("GITHUB_CONTENTS_WRITE_PERMISSION_REQUIRED",
+                    "The GitHub App installation needs Contents: Read and write before zip-GitHub can initialize an empty repository. "
+                            + "Approve the updated GitHub App permissions for the installation and try again.");
+        }
+
         if (repositoryBootstrap == null) {
             throw ApiException.badGateway("EMPTY_REPOSITORY_BOOTSTRAP_UNAVAILABLE",
                     "The empty repository could not be initialized by zip-GitHub.");
         }
         try {
             repositoryBootstrap.bootstrapEmptyRepository(verified.installationId(), verified.fullName(), verified.defaultBranch());
-        } catch (RuntimeException bootstrapFailure) {
+        } catch (GitRepositoryBootstrapService.GitHubContentsBootstrapException bootstrapFailure) {
             // Accept only the narrow race where another actor initialized exactly our selected branch.
+            try {
+                if (catalog.branchExists(userAccessToken, verified.fullName(), verified.defaultBranch())) {
+                    return verify(userAccessToken, installationId, repositoryId, verified.defaultBranch());
+                }
+            } catch (RuntimeException ignored) {
+                // Map the original GitHub response below; it is more useful than a follow-up read failure.
+            }
+            throw mapBootstrapFailure(bootstrapFailure);
+        } catch (RuntimeException bootstrapFailure) {
             try {
                 if (!catalog.branchExists(userAccessToken, verified.fullName(), verified.defaultBranch())) {
                     throw ApiException.badGateway("EMPTY_REPOSITORY_BOOTSTRAP_FAILED",
-                            "GitHub rejected initialization of the empty repository.");
+                            "zip-GitHub could not initialize the empty repository before creating its Work branch.");
                 }
             } catch (ApiException e) {
                 throw e;
             } catch (RuntimeException stateFailure) {
                 throw ApiException.badGateway("EMPTY_REPOSITORY_BOOTSTRAP_FAILED",
-                        "GitHub rejected initialization of the empty repository.");
+                        "zip-GitHub could not initialize the empty repository before creating its Work branch.");
             }
         }
         try {
@@ -115,6 +136,27 @@ public class GitHubProjectConfigurationService {
         }
         // Re-read repository metadata after the first commit so only normal initialized state is persisted.
         return verify(userAccessToken, installationId, repositoryId, verified.defaultBranch());
+    }
+
+    private static ApiException mapBootstrapFailure(GitRepositoryBootstrapService.GitHubContentsBootstrapException failure) {
+        String githubMessage = failure.githubMessage();
+        String suffix = githubMessage == null || githubMessage.isBlank() ? "" : " GitHub: " + githubMessage;
+        return switch (failure.statusCode()) {
+            case 401 -> ApiException.badGateway("GITHUB_BOOTSTRAP_AUTHENTICATION_FAILED",
+                    "GitHub rejected the installation credential while initializing the empty repository." + suffix);
+            case 403 -> ApiException.forbidden("GITHUB_CONTENTS_WRITE_PERMISSION_REQUIRED",
+                    "GitHub denied the bootstrap write. Verify that the GitHub App installation has Contents: Read and write "
+                            + "and that any updated App permissions have been approved." + suffix);
+            case 404 -> ApiException.badGateway("GITHUB_BOOTSTRAP_REPOSITORY_UNAVAILABLE",
+                    "GitHub could not expose the repository to the installation credential used for bootstrap." + suffix);
+            case 409 -> ApiException.conflict("GITHUB_EMPTY_REPOSITORY_CONFLICT",
+                    "GitHub reported a conflict while initializing the empty repository. Retry after GitHub has finished creating the repository."
+                            + suffix);
+            case 422 -> ApiException.badGateway("GITHUB_BOOTSTRAP_VALIDATION_FAILED",
+                    "GitHub rejected the empty-repository bootstrap request as invalid." + suffix);
+            default -> ApiException.badGateway("EMPTY_REPOSITORY_BOOTSTRAP_FAILED",
+                    "GitHub rejected initialization of the empty repository with HTTP " + failure.statusCode() + "." + suffix);
+        };
     }
 
     private static String usableBranch(String value) {

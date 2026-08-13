@@ -80,10 +80,36 @@ public class GitRepositoryBootstrapService {
         HttpResponse<String> response = http.send(builder.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             String body = response.body() == null ? "" : response.body();
-            if (body.length() > 1000) body = body.substring(0, 1000);
-            throw new IllegalStateException("GitHub Contents bootstrap failed with HTTP " + response.statusCode() + ": " + body);
+            String githubMessage = "";
+            try {
+                JsonNode problem = mapper.readTree(body);
+                githubMessage = problem.path("message").asText("");
+            } catch (Exception ignored) {
+                // Keep the public diagnostic bounded and structured even for a non-JSON upstream response.
+            }
+            throw new GitHubContentsBootstrapException(response.statusCode(), githubMessage);
         }
         return mapper.readTree(response.body());
+    }
+
+    public static final class GitHubContentsBootstrapException extends IllegalStateException {
+        private final int statusCode;
+        private final String githubMessage;
+
+        GitHubContentsBootstrapException(int statusCode, String githubMessage) {
+            super("GitHub Contents bootstrap failed with HTTP " + statusCode
+                    + (githubMessage == null || githubMessage.isBlank() ? "" : ": " + githubMessage));
+            this.statusCode = statusCode;
+            this.githubMessage = githubMessage == null ? "" : githubMessage.trim();
+        }
+
+        public int statusCode() {
+            return statusCode;
+        }
+
+        public String githubMessage() {
+            return githubMessage;
+        }
     }
 
     private static boolean unsafeBranch(String branch) {

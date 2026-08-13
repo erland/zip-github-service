@@ -1,3 +1,14 @@
+## 1.0.0-rc.107 - 2026-08-13
+
+Repository revision: `r0155`
+
+- Strengthens step 9.29 empty-repository diagnostics after real `erland/repo-fleet` testing showed that the initial Contents API write is still being rejected before any branch is created.
+- Reads the GitHub App installation's actual `permissions.contents` value from `/user/installations` and requires `write` before attempting empty-repository bootstrap.
+- Returns `GITHUB_CONTENTS_WRITE_PERMISSION_REQUIRED` when the installation has not granted/approved Contents: Read and write.
+- Preserves GitHub's safe HTTP status and top-level `message` for failed Contents API bootstrap requests and maps 401/403/404/409/422 to explicit API problem codes instead of collapsing them into `REPOSITORY_WORK_START_FAILED`.
+- Adds regression coverage for the permission preflight and safe GitHub error diagnostics.
+- No ZIP comparison, selection, delivery, PR, Actions, or Work lifecycle semantics are changed for initialized repositories.
+
 ## 1.0.0-rc.106 - 2026-08-13
 
 Repository revision: `r0154`

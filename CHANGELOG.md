@@ -1,3 +1,10 @@
+## 1.0.0-rc.91 - 2026-08-13
+
+- Completes Step 9.23 by correcting the active frontend browser title from the legacy `zip-buildserver` name to `zip-GitHub`.
+- Preserves historical `zip-buildserver` references in migration/baseline/legacy documentation instead of rewriting historical context.
+- Adds release verification for the active browser title.
+- Adds planned Steps 9.24 (explicit decisions for every blocking review entry) and 9.25 (safe global cleanup of orphaned `zip-github/work-*` branches), with 9.24 now `NEXT`.
+
 ## 1.0.0-rc.90 - 2026-08-11
 
 - Completes Step 9.22 with conservative Shortcut repository suggestions based on normalized ZIP/repository names, the authenticated user’s latest upload filename for an existing project, and a smaller recency bonus.

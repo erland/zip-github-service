@@ -799,3 +799,42 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 **Status:** DONE i r0138 / 1.0.0-rc.90. Se `docs/step-9.22-report.md`.
 
 **Kvalitetsgrind för 9.22:** Shortcut-flödet ska i återkommande projekt ofta kunna presentera ett trovärdigt repositoryförslag utan sökning, men ett osäkert förslag får aldrig automatiskt välja/promota repository och den fullständiga 9.21-pickern ska alltid finnas som fallback.
+
+
+## Steg 9.23 - Produktnamn i aktiv webbklient
+
+- Ändra den aktiva webbklientens dokumenttitel från legacy-namnet `zip-buildserver` till produktnamnet `zip-GitHub`, så webbläsarfliken stämmer med tjänsten.
+- Inventera kvarvarande `zip-buildserver`-referenser och ändra endast sådana som hör till aktiv produkt/runtime. Historik, migrationsunderlag och uttryckligt legacy-material ska behålla det historiska namnet.
+- Lägg en release-regression som verifierar att `frontend/index.html` använder `zip-GitHub` och inte `zip-buildserver`.
+
+**Status:** DONE i r0139 / 1.0.0-rc.91. Se `docs/step-9.23-report.md`.
+
+**Kvalitetsgrind för 9.23:** den aktiva webbklientens webbläsarflik ska visa `zip-GitHub`, samtidigt som legacy-dokumentation fortfarande får beskriva `zip-buildserver` där det historiskt är korrekt.
+
+## Steg 9.24 - Explicita beslut för blockerande review-poster
+
+- Överstyrbara blockerare ska börja i ett obesvarat läge. Användaren får inte leverera importen förrän varje sådan post uttryckligen har beslutats som antingen `Ta inte med` eller `Godkänn och ta med`.
+- Ett uttryckligt `Ta inte med` ska vara ett förstaklassbeslut, inte samma sak som att användaren aldrig interagerat med posten. Ett uttryckligt override ska fortsatt ge befintlig override-audit och selection-semantik.
+- Hårt blockerade poster får aldrig väljas, men användaren ska behöva bekräfta att de har sett att respektive post kommer att utelämnas innan leverans kan fortsätta.
+- Review-sammanfattningen ska tydligt visa hur många blockerande poster som fortfarande kräver beslut och primär leveransåtgärd ska vara spärrad så länge antalet är större än noll.
+- Behåll kategori-massvalet från 9.19 och komplettera det med säkra massbeslut där det minskar klick utan att skapa implicit godkännande: uttryckligt exkludera överstyrbara poster respektive befintligt explicit bulk-override. Hårt blockerade poster ska fortfarande aldrig kunna inkluderas.
+- Backend/approval-kontraktet ska validera den explicita beslutsmodellen så att en manipulerad klient inte kan kringgå kravet genom att bara utelämna obesvarade blockerare.
+- Lägg regression för obesvarad blockerare som stoppar leverans, explicit exkludering, explicit override+selection, hård blockerare som kräver acknowledgement men inte kan väljas, bulkbeslut samt oförändrad exact-selection-invariant.
+
+**Status:** NEXT efter r0139 / 1.0.0-rc.91.
+
+**Kvalitetsgrind för 9.24:** ingen blockerande review-post får passera obemärkt. Varje överstyrbar blockerare måste ha ett explicit inkluderings- eller exkluderingsbeslut och varje hård blockerare ett explicit acknowledgement innan leverans, samtidigt som hårt blockerade paths förblir omöjliga att välja och backend upprätthåller samma krav som UI:t.
+
+## Steg 9.25 - Säker global städning av föräldralösa Work-brancher
+
+- Lägg en samlad underhållsvy som inventerar zip-GitHub Work-brancher över samtliga repositories som den autentiserade användaren får se via GitHub App-installationerna, så städning inte kräver repository-för-repository-klick.
+- Kandidater ska begränsas strikt till zip-GitHubs egen branch-namespace, exempelvis `zip-github/work-*`. Default branch, protected branches och alla andra branchnamn ska alltid vara icke-raderbara via funktionen.
+- Klassificera en branch som säker att radera endast när backend kan verifiera att den saknar koppling till en icke-terminal Work, inte används som head för en öppen pull request och fortfarande ligger i ett repository/an installation som användaren har behörighet till.
+- Osäker eller ofullständig GitHub-/databasstatus ska alltid ge `kan inte verifieras säkert` och därmed ingen delete-möjlighet. Hellre falskt negativt än risk för att ta bort aktivt arbete.
+- Visa först en read-only förhandsgranskning med totalsiffror och orsak per branch. Radering ska kräva ett separat explicit bulkbeslut och backend ska göra en ny säkerhetskontroll direkt före varje delete för att minimera race mellan preview och mutation.
+- Ingen automatisk eller schemalagd branchradering införs i detta steg. Fel vid en branch ska inte få efterföljande brancher att antas säkra; resultatet ska rapporteras per repository/branch.
+- Lägg regression för aktiv Work, öppen PR, merged/terminal Work, protected/default branch, främmande branch-prefix, behörighetsbortfall, stale preview/race och blandat bulkresultat.
+
+**Status:** PENDING efter 9.24.
+
+**Kvalitetsgrind för 9.25:** bulkstädning får endast erbjuda och radera brancher som zip-GitHub med hög säkerhet kan bevisa är föräldralösa. Osäkerhet ska alltid stoppa deletion, användaren ska se en preview och radering ska aldrig ske automatiskt.

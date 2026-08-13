@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { ImportActionsDetailsResponse, ImportActionsStatusResponse } from '../api/imports';
+import { ActionsWorkflowRunResponse, ImportActionsDetailsResponse, ImportActionsStatusResponse } from '../api/imports';
 
 export type ActionsPanelProps = {
   actions: ImportActionsStatusResponse | null;
@@ -95,15 +95,18 @@ export default function ActionsPanel({
   const additionalChecks = (actions.checks ?? []).filter(check =>
     !isDuplicateGitHubActionsCheck(check.appName, check.name, representedWorkflowJobNames),
   );
+  const workflowGroups = groupWorkflowRuns(actions.workflows ?? [], targetCommitSha);
 
   return <section className="actions-overview" aria-labelledby="actions-heading">
     <div className="review-list-heading"><div><Heading id="actions-heading">GitHub Actions</Heading><p>Commit <code>{commitSha.slice(0, 12)}</code>. GitHub är källa för fullständig körningsinformation.</p></div><div className="actions-heading-actions"><StateBadge state={actions.state} />{onRefresh && <button className="button button--secondary" type="button" disabled={refreshing} onClick={onRefresh}>{refreshing ? 'Uppdaterar…' : 'Uppdatera status'}</button>}</div></div>
-    {(actions.workflows ?? []).length > 0 && <ol className="actions-list">{(actions.workflows ?? []).map(workflow => {
-      const workflowCommitSha = workflow.headSha || actions.commitSha || commitSha;
-      const jobs = workflow.jobs ?? [];
-      return <li key={workflow.id} className="actions-run-card">
-      <div className="actions-item-heading"><div><strong>{workflow.name}</strong><p>{workflow.event || 'workflow'} · <code>{workflowCommitSha.slice(0, 12)}</code> · <a href={workflow.htmlUrl || fallbackUrl} target="_blank" rel="noreferrer">Öppna körning på GitHub</a></p></div><StateBadge state={workflow.state} /></div>
-      {jobs.length > 0 && <ul className="actions-job-list">{jobs.map(job => <li key={job.id}><span>{job.htmlUrl ? <a href={job.htmlUrl} target="_blank" rel="noreferrer">{job.name}</a> : job.name}</span><StateBadge state={job.state} /></li>)}</ul>}
+    {workflowGroups.length > 0 && <ol className="actions-list">{workflowGroups.map(group => {
+      const primary = group.runs[0];
+      const workflowCommitSha = primary.headSha || actions.commitSha || commitSha;
+      const jobs = primary.jobs ?? [];
+      return <li key={group.key} className="actions-run-card">
+      <div className="actions-item-heading"><div><strong>{primary.name}</strong><p>{group.runs.length === 1 ? `${primary.event || 'workflow'} · ` : `${group.runs.length} GitHub-körningar · `}<code>{workflowCommitSha.slice(0, 12)}</code>{group.runs.length === 1 && <> · <a href={primary.htmlUrl || fallbackUrl} target="_blank" rel="noreferrer">Öppna körning på GitHub</a></>}</p></div><StateBadge state={group.state} /></div>
+      {group.runs.length === 1 && jobs.length > 0 && <ul className="actions-job-list">{jobs.map(job => <li key={job.id}><span>{job.htmlUrl ? <a href={job.htmlUrl} target="_blank" rel="noreferrer">{job.name}</a> : job.name}</span><StateBadge state={job.state} /></li>)}</ul>}
+      {group.runs.length > 1 && <details className="actions-run-group"><summary>Visa {group.runs.length} separata körningar</summary><ol className="actions-list">{group.runs.map(run => <li key={run.id} className="actions-run-card"><div className="actions-item-heading"><div><strong>{run.event || 'workflow'}</strong><p><a href={run.htmlUrl || fallbackUrl} target="_blank" rel="noreferrer">Öppna körning på GitHub</a></p></div><StateBadge state={run.state} /></div>{(run.jobs ?? []).length > 0 && <ul className="actions-job-list">{(run.jobs ?? []).map(job => <li key={job.id}><span>{job.htmlUrl ? <a href={job.htmlUrl} target="_blank" rel="noreferrer">{job.name}</a> : job.name}</span><StateBadge state={job.state} /></li>)}</ul>}</li>)}</ol></details>}
     </li>;
     })}</ol>}
     {additionalChecks.length > 0 && <div className="actions-checks"><h3>Övriga kontroller</h3><ul className="actions-job-list">{additionalChecks.map(check => <li key={check.id}><span>{check.htmlUrl ? <a href={check.htmlUrl} target="_blank" rel="noreferrer">{check.name}</a> : check.name}{check.appName ? ` · ${check.appName}` : ''}</span><StateBadge state={check.state} /></li>)}</ul></div>}
@@ -125,6 +128,45 @@ function ActionsDetails({details, copyFailure, copyJobLog}:{details:ImportAction
       <div className="result-primary-action"><button className="button button--secondary" type="button" onClick={() => void copyFailure(failure)}>Kopiera fel med sammanhang</button>{(failure.jobLogLines ?? []).length > 0 && <button className="button button--secondary" type="button" onClick={() => void copyJobLog(failure)}>Kopiera jobblogg</button>}<a className="button button--secondary" href={failure.githubUrl} target="_blank" rel="noreferrer">Öppna jobb på GitHub</a></div>
     </li>)}</ol></section>}
   </div>;
+}
+
+function workflowIdentity(run: ActionsWorkflowRunResponse) {
+  const identity = run.workflowId > 0 ? `id:${run.workflowId}` : `path:${run.workflowPath || run.name}`;
+  return `${identity}|${run.headSha || ''}`;
+}
+
+function groupWorkflowRuns(runs: ActionsWorkflowRunResponse[], targetCommitSha: string) {
+  const groups = new Map<string, ActionsWorkflowRunResponse[]>();
+  for (const run of runs) {
+    const runCommitSha = run.headSha || targetCommitSha;
+    const normalizedRun = run.headSha ? run : { ...run, headSha: runCommitSha };
+    const key = workflowIdentity(normalizedRun);
+    const existing = groups.get(key) ?? [];
+    existing.push(normalizedRun);
+    groups.set(key, existing);
+  }
+  return [...groups.entries()].map(([key, groupedRuns]) => ({
+    key,
+    runs: groupedRuns.slice().sort((a, b) => compareRunRecency(b, a)),
+    state: aggregateWorkflowState(groupedRuns),
+  }));
+}
+
+function compareRunRecency(a: ActionsWorkflowRunResponse, b: ActionsWorkflowRunResponse) {
+  const aTime = Date.parse(a.updatedAt || a.createdAt || '') || 0;
+  const bTime = Date.parse(b.updatedAt || b.createdAt || '') || 0;
+  if (aTime !== bTime) return aTime - bTime;
+  return a.id - b.id;
+}
+
+function aggregateWorkflowState(runs: ActionsWorkflowRunResponse[]): ActionsWorkflowRunResponse['state'] {
+  const states = new Set(runs.map(run => run.state));
+  if (states.has('failure')) return 'failure';
+  if (states.has('in_progress')) return 'in_progress';
+  if (states.has('queued')) return 'queued';
+  if (states.has('pending')) return 'pending';
+  if (states.has('cancelled')) return 'cancelled';
+  return 'success';
 }
 
 function formatBytes(bytes:number) {

@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0144`
-- Last completed step: `9.25`
-- Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.25 COMPLETE — SAFE WORK BRANCH MAINTENANCE`
+- Repository revision: `r0145`
+- Last completed step: `9.26`
+- Next step: `9.27`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.26 COMPLETE — ACTIONS RUN GROUPING`
 
 ## Step ledger
 
@@ -110,12 +110,15 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.23` | Fas 9 — Product naming cleanup | Korrekt produktnamn i aktiv webbklient/browser title | **DONE** | 2026-08-13 | `docs/step-9.23-report.md`, `frontend/index.html` |
 | `9.24` | Fas 9 — Review safety | Explicita beslut för blockerande review-poster | **DONE** | 2026-08-13 | `docs/step-9.24-report.md`, `frontend/src/pages/ImportReviewPage.tsx`, `backend/src/main/java/info/isaksson/erland/zipgithub/selection/ImportSelectionFactory.java` |
 | `9.25` | Fas 9 — Work branch maintenance | Säker global städning av föräldralösa Work-brancher | **DONE** | 2026-08-13 | `docs/step-9.25-report.md`, `frontend/src/pages/MaintenancePage.tsx`, `backend/src/main/java/info/isaksson/erland/zipgithub/application/WorkBranchMaintenanceService.java` |
+| `9.26` | Fas 9 — Actions presentation | Gruppera flera runs för samma workflow och commit | **DONE** | 2026-08-13 | `docs/step-9.26-report.md`, `frontend/src/components/ActionsPanel.tsx` |
+| `9.27` | Fas 9 — PR/Work safety UX | Bekräftelse innan ett Work med öppen PR utökas | **NEXT** | — | — |
 
 ## Revision history
 
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
 | `r0143` | 2026-08-13 | `9.25` safe orphaned Work branch cleanup | Global fail-closed preview + explicit revalidated bulk deletion across visible GitHub App repositories; bounded pagination avoids the former 100-repository truncation | `none — define next step before further product work` |
+| `r0145` | 2026-08-13 | `9.26` grouped workflow-run presentation | Same workflow/commit is shown once with all actual GitHub runs preserved as expandable details; 9.27 is NEXT | `9.27` |
 | `r0144` | 2026-08-13 | `9.25` frontend CI correction | Explicit Vitest lifecycle/assertion imports for the new maintenance page regression; no product behavior change | `none — define next step before further product work` |
 | `r0141` | 2026-08-13 | Backend CI correction after `9.24` | Added the missing `ImmutableImportPlanEntry` import required by the Step 9.24 blocker-decision delivery guard; no production behavior changed | `9.25` |
 | `r0142` | 2026-08-13 | Backend test CI correction after `9.24` | Updated the remaining `AlternativeZipIngestionRegressionTest` factory calls to the `selection-2` blocker-decision signature; no production behavior changed | `9.25` |

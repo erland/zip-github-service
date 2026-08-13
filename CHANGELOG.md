@@ -1,3 +1,12 @@
+## 1.0.0-rc.97 - 2026-08-13
+
+### Added
+
+- Completes Step 9.26 by grouping multiple GitHub workflow runs for the same workflow and commit into one top-level Actions card while preserving each actual run in an expandable detail view.
+- Typical `push` + `pull_request` runs created when a Work already has an open PR no longer make the same workflow appear duplicated.
+- Group status is conservative so a failed run is never hidden by a successful sibling run, and distinct workflow IDs remain separate even when their display names match.
+- Documents Step 9.27 as the next improvement: explicit confirmation before extending a Work that already has an open PR.
+
 ## 1.0.0-rc.96 - 2026-08-13
 
 ### Fixed

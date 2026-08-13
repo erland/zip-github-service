@@ -838,3 +838,32 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 **Status:** DONE i r0143 / 1.0.0-rc.95. Se `docs/step-9.25-report.md`.
 
 **Kvalitetsgrind för 9.25:** bulkstädning får endast erbjuda och radera brancher som zip-GitHub med hög säkerhet kan bevisa är föräldralösa. Osäkerhet ska alltid stoppa deletion, användaren ska se en preview och radering ska aldrig ske automatiskt.
+
+
+## Steg 9.26 - Grupperad presentation av workflow-runs för samma commit
+
+- Behåll GitHub workflow-runs som fullständig källa och radera eller filtrera inte bort separata körningar som GitHub faktiskt har skapat.
+- Gruppera toppnivåpresentationen när flera runs hör till samma workflow-identitet och samma commit, typiskt när både `push` och `pull_request` triggas efter en ny commit på ett Work som redan har en öppen PR.
+- Workflow-identiteten ska i första hand använda GitHubs `workflowId`; endast när det saknas får stabil workflow-path/namn användas som fallback. Två olika workflows med samma visningsnamn får inte slås ihop.
+- Gruppens sammanfattade status ska vara konservativ: ett misslyckat run får inte döljas av ett lyckat run, och pågående/köad status ska fortsatt synas när ingen körning har misslyckats.
+- Visa workflowet en gång i huvudlistan och ange antalet GitHub-körningar. Användaren ska kunna expandera gruppen och se varje separat event/run, dess status, jobb och GitHub-länk.
+- Behåll dedupliceringen mellan workflow-jobs och `Övriga kontroller` från 9.18 över samtliga runs; grupperingen får inte göra att externa eller omatchade checks försvinner.
+- Lägg regression för `push` + `pull_request` på samma workflow/commit, blandad success/failure samt två olika workflow-ID:n med samma visningsnamn.
+
+**Status:** DONE i r0145 / 1.0.0-rc.97. Se `docs/step-9.26-report.md`.
+
+**Kvalitetsgrind för 9.26:** samma workflow för samma commit ska bara ta en toppnivåplats i Actions-panelen även när GitHub skapat flera runs, men samtliga runs/statusar/jobs/länkar ska finnas kvar i den expanderbara detaljen och ett failure får aldrig maskeras av ett success-run.
+
+## Steg 9.27 - Bekräftelse innan ett Work med öppen PR utökas
+
+- När användaren försöker starta/ladda upp nästa ZIP till ett Work som redan har en öppen pull request ska zip-GitHub tydligt varna att den nya ZIP:en kommer att läggas på samma Work-branch och därmed uppdatera den befintliga PR:n.
+- Flödet ska fortsatt tillåta detta eftersom en ny ZIP kan vara en avsiktlig rättning eller komplettering till PR:n, men användaren måste uttryckligen bekräfta `Ja, fortsätt med nästa ZIP` innan upload/import fortsätter.
+- Varningen ska visa aktuell PR-identitet/länk när den finns och erbjuda ett tydligt avbryt-alternativ.
+- Kontrollera aktuell PR-status genom befintlig GitHub reconciliation innan beslutet används. Om PR:n hunnit mergas ska befintlig terminal Work-logik vinna och en ny import ska starta från aktuell default branch i stället för att fortsätta gammalt Work.
+- Skyddet ska ligga i själva new-import-flödet och inte bara på en enskild navigeringsknapp, så direkt navigation eller andra ingångar inte kringgår varningen.
+- Bekräftelsen är avsiktligt per ny import och ska inte bli en permanent inställning som tystar framtida varningar.
+- Lägg regression för `PR_OPEN` + avbryt, `PR_OPEN` + explicit fortsätt, ingen varning för Work utan PR samt merged-PR reconciliation.
+
+**Status:** NEXT.
+
+**Kvalitetsgrind för 9.27:** en ny ZIP får aldrig oavsiktligt läggas på ett Work med en redan öppen PR utan att användaren fått en tydlig, aktuell varning och uttryckligen valt att fortsätta; avsiktliga PR-rättningar ska samtidigt förbli möjliga.

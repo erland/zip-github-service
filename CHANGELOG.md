@@ -1,3 +1,13 @@
+## 1.0.0-rc.102 - 2026-08-13
+
+### Fixed
+
+- Corrects Step 9.29 for completely empty GitHub repositories where GitHub does not yet report a usable `default_branch` value before the first commit.
+- Empty repositories now resolve a missing/blank/null default-branch value to the deterministic bootstrap branch `main` before project persistence, preventing the PostgreSQL non-blank `default_branch` constraint from surfacing as a generic internal error.
+- Initialized repositories still fail closed if GitHub does not report a usable default branch; the fallback is restricted to repositories that GitHub confirms have no branches.
+- GitHub repository parsing no longer turns JSON `null` default-branch metadata into the literal branch name `"null"`.
+- Adds focused regression coverage for the empty-repository fallback and the initialized-repository fail-closed case.
+
 ## 1.0.0-rc.101 - 2026-08-13
 
 ### Added

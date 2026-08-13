@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0149`
+- Repository revision: `r0150`
 - Last completed step: `9.29`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.29 COMPLETE — EMPTY REPOSITORY SUPPORT`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.29 COMPLETE — EMPTY REPOSITORY SUPPORT CORRECTED`
 
 ## Step ledger
 
@@ -125,6 +125,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0147` | 2026-08-13 | `9.27` CI/test correction | Updated stale frontend mocks/serialization expectations and imported `CreateImportRequest` in the backend lifecycle regression; no production behavior changed | `none` |
 | `r0148` | 2026-08-13 | `9.28` CI trigger optimization | Main CI now runs automatically on push only (plus manual dispatch), avoiding duplicate push + PR-synchronize runs for the same Work commit while preserving main/tag image publication rules | `none` |
 | `r0149` | 2026-08-13 | `9.29` empty repository support | Truly empty repositories get one empty root bootstrap commit on the configured default branch before ordinary Work provisioning; no files are injected outside the reviewed ZIP | `none` |
+| `r0150` | 2026-08-13 | `9.29` runtime correction | Empty repositories with absent/blank GitHub default-branch metadata resolve to `main` before persistence; initialized repositories still fail closed | `none` |
 | `r0144` | 2026-08-13 | `9.25` frontend CI correction | Explicit Vitest lifecycle/assertion imports for the new maintenance page regression; no product behavior change | `none — define next step before further product work` |
 | `r0141` | 2026-08-13 | Backend CI correction after `9.24` | Added the missing `ImmutableImportPlanEntry` import required by the Step 9.24 blocker-decision delivery guard; no production behavior changed | `9.25` |
 | `r0142` | 2026-08-13 | Backend test CI correction after `9.24` | Updated the remaining `AlternativeZipIngestionRegressionTest` factory calls to the `selection-2` blocker-decision signature; no production behavior changed | `9.25` |

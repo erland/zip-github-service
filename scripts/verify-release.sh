@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.100"
+expected_version="1.0.0-rc.101"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.100 - 2026-08-13' CHANGELOG.md
+grep -q '## 1.0.0-rc.101 - 2026-08-13' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,13 +23,13 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0148`' docs/implementation-status.md
+grep -q 'Repository revision: `r0149`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'confirmOpenPullRequest' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.28`' docs/implementation-status.md
+grep -q 'Last completed step: `9.29`' docs/implementation-status.md
 test -s docs/rc78-step-9.17-frontend-ci-correction.md
 test -s docs/rc79-step-9.17-commit-order-ci-correction.md
 test -s docs/rc80-step-9.16-merged-pr-race-correction.md
@@ -45,7 +45,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.28 COMPLETE — CI TRIGGER OPTIMIZATION`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.29 COMPLETE — EMPTY REPOSITORY SUPPORT`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -585,3 +585,14 @@ grep -q '^  workflow_dispatch:$' .github/workflows/ci.yml
 grep -Fq '[[ "${GITHUB_REF}" == "refs/heads/main" ]] || [[ "${GITHUB_REF}" == refs/tags/* ]]' .github/workflows/ci.yml
 grep -Fq '| `9.28` | Fas 9 — CI efficiency | Undvik dubbla fulla CI-körningar för samma Work-commit med öppen PR | **DONE**' docs/implementation-status.md
 printf 'Phase 9.28 CI trigger optimization assertions verified for %s.\n' "$actual_version"
+
+# Phase 9 step 9.29 (completely empty repository bootstrap).
+test -s docs/step-9.29-report.md
+test -s backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+test -s backend/src/test/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapServiceTest.java
+grep -Fq 'boolean repositoryHasBranches' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubProjectCatalog.java
+grep -Fq '!catalog.repositoryHasBranches' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'bootstrapEmptyRepository(project.githubInstallationId()' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -Fq 'git", "commit", "--quiet", "--allow-empty"' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+grep -Fq '| `9.29` | Fas 9 — repository bootstrap | Stöd första ZIP i helt tomt GitHub-repository | **DONE**' docs/implementation-status.md
+printf 'Phase 9.29 empty repository support assertions verified for %s.\n' "$actual_version"

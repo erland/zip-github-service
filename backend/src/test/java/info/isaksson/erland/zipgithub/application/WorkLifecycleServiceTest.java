@@ -6,6 +6,7 @@ import info.isaksson.erland.zipgithub.api.error.ApiException;
 import info.isaksson.erland.zipgithub.github.GitHubBranchClient;
 import info.isaksson.erland.zipgithub.github.GitHubInstallationTokenProvider;
 import info.isaksson.erland.zipgithub.github.GitHubPullRequestClient;
+import info.isaksson.erland.zipgithub.github.GitRepositoryBootstrapService;
 import info.isaksson.erland.zipgithub.persistence.ProjectPersistenceStore;
 import info.isaksson.erland.zipgithub.persistence.WorkPersistenceStore;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,32 @@ class WorkLifecycleServiceTest {
         order.verify(f.branches).createBranch("installation-token", "erland/repo", created.branchName(), sha);
         order.verify(f.branches).branchHeadSha("installation-token", "erland/repo", created.branchName());
         order.verify(f.work).activate(f.owner, f.project.id(), created.branchName(), sha);
+    }
+
+    @Test
+    void emptyRepositoryIsBootstrappedBeforeWorkBranchIsCreated() {
+        Fixture f = fixture();
+        UUID workId = UUID.randomUUID();
+        String sha = "e".repeat(40);
+        when(f.work.findOpen(f.owner, f.project.id())).thenReturn(Optional.empty());
+        when(f.work.activeBranchInUse(eq(f.owner), eq(f.project.id()), anyString())).thenReturn(false);
+        when(f.branches.branchHeadSha("installation-token", "erland/repo", "main"))
+                .thenThrow(new IllegalStateException("missing ref")).thenReturn(sha);
+        when(f.branches.listBranches("installation-token", "erland/repo")).thenReturn(List.of());
+        when(f.bootstrap.bootstrapEmptyRepository(10L, "erland/repo", "main")).thenReturn(sha);
+        when(f.branches.branchHeadSha(eq("installation-token"), eq("erland/repo"), startsWith("zip-github/work-"))).thenReturn(sha);
+        when(f.work.createProvisioning(eq(f.owner), eq(f.project.id()), eq("main"), anyString(), eq(sha)))
+                .thenAnswer(inv -> new WorkSession(workId, f.project.id(), f.owner, "main", inv.getArgument(3), "PROVISIONING",
+                        null, sha, null, null, null, null, Instant.now(), Instant.now()));
+        when(f.work.activate(eq(f.owner), eq(f.project.id()), anyString(), eq(sha)))
+                .thenAnswer(inv -> new WorkSession(workId, f.project.id(), f.owner, "main", inv.getArgument(2), "ACTIVE",
+                        null, sha, null, null, null, null, Instant.now(), Instant.now()));
+
+        WorkSession created = f.service.startWork(f.owner, f.project.id(), null);
+
+        assertEquals("ACTIVE", created.status());
+        verify(f.bootstrap).bootstrapEmptyRepository(10L, "erland/repo", "main");
+        verify(f.branches).createBranch("installation-token", "erland/repo", created.branchName(), sha);
     }
 
     @Test
@@ -214,18 +241,21 @@ class WorkLifecycleServiceTest {
         GitHubInstallationTokenProvider tokens = mock(GitHubInstallationTokenProvider.class);
         GitHubBranchClient branches = mock(GitHubBranchClient.class);
         GitHubPullRequestClient pullRequests = mock(GitHubPullRequestClient.class);
+        GitRepositoryBootstrapService bootstrap = mock(GitRepositoryBootstrapService.class);
         service.persistentProjects = projects;
         service.persistentWork = work;
         service.installationTokens = tokens;
         service.githubBranches = branches;
         service.githubPullRequests = pullRequests;
+        service.repositoryBootstrap = bootstrap;
         when(projects.enabled()).thenReturn(true);
         when(projects.findProject(owner, projectId)).thenReturn(Optional.of(project));
         when(work.findActive(owner, projectId)).thenReturn(Optional.empty());
         when(tokens.createInstallationToken(10L)).thenReturn("installation-token");
-        return new Fixture(owner, project, service, work, branches, pullRequests);
+        return new Fixture(owner, project, service, work, branches, pullRequests, bootstrap);
     }
 
     private record Fixture(UUID owner, ProjectResponse project, ProjectApplicationService service,
-                           WorkPersistenceStore work, GitHubBranchClient branches, GitHubPullRequestClient pullRequests) {}
+                           WorkPersistenceStore work, GitHubBranchClient branches, GitHubPullRequestClient pullRequests,
+                           GitRepositoryBootstrapService bootstrap) {}
 }

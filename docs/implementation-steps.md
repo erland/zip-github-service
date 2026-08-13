@@ -882,3 +882,18 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 
 **Kvalitetsgrind för 9.28:** en vanlig ZIP-commit på ett Work ska inte starta en andra full CI-körning enbart för att samma branch har en öppen PR; samma commit ska fortfarande verifieras automatiskt via `push`, manuell körning ska finnas kvar och image-publicering ska förbli begränsad till `main`/tagg.
 
+
+
+## Steg 9.29 - Stöd för helt tomma GitHub-repositories
+
+- Tillåt att ett repository kopplas till zip-GitHub även när GitHubs konfigurerade default branch ännu saknar ref, men endast när GitHub samtidigt verifierar att repositoryt saknar alla branches. En saknad branch i ett icke-tomt repository ska fortsatt vara ett fel.
+- Mutera inte repositoryt bara för att användaren listar eller väljer det. Bootstrap får ske först när användaren faktiskt startar ett Work eller första importen behöver ett Work.
+- Eftersom Work/snapshot/delivery-modellen kräver en låst base commit ska ett helt tomt repository initieras med exakt en tom root commit på repositoryts konfigurerade default branch. Bootstrap-committen får inte lägga till README, `.gitignore` eller andra filer.
+- Skapa därefter ordinarie `zip-github/work-*` från bootstrap-SHA:n och behåll befintlig snapshot, exact-selection, parent-verifiering, non-force push och PR-livscykel oförändrade.
+- Fail closed: bootstrap får endast ske när installations-token-scopad branch-listning fortfarande är tom. Om repositoryt har någon branch men default branch saknas ska zip-GitHub inte försöka reparera historiken automatiskt.
+- Hantera ett smalt race där någon annan initierar default branch mellan tomhetskontrollen och bootstrap: acceptera endast racet om den konfigurerade default branchen därefter kan resolve:as normalt; annars rapporteras bootstrap-fel.
+- Lägg regression för tomt repo i projektverifieringen, icke-tomt repo med saknad default branch, Work-bootstrap och en lokal bare-Git-verifiering att bootstrap skapar en root commit med tomt tree.
+
+**Status:** DONE (2026-08-13, r0149 / 1.0.0-rc.101). Se `docs/step-9.29-report.md`.
+
+**Kvalitetsgrind för 9.29:** ett helt nytt GitHub-repository ska kunna ta emot sin första ZIP via samma säkra Work/review/PR-flöde som andra repositories. Bootstrap får inte introducera något filinnehåll utanför användarens godkända ZIP och får aldrig användas som generell reparation av en saknad branch i ett redan initierat repository.

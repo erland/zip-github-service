@@ -21,6 +21,7 @@ import info.isaksson.erland.zipgithub.persistence.ImportResumePersistenceStore;
 import info.isaksson.erland.zipgithub.github.GitHubBranchClient;
 import info.isaksson.erland.zipgithub.github.GitHubInstallationTokenProvider;
 import info.isaksson.erland.zipgithub.github.GitHubPullRequestClient;
+import info.isaksson.erland.zipgithub.github.GitRepositoryBootstrapService;
 import info.isaksson.erland.zipgithub.pullrequest.PullRequestResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -53,6 +54,7 @@ public class ProjectApplicationService {
     @Inject GitHubInstallationTokenProvider installationTokens;
     @Inject GitHubBranchClient githubBranches;
     @Inject GitHubPullRequestClient githubPullRequests;
+    @Inject GitRepositoryBootstrapService repositoryBootstrap;
 
     /** Clears the temporary in-memory store between Quarkus tests.
      *  This method must be removed when persistent repositories replace the prototype store.
@@ -214,7 +216,26 @@ public class ProjectApplicationService {
             if (resume) {
                 baseSha = githubBranches.branchHeadSha(token, project.repositoryFullName(), branchName);
             } else {
-                baseSha = githubBranches.branchHeadSha(token, project.repositoryFullName(), project.defaultBranch());
+                try {
+                    baseSha = githubBranches.branchHeadSha(token, project.repositoryFullName(), project.defaultBranch());
+                } catch (RuntimeException missingDefaultBranch) {
+                    if (!githubBranches.listBranches(token, project.repositoryFullName()).isEmpty()) throw missingDefaultBranch;
+                    if (repositoryBootstrap == null) throw new IllegalStateException("Empty-repository bootstrap service is unavailable");
+                    try {
+                        repositoryBootstrap.bootstrapEmptyRepository(project.githubInstallationId(), project.repositoryFullName(), project.defaultBranch());
+                    } catch (RuntimeException bootstrapFailure) {
+                        // Another actor may have initialized the repository after our empty-state check.
+                        // Accept that race only when the configured default branch now resolves normally.
+                        try {
+                            baseSha = githubBranches.branchHeadSha(token, project.repositoryFullName(), project.defaultBranch());
+                            if (baseSha != null) { /* resolved by the concurrent initializer */ }
+                        } catch (RuntimeException stillEmpty) {
+                            bootstrapFailure.addSuppressed(stillEmpty);
+                            throw bootstrapFailure;
+                        }
+                    }
+                    baseSha = githubBranches.branchHeadSha(token, project.repositoryFullName(), project.defaultBranch());
+                }
             }
             persistentWork.createProvisioning(ownerUserId, projectId, resume ? branchName : project.defaultBranch(), branchName, baseSha);
             if (!resume) githubBranches.createBranch(token, project.repositoryFullName(), branchName, baseSha);

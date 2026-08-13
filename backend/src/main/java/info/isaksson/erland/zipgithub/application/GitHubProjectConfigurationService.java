@@ -28,7 +28,11 @@ public class GitHubProjectConfigurationService {
                 .orElseThrow(() -> ApiException.notFound("GITHUB_REPOSITORY_NOT_FOUND", "The GitHub repository was not found."));
         String selectedBranch = branch == null || branch.isBlank() ? repository.defaultBranch() : branch.trim();
         if (!catalog.branchExists(userAccessToken, repository.fullName(), selectedBranch)) {
-            throw ApiException.badRequest("GITHUB_BRANCH_NOT_FOUND", "The selected branch does not exist in the repository.");
+            boolean emptyRepository = selectedBranch.equals(repository.defaultBranch())
+                    && !catalog.repositoryHasBranches(userAccessToken, repository.fullName());
+            if (!emptyRepository) {
+                throw ApiException.badRequest("GITHUB_BRANCH_NOT_FOUND", "The selected branch does not exist in the repository.");
+            }
         }
         return new VerifiedRepository(installationId, installation.accountLogin(), installation.repositorySelection(),
                 repository.id(), repository.fullName(), repository.privateRepository(), selectedBranch);

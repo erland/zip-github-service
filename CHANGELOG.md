@@ -1,3 +1,13 @@
+## 1.0.0-rc.101 - 2026-08-13
+
+### Added
+
+- Completes Step 9.29 with first-class support for completely empty GitHub repositories that do not yet have a commit or branch ref.
+- Project verification now accepts a missing configured default branch only when GitHub confirms that the repository has no branches at all; a missing branch in a non-empty repository remains an error.
+- Starting the first Work in a truly empty repository creates one empty root bootstrap commit on the configured default branch, then creates the ordinary `zip-github/work-*` branch from that exact SHA. No README, `.gitignore` or other file is injected outside the uploaded ZIP.
+- The existing snapshot, exact-selection, delivery-parent and pull-request invariants remain unchanged after bootstrap because the empty root commit becomes the normal locked base commit.
+- Adds regression coverage for empty-repository project verification, Work bootstrap and a real local bare-Git bootstrap that verifies an empty root tree.
+
 ## 1.0.0-rc.100 - 2026-08-13
 
 ### Changed

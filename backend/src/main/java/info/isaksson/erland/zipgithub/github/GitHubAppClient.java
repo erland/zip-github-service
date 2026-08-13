@@ -125,7 +125,7 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
             String head = java.net.URLEncoder.encode(owner + ":" + headBranch, StandardCharsets.UTF_8);
             JsonNode root = getJson("https://api.github.com/repos/" + repositoryFullName
                     + "/pulls?state=open&head=" + head + "&per_page=1", accessToken);
-            return root.isArray() && !root.isEmpty();
+            return root.isArray() && root.size() > 0;
         } catch (Exception e) {
             throw new IllegalStateException("Could not inspect open pull requests for branch", e);
         }
@@ -506,6 +506,16 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
         } catch (IllegalStateException e) {
             if (e.getMessage() != null && e.getMessage().contains("HTTP 404")) return false;
             throw e;
+        }
+    }
+
+    @Override
+    public boolean repositoryHasBranches(String userAccessToken, String repositoryFullName) {
+        try {
+            JsonNode root = getJson("https://api.github.com/repos/" + repositoryFullName + "/branches?per_page=1", userAccessToken);
+            return root.isArray() && root.size() > 0;
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not determine whether repository has branches", e);
         }
     }
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.95"
+expected_version="1.0.0-rc.96"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.95 - 2026-08-13' CHANGELOG.md
+grep -q '## 1.0.0-rc.96 - 2026-08-13' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,7 +23,7 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0143`' docs/implementation-status.md
+grep -q 'Repository revision: `r0144`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -72,6 +72,8 @@ grep -Fq '<title>zip-GitHub</title>' frontend/index.html
 grep -q '| `9.24` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `9.25` .*\*\*DONE\*\*' docs/implementation-status.md
 test -s docs/step-9.25-report.md
+test -s docs/rc96-step-9.25-frontend-ci-correction.md
+grep -Fq "import { afterEach, beforeEach, expect, test, vi } from 'vitest';" frontend/src/pages/MaintenancePage.test.tsx
 grep -q 'WorkBranchMaintenanceService' backend/src/main/java/info/isaksson/erland/zipgithub/api/MaintenanceResource.java
 grep -q 'nonTerminalBranchInUse' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/WorkPersistenceStore.java
 grep -q 'hasOpenPullRequestForHead' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java

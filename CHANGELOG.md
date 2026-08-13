@@ -1,3 +1,10 @@
+## 1.0.0-rc.96 - 2026-08-13
+
+### Fixed
+
+- Corrects the Step 9.25 frontend CI test bootstrap by explicitly importing `beforeEach`, `afterEach`, `expect` and `test` from Vitest in `MaintenancePage.test.tsx`.
+- No production behavior changed; this is a focused CI correction after rc.95.
+
 ## 1.0.0-rc.95 - 2026-08-13
 
 ### Added

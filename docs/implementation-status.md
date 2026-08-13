@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0143`
+- Repository revision: `r0144`
 - Last completed step: `9.25`
 - Next step: `none` — implementation plan complete
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.25 COMPLETE — SAFE WORK BRANCH MAINTENANCE`
@@ -116,6 +116,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
 | `r0143` | 2026-08-13 | `9.25` safe orphaned Work branch cleanup | Global fail-closed preview + explicit revalidated bulk deletion across visible GitHub App repositories; bounded pagination avoids the former 100-repository truncation | `none — define next step before further product work` |
+| `r0144` | 2026-08-13 | `9.25` frontend CI correction | Explicit Vitest lifecycle/assertion imports for the new maintenance page regression; no product behavior change | `none — define next step before further product work` |
 | `r0141` | 2026-08-13 | Backend CI correction after `9.24` | Added the missing `ImmutableImportPlanEntry` import required by the Step 9.24 blocker-decision delivery guard; no production behavior changed | `9.25` |
 | `r0142` | 2026-08-13 | Backend test CI correction after `9.24` | Updated the remaining `AlternativeZipIngestionRegressionTest` factory calls to the `selection-2` blocker-decision signature; no production behavior changed | `9.25` |
 | `r0140` | 2026-08-13 | `9.24` explicit blocker decisions | UI requires explicit include/exclude/acknowledge decisions; immutable `selection-2` persists decisions in its digest; backend rejects incomplete/inconsistent blocker coverage | `9.25` |

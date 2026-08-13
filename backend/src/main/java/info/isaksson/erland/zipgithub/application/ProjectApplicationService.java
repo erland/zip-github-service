@@ -94,9 +94,21 @@ public class ProjectApplicationService {
 
     public synchronized ProjectResponse ensureProjectForRepository(UUID ownerUserId, String userAccessToken,
                                                                     long installationId, long repositoryId) {
+        return ensureProjectForRepository(ownerUserId, userAccessToken, installationId, repositoryId, false);
+    }
+
+    public synchronized ProjectResponse ensureProjectForRepositoryReadyForWork(UUID ownerUserId, String userAccessToken,
+                                                                                long installationId, long repositoryId) {
+        return ensureProjectForRepository(ownerUserId, userAccessToken, installationId, repositoryId, true);
+    }
+
+    private ProjectResponse ensureProjectForRepository(UUID ownerUserId, String userAccessToken,
+                                                        long installationId, long repositoryId, boolean prepareForWork) {
         var existing = findProjectByRepository(ownerUserId, installationId, repositoryId);
         if (existing.isPresent()) return existing.get();
-        var verified = githubConfiguration.verify(userAccessToken, installationId, repositoryId, null);
+        var verified = prepareForWork
+                ? githubConfiguration.verifyForWorkStart(userAccessToken, installationId, repositoryId)
+                : githubConfiguration.verify(userAccessToken, installationId, repositoryId, null);
         String repositoryName = verified.fullName().contains("/")
                 ? verified.fullName().substring(verified.fullName().indexOf('/') + 1) : verified.fullName();
         String internalName = uniqueInternalRepositoryProjectName(ownerUserId, repositoryName, verified.fullName(), repositoryId);

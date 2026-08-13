@@ -896,4 +896,6 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 
 **Status:** DONE (2026-08-13, r0149 / 1.0.0-rc.101). Se `docs/step-9.29-report.md`.
 
+**Runtimekorrigering:** r0150/rc.102 normaliserade saknad default branch. r0151/rc.103 flyttar bootstrap före project-persistens i `Starta arbete`, verifierar branchen på nytt efter bootstrap och mappar bootstrapfel till explicita API-fel.
+
 **Kvalitetsgrind för 9.29:** ett helt nytt GitHub-repository ska kunna ta emot sin första ZIP via samma säkra Work/review/PR-flöde som andra repositories. Bootstrap får inte introducera något filinnehåll utanför användarens godkända ZIP och får aldrig användas som generell reparation av en saknad branch i ett redan initierat repository.

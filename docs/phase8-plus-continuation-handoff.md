@@ -1,4 +1,4 @@
-> **Current handoff r0150 / 1.0.0-rc.102:** Step 9.29 empty-repository support is corrected for GitHub repositories that have no usable `default_branch` metadata before their first commit. Such repositories resolve to bootstrap branch `main` only when GitHub also confirms that no branches exist; initialized repositories still fail closed. No next implementation step is currently defined.
+> **Current handoff r0151 / 1.0.0-rc.103:** Step 9.29 empty-repository support is corrected for GitHub repositories that have no usable `default_branch` metadata before their first commit. Such repositories resolve to bootstrap branch `main` only when GitHub also confirms that no branches exist; initialized repositories still fail closed. No next implementation step is currently defined.
 
 > **Current handoff r0148 / 1.0.0-rc.100:** Step 9.28 optimizes CI triggers by removing the generic `pull_request` trigger from the main CI workflow. Each Work ZIP commit is still verified through `push`, manual `workflow_dispatch` remains, merges to main are verified again, and container images remain publishable only from main/tags. This avoids duplicate full `push` + `pull_request/synchronize` runs for the same Work commit. No next implementation step is currently defined.
 
@@ -308,3 +308,6 @@ GitHub Actions exposed two fixture/type issues in rc.84 rather than production r
 ### r0134 / rc.86 — Step 9.19 frontend build correction
 
 GitHub Actions showed that rc.85 fixed nullable deletion metadata but TypeScript still widened literal fields such as `status`, `severity` and `blockerType` to plain `string` for review entries appended through array spreads. The test now imports `ImportPlanEntry` and routes appended fixtures through a typed helper, preserving the API union types. All 58 Vitest runtime tests had already passed in rc.85; this is test-only typing and changes no production behavior.
+
+### rc.103 empty repository startup correction
+`Starta arbete` now bootstraps a truly empty repository before persisting the internal project, then re-verifies the initialized default branch. Bootstrap failures are surfaced as explicit API problems rather than generic internal errors.

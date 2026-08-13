@@ -53,7 +53,7 @@ public class RepositoryResource {
                                             @PathParam("repositoryId") long repositoryId) {
         var session = currentUser.requireSession();
         GitHubInstallationAccess.requireVisible(installationId, catalog.listUserInstallations(session.githubUserAccessToken()));
-        var project = projects.ensureProjectForRepository(session.userId(), session.githubUserAccessToken(), installationId, repositoryId);
+        var project = projects.ensureProjectForRepositoryReadyForWork(session.userId(), session.githubUserAccessToken(), installationId, repositoryId);
         var work = projects.startWork(session.userId(), project.id(), null);
         return new RepositoryWorkResponse(project, ProjectResource.workResponse(work));
     }

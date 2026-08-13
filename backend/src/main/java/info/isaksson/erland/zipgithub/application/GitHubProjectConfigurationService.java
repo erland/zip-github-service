@@ -4,12 +4,14 @@ import info.isaksson.erland.zipgithub.api.error.ApiException;
 import info.isaksson.erland.zipgithub.github.GitHubAppClient;
 import info.isaksson.erland.zipgithub.github.GitHubInstallationAccess;
 import info.isaksson.erland.zipgithub.github.GitHubProjectCatalog;
+import info.isaksson.erland.zipgithub.github.GitRepositoryBootstrapService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class GitHubProjectConfigurationService {
     @Inject GitHubProjectCatalog catalog;
+    @Inject GitRepositoryBootstrapService repositoryBootstrap;
 
     public VerifiedRepository verify(String userAccessToken, Long installationId, Long repositoryId, String branch) {
         if (installationId == null || repositoryId == null) {
@@ -55,6 +57,64 @@ public class GitHubProjectConfigurationService {
         }
         return new VerifiedRepository(installationId, installation.accountLogin(), installation.repositorySelection(),
                 repository.id(), repository.fullName(), repository.privateRepository(), selectedBranch);
+    }
+
+    /** Verifies a repository for starting Work and initializes a truly empty repository before persistence. */
+    public VerifiedRepository verifyForWorkStart(String userAccessToken, Long installationId, Long repositoryId) {
+        VerifiedRepository verified = verify(userAccessToken, installationId, repositoryId, null);
+        boolean branchExists;
+        try {
+            branchExists = catalog.branchExists(userAccessToken, verified.fullName(), verified.defaultBranch());
+        } catch (RuntimeException e) {
+            throw ApiException.badGateway("GITHUB_BRANCH_STATE_UNAVAILABLE",
+                    "GitHub branch status could not be verified before starting work.");
+        }
+        if (branchExists) return verified;
+
+        final boolean hasBranches;
+        try {
+            hasBranches = catalog.repositoryHasBranches(userAccessToken, verified.fullName());
+        } catch (RuntimeException e) {
+            throw ApiException.badGateway("GITHUB_BRANCH_STATE_UNAVAILABLE",
+                    "GitHub repository state could not be verified before starting work.");
+        }
+        if (hasBranches) {
+            throw ApiException.conflict("GITHUB_DEFAULT_BRANCH_MISSING",
+                    "The repository is initialized but its configured default branch does not exist.");
+        }
+        if (repositoryBootstrap == null) {
+            throw ApiException.badGateway("EMPTY_REPOSITORY_BOOTSTRAP_UNAVAILABLE",
+                    "The empty repository could not be initialized by zip-GitHub.");
+        }
+        try {
+            repositoryBootstrap.bootstrapEmptyRepository(verified.installationId(), verified.fullName(), verified.defaultBranch());
+        } catch (RuntimeException bootstrapFailure) {
+            // Accept only the narrow race where another actor initialized exactly our selected branch.
+            try {
+                if (!catalog.branchExists(userAccessToken, verified.fullName(), verified.defaultBranch())) {
+                    throw ApiException.badGateway("EMPTY_REPOSITORY_BOOTSTRAP_FAILED",
+                            "GitHub rejected initialization of the empty repository.");
+                }
+            } catch (ApiException e) {
+                throw e;
+            } catch (RuntimeException stateFailure) {
+                throw ApiException.badGateway("EMPTY_REPOSITORY_BOOTSTRAP_FAILED",
+                        "GitHub rejected initialization of the empty repository.");
+            }
+        }
+        try {
+            if (!catalog.branchExists(userAccessToken, verified.fullName(), verified.defaultBranch())) {
+                throw ApiException.badGateway("EMPTY_REPOSITORY_BOOTSTRAP_FAILED",
+                        "The repository was initialized but the default branch could not be verified.");
+            }
+        } catch (ApiException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw ApiException.badGateway("EMPTY_REPOSITORY_BOOTSTRAP_FAILED",
+                    "The repository was initialized but the default branch could not be verified.");
+        }
+        // Re-read repository metadata after the first commit so only normal initialized state is persisted.
+        return verify(userAccessToken, installationId, repositoryId, verified.defaultBranch());
     }
 
     private static String usableBranch(String value) {

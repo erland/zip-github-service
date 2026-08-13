@@ -33,3 +33,8 @@ This deliberately keeps the rest of the model unchanged: repository snapshot has
 Production use exposed an additional empty-repository state: GitHub may provide no usable `default_branch` value before the first commit. rc.101 could therefore attempt to persist a blank default branch, violating the PostgreSQL `ck_project_default_branch_not_blank` constraint and surfacing as the generic unexpected-error response.
 
 The correction normalizes missing/blank/JSON-null default-branch metadata. When and only when GitHub confirms that the repository has no branches, zip-GitHub resolves the bootstrap branch to `main` before project persistence. An initialized repository with missing default-branch metadata continues to fail closed rather than being repaired automatically.
+
+
+## Runtime correction r0151 / rc.103
+
+A production test showed that `Starta arbete` could still fail before Work provisioning for a completely empty repository. The repository-start path now initializes the remote first, re-verifies the resulting branch, and only then persists the internal project. This removes the temporary uninitialized-repository state from PostgreSQL-facing project creation. Bootstrap/state failures are converted to explicit API problem codes (`GITHUB_BRANCH_STATE_UNAVAILABLE`, `EMPTY_REPOSITORY_BOOTSTRAP_*`) rather than the generic unexpected-error mapper.

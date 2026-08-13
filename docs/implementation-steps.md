@@ -864,6 +864,21 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Bekräftelsen är avsiktligt per ny import och ska inte bli en permanent inställning som tystar framtida varningar.
 - Lägg regression för `PR_OPEN` + avbryt, `PR_OPEN` + explicit fortsätt, ingen varning för Work utan PR samt merged-PR reconciliation.
 
-**Status:** NEXT.
+**Status:** DONE (2026-08-13, r0146 / 1.0.0-rc.98).
 
 **Kvalitetsgrind för 9.27:** en ny ZIP får aldrig oavsiktligt läggas på ett Work med en redan öppen PR utan att användaren fått en tydlig, aktuell varning och uttryckligen valt att fortsätta; avsiktliga PR-rättningar ska samtidigt förbli möjliga.
+
+## Steg 9.28 - CI trigger optimization
+
+- Undvik att samma ZIP-commit kör hela CI-pipelinen två gånger när ett Work redan har en öppen pull request. I nuvarande Work-modell skapas committen först genom push till `zip-github/work-*`; GitHubs `pull_request/synchronize` kan därefter trigga samma workflow en gång till för samma ändring.
+- Behåll `push` som den ordinarie automatiska CI-triggern för branches och taggar. Det verifierar varje Work-commit exakt en gång, verifierar senare rättningar på samma PR-branch och kör CI igen när ändringen mergas/pushas till default branch.
+- Behåll `workflow_dispatch` för explicit manuell verifiering.
+- Ta bort den generella `pull_request`-triggern från huvud-CI:t i detta steg. Inför inte path-/branch-filter som lämnar ett förväntat required workflow i `Pending`; repository-regler ska i stället kräva de stabila CI-jobb/check-namnen som produceras för committen.
+- Behåll befintlig image-publiceringsregel: container images får endast pushas från `main` eller tagg, aldrig från vanliga Work-brancher.
+- Dokumentera tradeoffen att huvud-CI:t efter ändringen verifierar PR-headens pushade commit i stället för GitHubs syntetiska PR merge-commit. GitHub rapporterar fortfarande merge conflicts separat; om projektet senare behöver merge-queue eller obligatorisk merge-commit-verifiering ska det införas som ett separat, icke-duplicerande workflow/eventupplägg.
+- Lägg release-regression som verifierar `push` + `workflow_dispatch`, frånvaro av `pull_request` i huvud-CI och oförändrad begränsning av image-publicering.
+
+**Status:** DONE (2026-08-13, r0148 / 1.0.0-rc.100). Se `docs/step-9.28-report.md`.
+
+**Kvalitetsgrind för 9.28:** en vanlig ZIP-commit på ett Work ska inte starta en andra full CI-körning enbart för att samma branch har en öppen PR; samma commit ska fortfarande verifieras automatiskt via `push`, manuell körning ska finnas kvar och image-publicering ska förbli begränsad till `main`/tagg.
+

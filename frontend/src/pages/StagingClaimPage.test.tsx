@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   promoteStagingImport: vi.fn(),
   getRepositories: vi.fn(),
   prepareImportReview: vi.fn(),
+  getProjectWork: vi.fn(),
 }));
 
 vi.mock('../api/staging', () => ({
@@ -20,6 +21,7 @@ vi.mock('../api/staging', () => ({
 }));
 vi.mock('../api/repositories', () => ({ getRepositories: mocks.getRepositories }));
 vi.mock('../api/imports', () => ({ prepareImportReview: mocks.prepareImportReview }));
+vi.mock('../api/projects', () => ({ getProjectWork: mocks.getProjectWork }));
 
 const claimed = {
   stagingId: 'staging-1', originalFilename: 'project.zip', sizeBytes: 2048, sha256: 'a'.repeat(64),
@@ -39,6 +41,7 @@ beforeEach(() => {
   mocks.getRepositories.mockReset().mockResolvedValue(repositories);
   mocks.promoteStagingImport.mockReset().mockResolvedValue({ stagingId: 'staging-1', projectId: 'project-2', importId: 'import-1', status: 'PROMOTED', alreadyPromoted: false });
   mocks.prepareImportReview.mockReset().mockResolvedValue({ id: 'plan-1' });
+  mocks.getProjectWork.mockReset().mockResolvedValue(null);
 });
 
 afterEach(() => cleanup());
@@ -59,7 +62,7 @@ it('promotes a claimed staging ZIP into a repository and enters the ordinary rev
   await user.click(screen.getByRole('radio', { name: /second/i }));
   await user.click(screen.getByRole('button', { name: 'Fortsätt till granskning' }));
 
-  expect(mocks.promoteStagingImport).toHaveBeenCalledWith('staging-1', { githubInstallationId: 11, githubRepositoryId: 21 });
+  expect(mocks.promoteStagingImport).toHaveBeenCalledWith('staging-1', { githubInstallationId: 11, githubRepositoryId: 21 }, false);
   expect(mocks.prepareImportReview).toHaveBeenCalledWith('import-1');
   expect(await screen.findByRole('heading', { name: 'Ordinarie granskning' })).toBeInTheDocument();
 });
@@ -71,7 +74,7 @@ it('reuses an existing internal project when the selected repository already has
   await screen.findByRole('heading', { name: 'Välj repository för ZIP-filen' });
   await user.click(screen.getByRole('radio', { name: /first/i }));
   await user.click(screen.getByRole('button', { name: 'Fortsätt till granskning' }));
-  expect(mocks.promoteStagingImport).toHaveBeenCalledWith('staging-1', { projectId: 'project-1' });
+  expect(mocks.promoteStagingImport).toHaveBeenCalledWith('staging-1', { projectId: 'project-1' }, false);
 });
 
 
@@ -120,4 +123,18 @@ it('falls back to the searchable picker when the Shortcut filename is ambiguous'
 
   expect(await screen.findByRole('searchbox', { name: 'Sök repositories' })).toBeInTheDocument();
   expect(screen.queryByText('Föreslaget repository')).not.toBeInTheDocument();
+});
+
+it('requires confirmation before Shortcut promotion updates an existing open PR', async () => {
+  const user = userEvent.setup();
+  mocks.getProjectWork.mockResolvedValue({ id: 'work-1', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-1', status: 'PR_OPEN', headCommitSha: 'a'.repeat(40), remoteHeadCommitSha: 'a'.repeat(40), branchChangedExternally: false, lastImportId: 'old', pullRequestNumber: 42, pullRequestUrl: 'https://github.com/erland/first/pull/42', createdAt: '2026-08-13T10:00:00Z', updatedAt: '2026-08-13T11:00:00Z' });
+  render(<MemoryRouter initialEntries={['/staging/claim']}><Routes><Route path="/staging/claim" element={<StagingClaimPage />} /></Routes></MemoryRouter>);
+
+  await screen.findByRole('heading', { name: 'Välj repository för ZIP-filen' });
+  await user.click(screen.getByRole('radio', { name: /first/i }));
+  expect(await screen.findByRole('alert', { name: 'Öppen pull request' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Fortsätt till granskning' })).toBeDisabled();
+  await user.click(screen.getByRole('button', { name: 'Ja, fortsätt med denna ZIP' }));
+  await user.click(screen.getByRole('button', { name: 'Fortsätt till granskning' }));
+  expect(mocks.promoteStagingImport).toHaveBeenCalledWith('staging-1', { projectId: 'project-1' }, true);
 });

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.97"
+expected_version="1.0.0-rc.100"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.97 - 2026-08-13' CHANGELOG.md
+grep -q '## 1.0.0-rc.100 - 2026-08-13' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,13 +23,13 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0145`' docs/implementation-status.md
+grep -q 'Repository revision: `r0148`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
-grep -q 'body: JSON.stringify(target)' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.26`' docs/implementation-status.md
+grep -q 'confirmOpenPullRequest' frontend/src/api/staging.ts
+grep -q 'Last completed step: `9.28`' docs/implementation-status.md
 test -s docs/rc78-step-9.17-frontend-ci-correction.md
 test -s docs/rc79-step-9.17-commit-order-ci-correction.md
 test -s docs/rc80-step-9.16-merged-pr-race-correction.md
@@ -45,7 +45,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.26 COMPLETE — ACTIONS RUN GROUPING`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.28 COMPLETE — CI TRIGGER OPTIMIZATION`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -95,11 +95,23 @@ grep -q 'Steg 9.25 - Säker global städning av föräldralösa Work-brancher' d
 grep -q 'Steg 9.26 - Grupperad presentation av workflow-runs för samma commit' docs/implementation-steps.md
 grep -q 'Steg 9.27 - Bekräftelse innan ett Work med öppen PR utökas' docs/implementation-steps.md
 grep -q '| `9.26` .*\*\*DONE\*\*' docs/implementation-status.md
-grep -q '| `9.27` .*\*\*NEXT\*\*' docs/implementation-status.md
+grep -q '| `9.27` .*\*\*DONE\*\*' docs/implementation-status.md
 test -s docs/step-9.26-report.md
 grep -q 'groupWorkflowRuns' frontend/src/components/ActionsPanel.tsx
 grep -q '2 GitHub-körningar' frontend/src/components/ActionsPanel.test.tsx
 grep -q 'does not group different workflows that happen to share the same display name' frontend/src/components/ActionsPanel.test.tsx
+test -s docs/step-9.27-report.md
+grep -q 'OPEN_PULL_REQUEST_CONFIRMATION_REQUIRED' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -q 'confirmOpenPullRequest' backend/src/main/java/info/isaksson/erland/zipgithub/api/dto/CreateImportRequest.java frontend/src/api/imports.ts frontend/src/api/staging.ts
+grep -q 'Ja, fortsätt med nästa ZIP' frontend/src/pages/NewImportPage.tsx
+grep -q 'Ja, fortsätt med denna ZIP' frontend/src/pages/StagingClaimPage.tsx
+grep -q 'newImportRequiresExplicitConfirmationWhenPullRequestIsStillOpen' backend/src/test/java/info/isaksson/erland/zipgithub/application/WorkLifecycleServiceTest.java
+grep -q 'import info.isaksson.erland.zipgithub.api.dto.CreateImportRequest;' backend/src/test/java/info/isaksson/erland/zipgithub/application/WorkLifecycleServiceTest.java
+grep -q "confirmOpenPullRequest: false" frontend/src/api/staging.test.ts
+grep -q "getProjectWork: mocks.getProjectWork" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -q "mocks.getProjectWork.mockResolvedValue(null)" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -Fq "toHaveBeenCalledWith('project-1', { name: 'Anna Andersson', email: 'anna@example.com' }, false)" frontend/src/pages/SimplifiedImportFlow.test.tsx
+test -s docs/rc99-step-9.27-ci-test-correction.md
 
 test -s docs/step-9.21-report.md
 test -s frontend/src/components/RepositoryPicker.tsx
@@ -564,3 +576,12 @@ grep -q 'lastSourceFilename' backend/src/main/java/info/isaksson/erland/zipgithu
 grep -q 'Använd detta repository' frontend/src/pages/StagingClaimPage.tsx
 grep -q 'Välj ett annat repository' frontend/src/pages/StagingClaimPage.tsx
 grep -q 'suggestRepository' frontend/src/pages/StagingClaimPage.tsx
+
+# Phase 9 step 9.28 (avoid duplicate push + pull_request full CI runs).
+test -s docs/step-9.28-report.md
+grep -q '^  push:$' .github/workflows/ci.yml
+grep -q '^  workflow_dispatch:$' .github/workflows/ci.yml
+! grep -q '^  pull_request:' .github/workflows/ci.yml
+grep -Fq '[[ "${GITHUB_REF}" == "refs/heads/main" ]] || [[ "${GITHUB_REF}" == refs/tags/* ]]' .github/workflows/ci.yml
+grep -Fq '| `9.28` | Fas 9 — CI efficiency | Undvik dubbla fulla CI-körningar för samma Work-commit med öppen PR | **DONE**' docs/implementation-status.md
+printf 'Phase 9.28 CI trigger optimization assertions verified for %s.\n' "$actual_version"

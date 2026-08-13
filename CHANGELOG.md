@@ -1,3 +1,28 @@
+## 1.0.0-rc.100 - 2026-08-13
+
+### Changed
+
+- Completes Step 9.28 by removing the generic `pull_request` trigger from the main CI workflow. Work commits, PR corrections and merges remain verified through `push`, while `workflow_dispatch` remains available for manual runs.
+- Prevents the common duplicate full CI execution where the same commit on an already-open Work PR triggered both `push` and `pull_request/synchronize`.
+- Preserves existing container-image publication safety: images are still published only from `main` or tags, never from ordinary Work branches.
+- Documents the deliberate tradeoff that CI now validates the pushed PR head commit rather than GitHub's synthetic pull-request merge commit; merge-queue/merge-commit validation can be added later as a separate non-duplicating design if required.
+
+## 1.0.0-rc.99 - 2026-08-13
+
+### Fixed
+
+- Corrects Step 9.27 frontend regressions found by GitHub CI: staging serialization tests now expect the explicit `confirmOpenPullRequest: false` field and the simplified import-flow mock exposes `getProjectWork`.
+- Corrects Step 9.27 backend test compilation by importing `CreateImportRequest` in `WorkLifecycleServiceTest`.
+- No production behavior changed; this is a focused CI/test correction after rc.98.
+
+## 1.0.0-rc.98 - 2026-08-13
+
+### Added
+
+- Completes Step 9.27 with explicit confirmation before a new ZIP extends a Work whose pull request is still open.
+- The regular upload page and Shortcut promotion flow both show the current PR and require an explicit continue action before creating/promoting the import.
+- Backend creation reuses the existing strict PR reconciliation and independently rejects unconfirmed `PR_OPEN` reuse, so direct API calls cannot bypass the warning; merged PRs still terminate old Work and start fresh from the current default branch.
+
 ## 1.0.0-rc.97 - 2026-08-13
 
 ### Added

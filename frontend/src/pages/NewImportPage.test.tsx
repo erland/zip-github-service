@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   prepareImportReview: vi.fn(),
   cancelImport: vi.fn(),
   getProject: vi.fn(),
+  getProjectWork: vi.fn(),
   getCurrentUser: vi.fn(),
 }));
 
@@ -19,7 +20,7 @@ vi.mock('../api/imports', () => ({
   prepareImportReview: mocks.prepareImportReview,
   cancelImport: mocks.cancelImport,
 }));
-vi.mock('../api/projects', () => ({ getProject: mocks.getProject }));
+vi.mock('../api/projects', () => ({ getProject: mocks.getProject, getProjectWork: mocks.getProjectWork }));
 vi.mock('../api/auth', () => ({ getCurrentUser: mocks.getCurrentUser }));
 
 const project = {
@@ -53,10 +54,41 @@ beforeEach(() => {
   mocks.prepareImportReview.mockReset().mockResolvedValue({ id: 'plan-1' });
   mocks.cancelImport.mockReset().mockResolvedValue({ id: 'import-1', projectId: 'project-1', baseBranch: 'main', status: 'CANCELLED', createdAt: '2026-08-07T10:00:00Z' });
   mocks.getProject.mockReset().mockResolvedValue(project);
+  mocks.getProjectWork.mockReset().mockResolvedValue(null);
   mocks.getCurrentUser.mockReset().mockResolvedValue(currentUser);
 });
 
 afterEach(() => cleanup());
+
+describe('NewImportPage open PR confirmation', () => {
+  const openWork = { id: 'work-1', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-1', status: 'PR_OPEN',
+    headCommitSha: 'a'.repeat(40), remoteHeadCommitSha: 'a'.repeat(40), branchChangedExternally: false, lastImportId: 'previous',
+    pullRequestNumber: 42, pullRequestUrl: 'https://github.com/erland/zip-github-service/pull/42', createdAt: '2026-08-13T10:00:00Z', updatedAt: '2026-08-13T11:00:00Z' };
+
+  it('requires explicit confirmation before a new ZIP can be selected for PR_OPEN Work', async () => {
+    const user = userEvent.setup();
+    mocks.getProjectWork.mockResolvedValue(openWork);
+    renderPage();
+
+    expect(await screen.findByRole('alert', { name: 'Öppen pull request' })).toHaveTextContent('Det finns redan en öppen pull request');
+    const input = screen.getByLabelText('Projektarkiv');
+    expect(input).toBeDisabled();
+    expect(screen.getByRole('link', { name: 'Öppna pull request #42 på GitHub' })).toHaveAttribute('href', openWork.pullRequestUrl);
+
+    await user.click(screen.getByRole('button', { name: 'Ja, fortsätt med nästa ZIP' }));
+    expect(input).toBeEnabled();
+    await user.upload(input, new File(['zip'], 'fix.zip', { type: 'application/zip' }));
+    await user.click(screen.getByRole('button', { name: 'Ladda upp ZIP' }));
+
+    expect(mocks.createImport).toHaveBeenCalledWith('project-1', undefined, true);
+  });
+
+  it('does not warn when there is no open PR', async () => {
+    renderPage();
+    expect(await screen.findByLabelText('Projektarkiv')).toBeEnabled();
+    expect(screen.queryByRole('alert', { name: 'Öppen pull request' })).not.toBeInTheDocument();
+  });
+});
 
 describe('NewImportPage automatic review preparation', () => {
   it('continues from a successful upload directly to the review route', async () => {

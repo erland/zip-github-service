@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   prepareImportWorkspace: vi.fn(),
   deliverImport: vi.fn(),
   getProject: vi.fn(),
+  getProjectWork: vi.fn(),
   getCurrentUser: vi.fn(),
 }));
 
@@ -36,7 +37,7 @@ vi.mock('../api/imports', () => ({
   prepareImportWorkspace: mocks.prepareImportWorkspace,
   deliverImport: mocks.deliverImport,
 }));
-vi.mock('../api/projects', () => ({ getProject: mocks.getProject }));
+vi.mock('../api/projects', () => ({ getProject: mocks.getProject, getProjectWork: mocks.getProjectWork }));
 vi.mock('../api/auth', () => ({ getCurrentUser: mocks.getCurrentUser }));
 
 const project = {
@@ -102,8 +103,10 @@ beforeEach(() => {
   mocks.prepareImportWorkspace.mockReset();
   mocks.deliverImport.mockReset();
   mocks.getProject.mockReset();
+  mocks.getProjectWork.mockReset();
   mocks.getCurrentUser.mockReset();
   mocks.getProject.mockResolvedValue(project);
+  mocks.getProjectWork.mockResolvedValue(null);
   mocks.getCurrentUser.mockResolvedValue(currentUser);
   mocks.createImport.mockResolvedValue({ id: 'import-1', projectId: project.id, baseBranch: 'main', status: 'CREATED', createdAt: '2026-08-07T18:00:00Z' });
   mocks.uploadZip.mockImplementation(async (_id, _file, onProgress: (value: number) => void) => { onProgress(100); return upload; });
@@ -134,7 +137,7 @@ describe('simplified import flow E2E regression', () => {
     await user.click(screen.getByRole('button', { name: 'Ladda upp ZIP' }));
 
     expect(await screen.findByRole('heading', { name: 'Granska förändringar' })).toBeInTheDocument();
-    expect(mocks.createImport).toHaveBeenCalledWith('project-1', { name: 'Anna Andersson', email: 'anna@example.com' });
+    expect(mocks.createImport).toHaveBeenCalledWith('project-1', { name: 'Anna Andersson', email: 'anna@example.com' }, false);
     expect(mocks.uploadZip).toHaveBeenCalledTimes(1);
     expect(mocks.prepareImportReview).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('button', { name: 'Skapa granskningsplan' })).not.toBeInTheDocument();

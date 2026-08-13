@@ -70,7 +70,7 @@ public class StagingImportResource {
             projectId = projects.ensureProjectForRepository(session.userId(), session.githubUserAccessToken(),
                     request.githubInstallationId(), request.githubRepositoryId()).id();
         }
-        var promoted = promotions.promote(stagingId, session.userId(), projectId, session.gitName(), session.gitEmail());
+        var promoted = promotions.promote(stagingId, session.userId(), projectId, session.gitName(), session.gitEmail(), request != null && request.confirmsOpenPullRequest());
         return new StagingPromotionResponse(stagingId, promoted.projectId(), promoted.importId(), "PROMOTED", promoted.alreadyPromoted());
     }
 

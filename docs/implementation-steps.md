@@ -835,6 +835,6 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Ingen automatisk eller schemalagd branchradering införs i detta steg. Fel vid en branch ska inte få efterföljande brancher att antas säkra; resultatet ska rapporteras per repository/branch.
 - Lägg regression för aktiv Work, öppen PR, merged/terminal Work, protected/default branch, främmande branch-prefix, behörighetsbortfall, stale preview/race och blandat bulkresultat.
 
-**Status:** NEXT efter r0140 / 1.0.0-rc.92.
+**Status:** DONE i r0143 / 1.0.0-rc.95. Se `docs/step-9.25-report.md`.
 
 **Kvalitetsgrind för 9.25:** bulkstädning får endast erbjuda och radera brancher som zip-GitHub med hög säkerhet kan bevisa är föräldralösa. Osäkerhet ska alltid stoppa deletion, användaren ska se en preview och radering ska aldrig ske automatiskt.

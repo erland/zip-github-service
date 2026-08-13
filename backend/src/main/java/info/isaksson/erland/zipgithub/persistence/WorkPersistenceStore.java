@@ -63,6 +63,21 @@ public class WorkPersistenceStore {
         } catch (SQLException e) { throw new IllegalStateException("Could not validate active work branch.", e); }
     }
 
+    public boolean nonTerminalBranchInUse(long installationId, long repositoryId, String branchName) {
+        try (Connection c=dataSource.getConnection(); PreparedStatement s=c.prepareStatement("""
+                SELECT 1
+                FROM work_session w
+                JOIN project p ON p.id=w.project_id AND p.owner_user_id=w.owner_user_id
+                WHERE p.github_installation_id=? AND p.github_repository_id=?
+                  AND w.status IN ('PROVISIONING','ACTIVE','PR_OPEN','PR_CLOSED')
+                  AND w.branch_name=?
+                LIMIT 1
+                """)) {
+            s.setLong(1,installationId); s.setLong(2,repositoryId); s.setString(3,branchName);
+            try (ResultSet r=s.executeQuery()) { return r.next(); }
+        } catch (SQLException e) { throw new IllegalStateException("Could not validate repository Work branch usage.", e); }
+    }
+
     public WorkSession recordCommit(UUID ownerUserId, UUID projectId, UUID importId, String baseCommitSha,
                                     String commitSha, String planDigestSha256) {
         try (Connection c = dataSource.getConnection(); PreparedStatement s = c.prepareStatement("""

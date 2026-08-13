@@ -9,6 +9,10 @@ public interface GitHubPullRequestClient {
     Optional<GitHubPullRequest> findOpenPullRequest(String accessToken, String repositoryFullName,
                                                     String headBranch, String baseBranch);
 
+    default boolean hasOpenPullRequestForHead(String accessToken, String repositoryFullName, String headBranch) {
+        throw new UnsupportedOperationException("Open pull request lookup by head is not implemented");
+    }
+
     default GitHubPullRequest getPullRequest(String accessToken, String repositoryFullName, long pullRequestNumber) {
         throw new UnsupportedOperationException("Pull request read is not implemented");
     }

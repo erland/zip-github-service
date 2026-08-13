@@ -1,3 +1,14 @@
+## 1.0.0-rc.95 - 2026-08-13
+
+### Added
+
+- Completes Step 9.25 with a global authenticated maintenance view for conservative cleanup of orphaned zip-GitHub Work branches across GitHub App repositories.
+- Inventory is strictly limited to UUID-shaped `zip-github/work-*` branches, shows a read-only preview, requires a separate explicit bulk acknowledgement and never deletes automatically.
+- Backend classification fails closed for protected/default branches, any non-terminal Work in the repository, any open pull request using the branch as head, incomplete GitHub/database status or lost repository visibility.
+- Cleanup re-resolves current visibility, branch state, Work usage and open-PR state immediately before every individual delete; mixed bulk results are reported independently per branch.
+- GitHub App installation/repository and branch listing now use bounded pagination so installations with more than 100 repositories are inventoried rather than silently truncated.
+- Adds focused backend/frontend regressions for safe candidates, active Work, open PR, protected/unverifiable state, stale preview and explicit UI acknowledgement.
+
 ## 1.0.0-rc.94 - 2026-08-13
 
 ### Fixed

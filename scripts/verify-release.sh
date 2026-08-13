@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.103"
+expected_version="1.0.0-rc.106"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.103 - 2026-08-13' CHANGELOG.md
+grep -q '## 1.0.0-rc.106 - 2026-08-13' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,7 +23,9 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0151`' docs/implementation-status.md
+test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
+
+grep -q 'Repository revision: `r0154`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -50,7 +52,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.29 COMPLETE — EMPTY REPOSITORY STARTUP CORRECTED`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.29 COMPLETE — EMPTY REPOSITORY STARTUP CONTENTS-API CORRECTED — RC.104 PACKAGING CORRECTED`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -603,6 +605,9 @@ grep -Fq 'isTextual() ? repo.path("default_branch").asText() : ""' backend/src/m
 grep -Fq 'fallsBackToMainWhenAnEmptyRepositoryHasNoReportedDefaultBranch' backend/src/test/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationServiceTest.java
 test -s docs/rc102-step-9.29-empty-default-branch-correction.md
 grep -Fq 'bootstrapEmptyRepository(project.githubInstallationId()' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
-grep -Fq 'git", "commit", "--quiet", "--allow-empty"' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+grep -Fq '"PUT", createPayload.toString()' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
 grep -Fq '| `9.29` | Fas 9 — repository bootstrap | Stöd första ZIP i helt tomt GitHub-repository | **DONE**' docs/implementation-status.md
 printf 'Phase 9.29 empty repository support assertions verified for %s.\n' "$actual_version"
+
+grep -Fq '.zip-github-bootstrap' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+grep -Fq '"REPOSITORY_WORK_START_FAILED"' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java

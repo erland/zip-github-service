@@ -1,41 +1,51 @@
 package info.isaksson.erland.zipgithub.github;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
 
+import java.net.InetSocketAddress;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class GitRepositoryBootstrapServiceTest {
     @Test
-    void createsOneEmptyRootCommitOnRequestedDefaultBranch() throws Exception {
-        Path root = Files.createTempDirectory("zip-github-bootstrap-test-");
-        try {
-            Path remote = root.resolve("remote.git");
-            run(root, "git", "init", "--quiet", "--bare", remote.toString());
-            GitRepositoryBootstrapService service = new GitRepositoryBootstrapService();
-
-            String sha = service.bootstrapEmptyRepository(remote.toUri(), "", "main");
-
-            assertEquals(sha, run(root, "git", "--git-dir=" + remote, "rev-parse", "refs/heads/main").trim());
-            assertEquals("", run(root, "git", "--git-dir=" + remote, "ls-tree", "-r", "refs/heads/main").trim());
-            String rootCommit = run(root, "git", "--git-dir=" + remote, "rev-list", "--parents", "-n", "1", "refs/heads/main").trim();
-            assertEquals(1, rootCommit.split("\\s+").length, "bootstrap commit must be a root commit without parents");
-        } finally {
-            try (var stream = Files.walk(root)) {
-                for (Path item : stream.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(item);
+    void initializesThroughContentsApiAndImmediatelyRemovesMarker() throws Exception {
+        List<String> methods = new ArrayList<>();
+        List<String> bodies = new ArrayList<>();
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/repos/erland/repo-fleet/contents/.zip-github-bootstrap", exchange -> {
+            methods.add(exchange.getRequestMethod());
+            bodies.add(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            byte[] response;
+            if ("PUT".equals(exchange.getRequestMethod())) {
+                response = "{\"content\":{\"sha\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"commit\":{\"sha\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}}".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(201, response.length);
+            } else {
+                response = "{\"commit\":{\"sha\":\"cccccccccccccccccccccccccccccccccccccccc\"}}".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, response.length);
             }
-        }
-    }
+            exchange.getResponseBody().write(response);
+            exchange.close();
+        });
+        server.start();
+        try {
+            GitRepositoryBootstrapService service = new GitRepositoryBootstrapService();
+            service.mapper = new ObjectMapper();
+            URI base = URI.create("http://127.0.0.1:" + server.getAddress().getPort());
+            String sha = service.bootstrapEmptyRepository(base, "erland/repo-fleet", "token", "main");
 
-    private static String run(Path directory, String... command) throws Exception {
-        Process process = new ProcessBuilder(command).directory(directory.toFile()).redirectErrorStream(true).start();
-        String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        int exit = process.waitFor();
-        if (exit != 0) fail("Git command failed: " + output);
-        return output;
+            assertEquals("cccccccccccccccccccccccccccccccccccccccc", sha);
+            assertEquals(List.of("PUT", "DELETE"), methods);
+            assertFalse(bodies.get(0).contains("\"branch\""), "first Contents write must use GitHub's configured default branch");
+            assertTrue(bodies.get(1).contains("\"branch\":\"main\""));
+            assertTrue(bodies.get(1).contains("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        } finally {
+            server.stop(0);
+        }
     }
 }

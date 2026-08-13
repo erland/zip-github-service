@@ -1,3 +1,33 @@
+## 1.0.0-rc.106 - 2026-08-13
+
+Repository revision: `r0154`
+
+- Corrects the rc.105 packaging regression that stripped Unix execute bits from shell scripts and `backend/mvnw`.
+- Restores file modes from the last known-good pre-repackaging release metadata while preserving the rc.104/rc.105 empty-repository bootstrap implementation.
+- Extends `scripts/verify-package.py` so release archives fail verification when any `.sh` file or `backend/mvnw` is not executable.
+- This release changes release metadata and packaging verification only; no application runtime behavior is changed from rc.105.
+
+## 1.0.0-rc.105 - 2026-08-13
+
+### Fixed
+
+Repository revision: `r0153`
+
+- Corrects the rc.104 release archive packaging regression where an internal working copy directory (`rc104work/`) was accidentally included alongside the authoritative `zip-github/` tree.
+- Preserves the intended rc.104 Step 9.29 GitHub Contents API bootstrap implementation unchanged; this release is a packaging/release-process correction only.
+- Adds `scripts/verify-package.py`, which rejects release archives unless they contain exactly one top-level `zip-github/` directory and no transient build/work directories.
+
+## 1.0.0-rc.104 - 2026-08-13
+
+### Fixed
+
+Repository revision: `r0152`
+
+- Corrects Step 9.29 empty-repository bootstrap for real GitHub repositories such as `erland/repo-fleet` by using GitHub's documented Contents API initialization path instead of a local smart-HTTP `git push`.
+- Creates a temporary `.zip-github-bootstrap` marker on the repository default branch and deletes it immediately, leaving the current default-branch tree empty before ordinary Work provisioning begins.
+- Wraps the repository-first `Starta arbete` endpoint so unexpected runtime failures are returned as the explicit `REPOSITORY_WORK_START_FAILED` API problem instead of the generic internal-error response.
+- Adds focused regression coverage for the serial Contents API create/delete bootstrap contract.
+
 
 ## 1.0.0-rc.103 - 2026-08-13
 

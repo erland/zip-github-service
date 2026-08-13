@@ -20,7 +20,7 @@ class ImportSourceAuditMetadataTest {
         ProjectApplicationService service = service();
         UUID owner = UUID.randomUUID();
         var project = service.createProject(owner, "token", new CreateProjectRequest("Example", 10L, 20L, "main"));
-        var imported = service.createImport(owner, project.id(), new CreateImportRequest(null, null),
+        var imported = service.createImport(owner, project.id(), new CreateImportRequest(null, null, null),
                 "Erland", "erland@example.invalid");
 
         ImportAuditMetadata audit = service.importAuditMetadata(owner, imported.id());

@@ -33,7 +33,7 @@ public class StagingPromotionService {
         this.clock = Objects.requireNonNull(clock, "clock");
     }
 
-    public Promotion promote(UUID stagingId, UUID owner, UUID projectId, String gitName, String gitEmail) {
+    public Promotion promote(UUID stagingId, UUID owner, UUID projectId, String gitName, String gitEmail, boolean confirmOpenPullRequest) {
         if (stagingId == null || projectId == null) throw ApiException.badRequest("VALIDATION_ERROR", "stagingId and projectId are required.");
         projects.getProject(owner, projectId); // ownership check before any ordinary Import is created
         String sourceReference = "staging-import:" + stagingId;
@@ -47,7 +47,7 @@ public class StagingPromotionService {
                     throw ApiException.conflict("STAGING_ALREADY_PROMOTED", "The staging import is already bound to another project.");
                 result = projects.ensureStoredUploadAttached(owner, recovered.get().id(), item.artifact());
             } else {
-                result = projects.createImportFromStoredUpload(owner, projectId, new CreateImportRequest(null, null), gitName, gitEmail,
+                result = projects.createImportFromStoredUpload(owner, projectId, new CreateImportRequest(null, null, confirmOpenPullRequest), gitName, gitEmail,
                         item.artifact(), sourceReference,
                         new ImportAuditMetadata(ImportSource.STAGING_IMPORT, sourceReference));
             }

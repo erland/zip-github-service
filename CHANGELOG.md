@@ -1,3 +1,11 @@
+## 1.0.0-rc.98 - 2026-08-13
+
+### Added
+
+- Completes Step 9.27 with explicit confirmation before a new ZIP extends a Work whose pull request is still open.
+- The regular upload page and Shortcut promotion flow both show the current PR and require an explicit continue action before creating/promoting the import.
+- Backend creation reuses the existing strict PR reconciliation and independently rejects unconfirmed `PR_OPEN` reuse, so direct API calls cannot bypass the warning; merged PRs still terminate old Work and start fresh from the current default branch.
+
 ## 1.0.0-rc.97 - 2026-08-13
 
 ### Added

@@ -420,6 +420,9 @@ public class ProjectApplicationService {
         if (!project.active()) throw ApiException.conflict("PROJECT_INACTIVE", "The project is inactive.");
         assertNoActiveImport(ownerUserId, projectId);
         WorkSession work = workForNewImport(ownerUserId, project);
+        if ("PR_OPEN".equals(work.status()) && (request == null || !request.confirmsOpenPullRequest()))
+            throw ApiException.conflict("OPEN_PULL_REQUEST_CONFIRMATION_REQUIRED",
+                    "This Work already has an open pull request. Confirm that the next ZIP should update the existing pull request before continuing.");
         ensureActiveWorkBranch(ownerUserId, project, work);
         String branch = work.branchName();
         String requestedName = request == null ? null : request.authorName();

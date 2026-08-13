@@ -1,4 +1,4 @@
-> **Current handoff r0145 / 1.0.0-rc.97:** Step 9.26 groups multiple GitHub workflow runs for the same workflow identity and commit into one top-level Actions card while preserving each real run/event/job/link in expandable details. Mixed statuses fail visibly instead of being masked. Step 9.27 is `NEXT`: explicit confirmation before extending a Work that already has an open PR.
+> **Current handoff r0146 / 1.0.0-rc.98:** Step 9.27 requires explicit confirmation before a new web or Shortcut ZIP extends a strictly reconciled Work with an open PR. If the PR has already merged, the existing terminal Work logic starts a fresh Work from the current default branch. No next implementation step is currently defined.
 
 > **Current handoff r0144 / 1.0.0-rc.96:** Step 9.25 behavior is unchanged; rc.96 corrects the frontend CI regression test by explicitly importing the Vitest lifecycle/assertion functions used by `MaintenancePage.test.tsx`. No next implementation step is currently defined.
 

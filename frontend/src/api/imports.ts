@@ -106,11 +106,11 @@ export async function getExternalBranchChanges(importId: string): Promise<Extern
   return requestJson(`/api/imports/${encodeURIComponent(importId)}/external-branch-changes`);
 }
 
-export async function createImport(projectId: string, author?: { name: string; email: string }): Promise<ImportResponse> {
+export async function createImport(projectId: string, author?: { name: string; email: string }, confirmOpenPullRequest = false): Promise<ImportResponse> {
   return requestJson(`/api/projects/${encodeURIComponent(projectId)}/imports`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ authorName: author?.name ?? null, authorEmail: author?.email ?? null }),
+    body: JSON.stringify({ authorName: author?.name ?? null, authorEmail: author?.email ?? null, confirmOpenPullRequest }),
   });
 }
 

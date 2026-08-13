@@ -27,10 +27,10 @@ class StoredUploadImportPromotionTest {
         StoredUploadArtifact artifact = artifact("one.zip", "a".repeat(64));
 
         var first = fixture.service.createImportFromStoredUpload(
-                fixture.owner, fixture.projectId, new CreateImportRequest(null, null),
+                fixture.owner, fixture.projectId, new CreateImportRequest(null, null, null),
                 "Erland", "erland@example.invalid", artifact, "staging-123");
         var retry = fixture.service.createImportFromStoredUpload(
-                fixture.owner, fixture.projectId, new CreateImportRequest(null, null),
+                fixture.owner, fixture.projectId, new CreateImportRequest(null, null, null),
                 "Erland", "erland@example.invalid", artifact, "staging-123");
 
         assertEquals(first.importSession().id(), retry.importSession().id());

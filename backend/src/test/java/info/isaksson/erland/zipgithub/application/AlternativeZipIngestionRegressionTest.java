@@ -58,7 +58,7 @@ class AlternativeZipIngestionRegressionTest {
         StreamingUploadService browserUploader = new StreamingUploadService(ingestion);
 
         var browserImport = fixture.service.createImport(fixture.owner, fixture.projectId,
-                new CreateImportRequest(null, null), "Erland", "erland@example.invalid");
+                new CreateImportRequest(null, null, null), "Erland", "erland@example.invalid");
         StoredUpload browserUpload = browserUploader.store(fixture.owner, browserImport.id(), "project.zip",
                 zipBytes.length, new ByteArrayInputStream(zipBytes));
         fixture.service.recordUpload(fixture.owner, browserImport.id(), browserUpload);
@@ -69,7 +69,7 @@ class AlternativeZipIngestionRegressionTest {
         var stagedArtifact = ingestion.store(UUID.randomUUID(), "project.zip", zipBytes.length,
                 new ByteArrayInputStream(zipBytes));
         var promoted = fixture.service.createImportFromStoredUpload(fixture.owner, fixture.projectId,
-                new CreateImportRequest(null, null), "Erland", "erland@example.invalid", stagedArtifact,
+                new CreateImportRequest(null, null, null), "Erland", "erland@example.invalid", stagedArtifact,
                 "staging-regression-1");
 
         assertNotEquals(browserImport.id(), promoted.importSession().id());

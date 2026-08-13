@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.97"
+expected_version="1.0.0-rc.98"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.97 - 2026-08-13' CHANGELOG.md
+grep -q '## 1.0.0-rc.98 - 2026-08-13' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,13 +23,13 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0145`' docs/implementation-status.md
+grep -q 'Repository revision: `r0146`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
-grep -q 'body: JSON.stringify(target)' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.26`' docs/implementation-status.md
+grep -q 'confirmOpenPullRequest' frontend/src/api/staging.ts
+grep -q 'Last completed step: `9.27`' docs/implementation-status.md
 test -s docs/rc78-step-9.17-frontend-ci-correction.md
 test -s docs/rc79-step-9.17-commit-order-ci-correction.md
 test -s docs/rc80-step-9.16-merged-pr-race-correction.md
@@ -45,7 +45,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.26 COMPLETE — ACTIONS RUN GROUPING`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.27 COMPLETE — OPEN-PR CONTINUATION CONFIRMATION`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -95,11 +95,17 @@ grep -q 'Steg 9.25 - Säker global städning av föräldralösa Work-brancher' d
 grep -q 'Steg 9.26 - Grupperad presentation av workflow-runs för samma commit' docs/implementation-steps.md
 grep -q 'Steg 9.27 - Bekräftelse innan ett Work med öppen PR utökas' docs/implementation-steps.md
 grep -q '| `9.26` .*\*\*DONE\*\*' docs/implementation-status.md
-grep -q '| `9.27` .*\*\*NEXT\*\*' docs/implementation-status.md
+grep -q '| `9.27` .*\*\*DONE\*\*' docs/implementation-status.md
 test -s docs/step-9.26-report.md
 grep -q 'groupWorkflowRuns' frontend/src/components/ActionsPanel.tsx
 grep -q '2 GitHub-körningar' frontend/src/components/ActionsPanel.test.tsx
 grep -q 'does not group different workflows that happen to share the same display name' frontend/src/components/ActionsPanel.test.tsx
+test -s docs/step-9.27-report.md
+grep -q 'OPEN_PULL_REQUEST_CONFIRMATION_REQUIRED' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -q 'confirmOpenPullRequest' backend/src/main/java/info/isaksson/erland/zipgithub/api/dto/CreateImportRequest.java frontend/src/api/imports.ts frontend/src/api/staging.ts
+grep -q 'Ja, fortsätt med nästa ZIP' frontend/src/pages/NewImportPage.tsx
+grep -q 'Ja, fortsätt med denna ZIP' frontend/src/pages/StagingClaimPage.tsx
+grep -q 'newImportRequiresExplicitConfirmationWhenPullRequestIsStillOpen' backend/src/test/java/info/isaksson/erland/zipgithub/application/WorkLifecycleServiceTest.java
 
 test -s docs/step-9.21-report.md
 test -s frontend/src/components/RepositoryPicker.tsx

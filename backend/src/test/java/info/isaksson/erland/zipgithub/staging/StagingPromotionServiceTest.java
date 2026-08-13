@@ -39,7 +39,7 @@ class StagingPromotionServiceTest {
             UUID created=action.createOrRecover(item);
             return new StagingImportPersistenceStore.PromotionOutcome(StagingImportPersistenceStore.PromotionResult.PROMOTED,created);
         });
-        var result=new StagingPromotionService(store,projects,Clock.fixed(now, ZoneOffset.UTC)).promote(stagingId,owner,project,"User","u@example.com");
+        var result=new StagingPromotionService(store,projects,Clock.fixed(now, ZoneOffset.UTC)).promote(stagingId,owner,project,"User","u@example.com", false);
         assertEquals(importId,result.importId());
         verify(store).promoteWithLock(eq(stagingId),eq(owner),eq(now),any());
     }
@@ -59,7 +59,7 @@ class StagingPromotionServiceTest {
             UUID recovered=action.createOrRecover(item);
             return new StagingImportPersistenceStore.PromotionOutcome(StagingImportPersistenceStore.PromotionResult.PROMOTED,recovered);
         });
-        var result=new StagingPromotionService(store,projects,Clock.fixed(now,ZoneOffset.UTC)).promote(stagingId,owner,project,"User","u@example.com");
+        var result=new StagingPromotionService(store,projects,Clock.fixed(now,ZoneOffset.UTC)).promote(stagingId,owner,project,"User","u@example.com", false);
         assertEquals(importId,result.importId());
         verify(projects,never()).createImportFromStoredUpload(any(),any(),any(),any(),any(),any(),any(),any());
     }

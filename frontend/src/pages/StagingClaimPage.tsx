@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import RepositoryPicker from '../components/RepositoryPicker';
 import { getRepositories, type RepositoryEntry } from '../api/repositories';
+import { getProjectWork, type WorkSessionResponse } from '../api/projects';
 import { prepareImportReview } from '../api/imports';
 import { claimStagingImport, getClaimedStagingImport, promoteStagingImport, type ClaimedStagingImport } from '../api/staging';
 import { markRepositoryRecent, repositoryKey } from '../repositories/recentRepositories';
@@ -25,6 +26,8 @@ export default function StagingClaimPage() {
   const [promoting, setPromoting] = useState(false);
   const [showRepositoryPicker, setShowRepositoryPicker] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedWork, setSelectedWork] = useState<WorkSessionResponse | null>(null);
+  const [openPrConfirmed, setOpenPrConfirmed] = useState(false);
   const suggestion = useMemo(() => claimed ? suggestRepository(claimed.originalFilename, repositories) : null, [claimed, repositories]);
   const selectedRepository = useMemo(
     () => repositories.find((repository) => repositoryKey(repository) === selectedRepositoryKey) ?? null,
@@ -70,15 +73,30 @@ export default function StagingClaimPage() {
     if (suggestion?.confidence === 'high' && !selectedRepositoryKey && repositories.length > 1) setShowRepositoryPicker(false);
   }, [suggestion, selectedRepositoryKey, repositories.length]);
 
+  useEffect(() => {
+    let cancelled = false;
+    setSelectedWork(null);
+    setOpenPrConfirmed(false);
+    if (!selectedRepository?.projectId) return () => { cancelled = true; };
+    getProjectWork(selectedRepository.projectId)
+      .then((work) => { if (!cancelled) { setSelectedWork(work); setOpenPrConfirmed(work?.status !== 'PR_OPEN'); } })
+      .catch((reason) => { if (!cancelled) setError(reason instanceof Error ? reason.message : 'Work-status kunde inte hämtas.'); });
+    return () => { cancelled = true; };
+  }, [selectedRepository?.projectId]);
+
   async function promote() {
     if (!claimed || !selectedRepository || promoting) return;
+    if (selectedWork?.status === 'PR_OPEN' && !openPrConfirmed) {
+      setError('Bekräfta först att ZIP-filen ska uppdatera den befintliga pull requesten.');
+      return;
+    }
     setPromoting(true);
     setError(null);
     try {
       markRepositoryRecent(selectedRepository);
       const result = await promoteStagingImport(claimed.stagingId, selectedRepository.projectId
         ? { projectId: selectedRepository.projectId }
-        : { githubInstallationId: selectedRepository.githubInstallationId, githubRepositoryId: selectedRepository.githubRepositoryId });
+        : { githubInstallationId: selectedRepository.githubInstallationId, githubRepositoryId: selectedRepository.githubRepositoryId }, selectedWork?.status === 'PR_OPEN' && openPrConfirmed);
       await prepareImportReview(result.importId);
       sessionStorage.removeItem(STAGING_CLAIMED_ID_KEY);
       navigate(`/projects/${result.projectId}/imports/${result.importId}/review`);
@@ -120,7 +138,15 @@ export default function StagingClaimPage() {
         {selectedRepository ? <><strong>{selectedRepository.repositoryName}</strong><small>{selectedRepository.repositoryFullName}</small></> : <em>Välj ett repository ovan.</em>}
       </div>
       {error && <p className="status-message status-message--error" role="alert">{error}</p>}
-      <button className="button button--primary" type="button" disabled={!selectedRepositoryKey || promoting} onClick={() => void promote()}>{promoting ? 'Förbereder granskning…' : 'Fortsätt till granskning'}</button>
+      {selectedWork?.status === 'PR_OPEN' && !openPrConfirmed && (
+        <aside className="status-message status-message--warning" role="alert" aria-label="Öppen pull request">
+          <strong>Det finns redan en öppen pull request för detta arbete</strong>
+          <p>Den här ZIP-filen kommer att läggas på samma Work-branch och uppdatera den befintliga pull requesten.</p>
+          {selectedWork.pullRequestUrl && <p><a href={selectedWork.pullRequestUrl} target="_blank" rel="noreferrer">Öppna pull request #{selectedWork.pullRequestNumber} på GitHub</a></p>}
+          <button className="button" type="button" onClick={() => setOpenPrConfirmed(true)}>Ja, fortsätt med denna ZIP</button>
+        </aside>
+      )}
+      <button className="button button--primary" type="button" disabled={!selectedRepositoryKey || promoting || (selectedWork?.status === 'PR_OPEN' && !openPrConfirmed)} onClick={() => void promote()}>{promoting ? 'Förbereder granskning…' : 'Fortsätt till granskning'}</button>
     </> : <><p>Inga repositories är tillgängliga för zip-github.</p><Link className="button button--secondary" to="/projects">Visa repositories</Link></>}
   </section>;
 }

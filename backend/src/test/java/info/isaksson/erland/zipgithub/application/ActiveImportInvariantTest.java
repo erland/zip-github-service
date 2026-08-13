@@ -22,16 +22,16 @@ class ActiveImportInvariantTest {
         var project = service.createProject(owner, "token",
                 new CreateProjectRequest("Example", 10L, 20L, "main"));
 
-        var first = service.createImport(owner, project.id(), new CreateImportRequest(null, null),
+        var first = service.createImport(owner, project.id(), new CreateImportRequest(null, null, null),
                 "Erland", "erland@example.invalid");
 
         ApiException conflict = assertThrows(ApiException.class, () -> service.createImport(owner, project.id(),
-                new CreateImportRequest(null, null), "Erland", "erland@example.invalid"));
+                new CreateImportRequest(null, null, null), "Erland", "erland@example.invalid"));
         assertEquals(409, conflict.status());
         assertEquals("ACTIVE_IMPORT_EXISTS", conflict.code());
 
         service.cancelImport(owner, first.id());
-        var second = service.createImport(owner, project.id(), new CreateImportRequest(null, null),
+        var second = service.createImport(owner, project.id(), new CreateImportRequest(null, null, null),
                 "Erland", "erland@example.invalid");
         assertNotEquals(first.id(), second.id());
     }

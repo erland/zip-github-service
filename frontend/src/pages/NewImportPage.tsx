@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { cancelImport, createImport, prepareImportReview, SourceUploadResponse, uploadZip } from '../api/imports';
-import { getProject, ProjectResponse } from '../api/projects';
+import { getProject, getProjectWork, ProjectResponse, WorkSessionResponse } from '../api/projects';
 import { getCurrentUser, type AuthenticatedUser } from '../api/auth';
 
 type UploadState = 'idle' | 'creating' | 'uploading' | 'preparing' | 'error' | 'cancelled';
@@ -13,6 +13,8 @@ export default function NewImportPage() {
   const existingImportId = searchParams.get('importId');
   const [project, setProject] = useState<ProjectResponse | null>(null);
   const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
+  const [work, setWork] = useState<WorkSessionResponse | null>(null);
+  const [openPrConfirmed, setOpenPrConfirmed] = useState(false);
   const [authorMode, setAuthorMode] = useState<'self' | 'other'>('self');
   const [authorName, setAuthorName] = useState('');
   const [authorEmail, setAuthorEmail] = useState('');
@@ -31,11 +33,13 @@ export default function NewImportPage() {
   useEffect(() => {
     if (!projectId) return;
     let active = true;
-    Promise.all([getProject(projectId), getCurrentUser()])
-      .then(([loadedProject, loadedUser]) => {
+    Promise.all([getProject(projectId), getCurrentUser(), getProjectWork(projectId)])
+      .then(([loadedProject, loadedUser, loadedWork]) => {
         if (!active) return;
         setProject(loadedProject);
         setCurrentUser(loadedUser);
+        setWork(loadedWork);
+        setOpenPrConfirmed(loadedWork?.status !== 'PR_OPEN');
       })
       .catch((reason) => setMessage(reason instanceof Error ? reason.message : 'Projektet kunde inte hämtas.'));
     return () => { active = false; };
@@ -81,7 +85,12 @@ export default function NewImportPage() {
     try {
       setState('creating');
       const customAuthor = authorMode === 'other' ? { name: authorName.trim(), email: authorEmail.trim() } : undefined;
-      const importId = existingImportId || (await createImport(project.id, customAuthor)).id;
+      if (!existingImportId && work?.status === 'PR_OPEN' && !openPrConfirmed) {
+        setState('idle');
+        setMessage('Bekräfta först att nästa ZIP ska uppdatera den befintliga pull requesten.');
+        return;
+      }
+      const importId = existingImportId || (await createImport(project.id, customAuthor, work?.status === 'PR_OPEN' && openPrConfirmed)).id;
       setCurrentImportId(importId);
       setState('uploading');
       const uploaded = await uploadZip(importId, file, setProgress, abortController.signal);
@@ -119,6 +128,18 @@ export default function NewImportPage() {
           <p>Första importen startar ett arbete från projektets standardbranch. Nästa ZIP jämförs automatiskt mot senaste commit på samma arbetsbranch.</p>
         </div>
 
+        {!existingImportId && work?.status === 'PR_OPEN' && !openPrConfirmed && (
+          <aside className="status-message status-message--warning" role="alert" aria-label="Öppen pull request">
+            <strong>Det finns redan en öppen pull request för detta arbete</strong>
+            <p>Nästa ZIP läggs på samma Work-branch och uppdaterar den befintliga pull requesten. Fortsätt bara om ZIP:en är en rättning eller komplettering till den PR:n.</p>
+            {work.pullRequestUrl && <p><a href={work.pullRequestUrl} target="_blank" rel="noreferrer">Öppna pull request #{work.pullRequestNumber} på GitHub</a></p>}
+            <div className="result-primary-action">
+              <Link className="button button--secondary" to={`/projects/${project?.id ?? projectId}`}>Avbryt</Link>
+              <button className="button" type="button" onClick={() => setOpenPrConfirmed(true)}>Ja, fortsätt med nästa ZIP</button>
+            </div>
+          </aside>
+        )}
+
         <fieldset className="identity-fieldset" disabled={!project || busy || Boolean(existingImportId)}>
           <legend>Författare till ändringarna</legend>
           <label className="radio-option">
@@ -146,7 +167,7 @@ export default function NewImportPage() {
           name="zip-file"
           type="file"
           accept=".zip,application/zip,application/x-zip-compressed"
-          disabled={!project || busy || Boolean(result)}
+          disabled={!project || busy || Boolean(result) || (!existingImportId && work?.status === 'PR_OPEN' && !openPrConfirmed)}
           aria-describedby="zip-file-help"
           onChange={(event) => {
             setFile(event.target.files?.[0] ?? null);

@@ -864,6 +864,6 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Bekräftelsen är avsiktligt per ny import och ska inte bli en permanent inställning som tystar framtida varningar.
 - Lägg regression för `PR_OPEN` + avbryt, `PR_OPEN` + explicit fortsätt, ingen varning för Work utan PR samt merged-PR reconciliation.
 
-**Status:** NEXT.
+**Status:** DONE (2026-08-13, r0146 / 1.0.0-rc.98).
 
 **Kvalitetsgrind för 9.27:** en ny ZIP får aldrig oavsiktligt läggas på ett Work med en redan öppen PR utan att användaren fått en tydlig, aktuell varning och uttryckligen valt att fortsätta; avsiktliga PR-rättningar ska samtidigt förbli möjliga.

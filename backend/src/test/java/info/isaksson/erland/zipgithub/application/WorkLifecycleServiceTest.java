@@ -129,6 +129,40 @@ class WorkLifecycleServiceTest {
     }
 
     @Test
+    void newImportRequiresExplicitConfirmationWhenPullRequestIsStillOpen() {
+        Fixture f = fixture();
+        WorkSession open = new WorkSession(UUID.randomUUID(), f.project.id(), f.owner, "main", "zip-github/work-old", "PR_OPEN",
+                "a".repeat(40), "b".repeat(40), UUID.randomUUID(), "c".repeat(64), 42L,
+                "https://github.com/erland/repo/pull/42", Instant.now(), Instant.now());
+        when(f.work.findActive(f.owner, f.project.id())).thenReturn(Optional.of(open));
+        when(f.pullRequests.getPullRequest("installation-token", "erland/repo", 42L))
+                .thenReturn(new GitHubPullRequestClient.GitHubPullRequest(42L, open.pullRequestUrl(), "open", false, false, open.headCommitSha()));
+
+        ApiException error = assertThrows(ApiException.class, () -> f.service.createImport(f.owner, f.project.id(),
+                new CreateImportRequest(null, null, false), "Erland", "erland@example.invalid"));
+
+        assertEquals(409, error.status());
+        assertEquals("OPEN_PULL_REQUEST_CONFIRMATION_REQUIRED", error.code());
+    }
+
+    @Test
+    void newImportContinuesOnOpenPullRequestAfterExplicitConfirmation() {
+        Fixture f = fixture();
+        WorkSession open = new WorkSession(UUID.randomUUID(), f.project.id(), f.owner, "main", "zip-github/work-old", "PR_OPEN",
+                "a".repeat(40), "b".repeat(40), UUID.randomUUID(), "c".repeat(64), 42L,
+                "https://github.com/erland/repo/pull/42", Instant.now(), Instant.now());
+        when(f.work.findActive(f.owner, f.project.id())).thenReturn(Optional.of(open));
+        when(f.pullRequests.getPullRequest("installation-token", "erland/repo", 42L))
+                .thenReturn(new GitHubPullRequestClient.GitHubPullRequest(42L, open.pullRequestUrl(), "open", false, false, open.headCommitSha()));
+        when(f.branches.branchHeadSha("installation-token", "erland/repo", open.branchName())).thenReturn(open.headCommitSha());
+
+        var imported = f.service.createImport(f.owner, f.project.id(), new CreateImportRequest(null, null, true),
+                "Erland", "erland@example.invalid");
+
+        assertEquals(open.branchName(), imported.baseBranch());
+    }
+
+    @Test
     void deliveryIsBlockedIfPullRequestMergedAfterImportReviewStarted() {
         Fixture f = fixture();
         WorkSession open = new WorkSession(UUID.randomUUID(), f.project.id(), f.owner, "main", "zip-github/work-old", "PR_OPEN",
@@ -143,7 +177,7 @@ class WorkLifecycleServiceTest {
                         new GitHubPullRequestClient.GitHubPullRequest(42L, open.pullRequestUrl(), "closed", false, true, open.headCommitSha()));
         when(f.work.updatePullRequestState(f.owner, f.project.id(), "MERGED")).thenReturn(merged);
 
-        var imported = f.service.createImport(f.owner, f.project.id(), null, "Erland", "erland@example.invalid");
+        var imported = f.service.createImport(f.owner, f.project.id(), new CreateImportRequest(null, null, true), "Erland", "erland@example.invalid");
         ApiException error = assertThrows(ApiException.class,
                 () -> f.service.assertWorkPullRequestStillReusableForDelivery(f.owner, imported.id()));
 

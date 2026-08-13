@@ -821,7 +821,7 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Backend/approval-kontraktet ska validera den explicita beslutsmodellen så att en manipulerad klient inte kan kringgå kravet genom att bara utelämna obesvarade blockerare.
 - Lägg regression för obesvarad blockerare som stoppar leverans, explicit exkludering, explicit override+selection, hård blockerare som kräver acknowledgement men inte kan väljas, bulkbeslut samt oförändrad exact-selection-invariant.
 
-**Status:** NEXT efter r0139 / 1.0.0-rc.91.
+**Status:** DONE i r0140 / 1.0.0-rc.92.
 
 **Kvalitetsgrind för 9.24:** ingen blockerande review-post får passera obemärkt. Varje överstyrbar blockerare måste ha ett explicit inkluderings- eller exkluderingsbeslut och varje hård blockerare ett explicit acknowledgement innan leverans, samtidigt som hårt blockerade paths förblir omöjliga att välja och backend upprätthåller samma krav som UI:t.
 
@@ -835,6 +835,6 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Ingen automatisk eller schemalagd branchradering införs i detta steg. Fel vid en branch ska inte få efterföljande brancher att antas säkra; resultatet ska rapporteras per repository/branch.
 - Lägg regression för aktiv Work, öppen PR, merged/terminal Work, protected/default branch, främmande branch-prefix, behörighetsbortfall, stale preview/race och blandat bulkresultat.
 
-**Status:** PENDING efter 9.24.
+**Status:** DONE i r0143 / 1.0.0-rc.95. Se `docs/step-9.25-report.md`.
 
 **Kvalitetsgrind för 9.25:** bulkstädning får endast erbjuda och radera brancher som zip-GitHub med hög säkerhet kan bevisa är föräldralösa. Osäkerhet ska alltid stoppa deletion, användaren ska se en preview och radering ska aldrig ske automatiskt.

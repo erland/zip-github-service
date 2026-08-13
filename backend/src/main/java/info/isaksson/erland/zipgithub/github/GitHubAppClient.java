@@ -32,34 +32,42 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
 
     /** Lists installations visible to the authenticated GitHub user for this GitHub App. */
     public List<GitHubInstallation> listUserInstallations(String userAccessToken) {
-        JsonNode root = getJson("https://api.github.com/user/installations", userAccessToken);
         List<GitHubInstallation> result = new ArrayList<>();
-        for (JsonNode item : root.path("installations")) {
-            JsonNode account = item.path("account");
-            result.add(new GitHubInstallation(
-                    item.path("id").asLong(),
-                    account.path("id").asLong(),
-                    account.path("login").asText(),
-                    account.path("type").asText(),
-                    item.path("repository_selection").asText(),
-                    item.path("html_url").asText(null)));
+        for (int page = 1; page <= 10; page++) {
+            JsonNode root = getJson("https://api.github.com/user/installations?per_page=100&page=" + page, userAccessToken);
+            JsonNode items = root.path("installations");
+            for (JsonNode item : items) {
+                JsonNode account = item.path("account");
+                result.add(new GitHubInstallation(
+                        item.path("id").asLong(),
+                        account.path("id").asLong(),
+                        account.path("login").asText(),
+                        account.path("type").asText(),
+                        item.path("repository_selection").asText(),
+                        item.path("html_url").asText(null)));
+            }
+            if (!items.isArray() || items.size() < 100) return List.copyOf(result);
         }
-        return List.copyOf(result);
+        throw new IllegalStateException("Too many GitHub App installations to enumerate safely");
     }
 
-    /** Lists repositories through a short-lived installation token, never the user's OAuth token. */
+    /** Lists repositories visible to the user for one installation, with bounded complete pagination. */
     public List<GitHubRepository> listUserInstallationRepositories(String userAccessToken, long installationId) {
-        JsonNode root = getJson("https://api.github.com/user/installations/" + installationId + "/repositories?per_page=100", userAccessToken);
         List<GitHubRepository> result = new ArrayList<>();
-        for (JsonNode repo : root.path("repositories")) {
-            result.add(new GitHubRepository(
-                    repo.path("id").asLong(),
-                    repo.path("full_name").asText(),
-                    repo.path("private").asBoolean(),
-                    repo.path("default_branch").asText(),
-                    repo.path("html_url").asText()));
+        for (int page = 1; page <= 20; page++) {
+            JsonNode root = getJson("https://api.github.com/user/installations/" + installationId + "/repositories?per_page=100&page=" + page, userAccessToken);
+            JsonNode repositories = root.path("repositories");
+            for (JsonNode repo : repositories) {
+                result.add(new GitHubRepository(
+                        repo.path("id").asLong(),
+                        repo.path("full_name").asText(),
+                        repo.path("private").asBoolean(),
+                        repo.path("default_branch").asText(),
+                        repo.path("html_url").asText()));
+            }
+            if (!repositories.isArray() || repositories.size() < 100) return List.copyOf(result);
         }
-        return List.copyOf(result);
+        throw new IllegalStateException("Too many installation repositories to enumerate safely");
     }
 
 
@@ -108,6 +116,20 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
         }
     }
 
+
+
+    @Override
+    public boolean hasOpenPullRequestForHead(String accessToken, String repositoryFullName, String headBranch) {
+        try {
+            String owner = repositoryFullName.split("/", 2)[0];
+            String head = java.net.URLEncoder.encode(owner + ":" + headBranch, StandardCharsets.UTF_8);
+            JsonNode root = getJson("https://api.github.com/repos/" + repositoryFullName
+                    + "/pulls?state=open&head=" + head + "&per_page=1", accessToken);
+            return root.isArray() && !root.isEmpty();
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not inspect open pull requests for branch", e);
+        }
+    }
 
     @Override
     public GitHubPullRequest getPullRequest(String accessToken, String repositoryFullName, long pullRequestNumber) {
@@ -403,12 +425,15 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
     @Override
     public List<GitHubBranchClient.Branch> listBranches(String installationToken, String repositoryFullName) {
         try {
-            JsonNode root = getJson("https://api.github.com/repos/" + repositoryFullName + "/branches?per_page=100", installationToken);
             List<GitHubBranchClient.Branch> result = new ArrayList<>();
-            for (JsonNode item : root) {
-                result.add(new GitHubBranchClient.Branch(item.path("name").asText(), item.path("commit").path("sha").asText(), item.path("protected").asBoolean(false)));
+            for (int page = 1; page <= 20; page++) {
+                JsonNode root = getJson("https://api.github.com/repos/" + repositoryFullName + "/branches?per_page=100&page=" + page, installationToken);
+                for (JsonNode item : root) {
+                    result.add(new GitHubBranchClient.Branch(item.path("name").asText(), item.path("commit").path("sha").asText(), item.path("protected").asBoolean(false)));
+                }
+                if (!root.isArray() || root.size() < 100) return List.copyOf(result);
             }
-            return List.copyOf(result);
+            throw new IllegalStateException("Too many repository branches to enumerate safely");
         } catch (Exception e) {
             throw new IllegalStateException("Could not list repository branches", e);
         }

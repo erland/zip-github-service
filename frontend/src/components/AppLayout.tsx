@@ -86,6 +86,7 @@ export default function AppLayout() {
             <nav aria-label="Huvudnavigering" className="primary-nav">
               <NavLink className={navClassName} to="/projects">Repositories</NavLink>
               <NavLink className={navClassName} to="/shortcut">Shortcut</NavLink>
+              <NavLink className={navClassName} to="/maintenance">Underhåll</NavLink>
               <NavLink className={navClassName} to="/about">Om tjänsten</NavLink>
             </nav>
             <div className="account-menu">

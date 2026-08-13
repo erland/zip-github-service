@@ -15,6 +15,8 @@ public record ImportSelectionResponse(
         List<String> selectedPaths,
         List<String> excludedPaths,
         List<Override> overrides,
+        List<BlockerDecision> blockerDecisions,
         Instant createdAt) {
     public record Override(String path, String blockerType, String policyCode, String acknowledgement) { }
+    public record BlockerDecision(String path, String blockerType, String decision) { }
 }

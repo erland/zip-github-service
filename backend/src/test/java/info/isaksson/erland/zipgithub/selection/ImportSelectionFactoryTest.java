@@ -21,9 +21,9 @@ class ImportSelectionFactoryTest {
         var plan = plan();
         var factory = new ImportSelectionFactory();
         var first = factory.create(OWNER, plan, PLAN_DIGEST, BASE,
-                List.of("src/B.java", "src/A.java"), List.of(), Instant.parse("2026-08-07T13:00:00Z"));
+                List.of("src/B.java", "src/A.java"), List.of(), decisions(), Instant.parse("2026-08-07T13:00:00Z"));
         var second = factory.create(OWNER, plan, PLAN_DIGEST, BASE,
-                List.of("src/A.java", "src/B.java"), List.of(), Instant.parse("2026-08-07T14:00:00Z"));
+                List.of("src/A.java", "src/B.java"), List.of(), decisions(), Instant.parse("2026-08-07T14:00:00Z"));
 
         assertEquals(List.of("src/A.java", "src/B.java"), first.selectedPaths());
         assertEquals(List.of(".git/config", ".github/workflows/ci.yml", "README.old"), first.excludedPaths());
@@ -35,7 +35,7 @@ class ImportSelectionFactoryTest {
     @Test
     void hardBlockedPathCanNeverBeSelected() {
         ApiException error = assertThrows(ApiException.class, () -> new ImportSelectionFactory().create(
-                OWNER, plan(), PLAN_DIGEST, BASE, List.of(".git/config"), List.of(), Instant.now()));
+                OWNER, plan(), PLAN_DIGEST, BASE, List.of(".git/config"), List.of(), decisions(), Instant.now()));
         assertEquals("HARD_BLOCKED_PATH_SELECTED", error.code());
     }
 
@@ -43,13 +43,13 @@ class ImportSelectionFactoryTest {
     void overridablePathRequiresExplicitAuditAcknowledgement() {
         var factory = new ImportSelectionFactory();
         ApiException missing = assertThrows(ApiException.class, () -> factory.create(
-                OWNER, plan(), PLAN_DIGEST, BASE, List.of(".github/workflows/ci.yml"), List.of(), Instant.now()));
+                OWNER, plan(), PLAN_DIGEST, BASE, List.of(".github/workflows/ci.yml"), List.of(), decisions(".github/workflows/ci.yml"), Instant.now()));
         assertEquals("OVERRIDE_REQUIRED", missing.code());
 
         var selection = factory.create(OWNER, plan(), PLAN_DIGEST, BASE,
                 List.of(".github/workflows/ci.yml"),
                 List.of(new ImportSelectionFactory.RequestedOverride(
-                        ".github/workflows/ci.yml", "I understand that this changes repository automation.")), Instant.now());
+                        ".github/workflows/ci.yml", "I understand that this changes repository automation.")), decisions(".github/workflows/ci.yml"), Instant.now());
         assertEquals(1, selection.overrides().size());
         assertEquals("OVERRIDABLE_BLOCKED", selection.overrides().getFirst().blockerType());
     }
@@ -62,7 +62,7 @@ class ImportSelectionFactoryTest {
                 OWNER, plan(), PLAN_DIGEST, BASE,
                 List.of(".git/config"),
                 List.of(new ImportSelectionFactory.RequestedOverride(".git/config", "I accept the risk.")),
-                Instant.now()));
+                decisions(), Instant.now()));
         assertEquals("HARD_BLOCKED_PATH_SELECTED", error.code());
     }
 
@@ -73,12 +73,12 @@ class ImportSelectionFactoryTest {
                 List.of("src/A.java", ".github/workflows/ci.yml"),
                 List.of(new ImportSelectionFactory.RequestedOverride(
                         ".github/workflows/ci.yml", "Approved workflow change.")),
-                Instant.parse("2026-08-07T15:00:00Z"));
+                decisions(".github/workflows/ci.yml"), Instant.parse("2026-08-07T15:00:00Z"));
         var second = factory.create(OWNER, plan(), PLAN_DIGEST, BASE,
                 List.of("src/A.java", ".github/workflows/ci.yml"),
                 List.of(new ImportSelectionFactory.RequestedOverride(
                         ".github/workflows/ci.yml", "Approved workflow change after review.")),
-                Instant.parse("2026-08-07T15:01:00Z"));
+                decisions(".github/workflows/ci.yml"), Instant.parse("2026-08-07T15:01:00Z"));
 
         assertEquals(".github/workflows/ci.yml", first.overrides().getFirst().path());
         assertEquals("GITHUB_WORKFLOW_PROTECTED", first.overrides().getFirst().policyCode());
@@ -91,24 +91,54 @@ class ImportSelectionFactoryTest {
     void deletionAlsoRequiresExplicitOverride() {
         var factory = new ImportSelectionFactory();
         assertCode("OVERRIDE_REQUIRED", () -> factory.create(
-                OWNER, plan(), PLAN_DIGEST, BASE, List.of("README.old"), List.of(), Instant.now()));
+                OWNER, plan(), PLAN_DIGEST, BASE, List.of("README.old"), List.of(), decisions("README.old"), Instant.now()));
 
         var selection = factory.create(OWNER, plan(), PLAN_DIGEST, BASE, List.of("README.old"),
-                List.of(new ImportSelectionFactory.RequestedOverride("README.old", "Approved deletion.")), Instant.now());
+                List.of(new ImportSelectionFactory.RequestedOverride("README.old", "Approved deletion.")), decisions("README.old"), Instant.now());
         assertEquals(List.of("README.old"), selection.selectedPaths());
         assertEquals("DELETE_PROTECTED", selection.overrides().getFirst().policyCode());
     }
 
     @Test
+    void requiresDecisionForEveryBlockingEntry() {
+        var factory = new ImportSelectionFactory();
+        ApiException error = assertThrows(ApiException.class, () -> factory.create(
+                OWNER, plan(), PLAN_DIGEST, BASE, List.of("src/A.java"), List.of(), List.of(), Instant.now()));
+        assertEquals("BLOCKER_DECISION_REQUIRED", error.code());
+    }
+
+    @Test
+    void explicitExclusionsAndHardBlockAcknowledgementAreAudited() {
+        var selection = new ImportSelectionFactory().create(OWNER, plan(), PLAN_DIGEST, BASE,
+                List.of("src/A.java"), List.of(), decisions(), Instant.now());
+        assertEquals(3, selection.blockerDecisions().size());
+        assertTrue(selection.blockerDecisions().stream().anyMatch(item ->
+                item.path().equals(".git/config") && item.decision().equals("ACKNOWLEDGE_EXCLUSION")));
+        assertTrue(selection.blockerDecisions().stream().filter(item -> !item.path().equals(".git/config"))
+                .allMatch(item -> item.decision().equals("EXCLUDE")));
+    }
+
+    @Test
     void rejectsEmptyStaleAndUnknownSelections() {
         var factory = new ImportSelectionFactory();
-        assertCode("EMPTY_SELECTION", () -> factory.create(OWNER, plan(), PLAN_DIGEST, BASE, List.of(), List.of(), Instant.now()));
+        assertCode("EMPTY_SELECTION", () -> factory.create(OWNER, plan(), PLAN_DIGEST, BASE, List.of(), List.of(), decisions(), Instant.now()));
         assertCode("IMPORT_PLAN_DIGEST_MISMATCH", () -> factory.create(OWNER, plan(), "b".repeat(64), BASE,
-                List.of("src/A.java"), List.of(), Instant.now()));
+                List.of("src/A.java"), List.of(), decisions(), Instant.now()));
         assertCode("IMPORT_PLAN_BASE_MISMATCH", () -> factory.create(OWNER, plan(), PLAN_DIGEST, "2".repeat(40),
-                List.of("src/A.java"), List.of(), Instant.now()));
+                List.of("src/A.java"), List.of(), decisions(), Instant.now()));
         assertCode("SELECTION_PATH_NOT_IN_PLAN", () -> factory.create(OWNER, plan(), PLAN_DIGEST, BASE,
-                List.of("missing.txt"), List.of(), Instant.now()));
+                List.of("missing.txt"), List.of(), decisions(), Instant.now()));
+    }
+
+    private static List<ImportSelectionFactory.RequestedBlockerDecision> decisions(String... includedPaths) {
+        var included = java.util.Set.of(includedPaths);
+        return List.of(
+                new ImportSelectionFactory.RequestedBlockerDecision(".git/config", "ACKNOWLEDGE_EXCLUSION"),
+                new ImportSelectionFactory.RequestedBlockerDecision(".github/workflows/ci.yml",
+                        included.contains(".github/workflows/ci.yml") ? "INCLUDE_OVERRIDE" : "EXCLUDE"),
+                new ImportSelectionFactory.RequestedBlockerDecision("README.old",
+                        included.contains("README.old") ? "INCLUDE_OVERRIDE" : "EXCLUDE")
+        );
     }
 
     private static void assertCode(String code, org.junit.jupiter.api.function.Executable executable) {

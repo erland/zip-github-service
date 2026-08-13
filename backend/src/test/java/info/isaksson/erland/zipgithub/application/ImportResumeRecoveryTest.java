@@ -114,7 +114,7 @@ class ImportResumeRecoveryTest {
 
     private static ApprovedSelection selection() {
         return new ApprovedSelection(UUID.fromString("77777777-7777-7777-7777-777777777777"), IMPORT, PLAN, OWNER,
-                PLAN_DIGEST, BASE, "selection-1", SELECTION_DIGEST, List.of("src/App.java"), List.of(), List.of(), NOW);
+                PLAN_DIGEST, BASE, "selection-2", SELECTION_DIGEST, List.of("src/App.java"), List.of(), List.of(), List.of(), NOW);
     }
 
     private static ImportPlanApproval approval() {

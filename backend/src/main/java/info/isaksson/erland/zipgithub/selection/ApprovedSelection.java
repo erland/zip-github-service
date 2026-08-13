@@ -18,6 +18,7 @@ public record ApprovedSelection(
         List<String> selectedPaths,
         List<String> excludedPaths,
         List<ApprovedSelectionOverride> overrides,
+        List<ApprovedBlockerDecision> blockerDecisions,
         Instant createdAt) {
 
     public ApprovedSelection {
@@ -36,6 +37,7 @@ public record ApprovedSelection(
         selectedPaths = List.copyOf(selectedPaths);
         excludedPaths = List.copyOf(excludedPaths);
         overrides = List.copyOf(overrides);
+        blockerDecisions = blockerDecisions == null ? List.of() : List.copyOf(blockerDecisions);
         if (selectedPaths.isEmpty()) throw new IllegalArgumentException("selectedPaths must not be empty");
         Objects.requireNonNull(createdAt, "createdAt");
     }

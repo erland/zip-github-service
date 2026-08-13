@@ -61,12 +61,12 @@ class ImportSelectionResourceTest {
     @Test
     void createsReadsAndKeepsSelectionImmutable() {
         String body = """
-                {"planDigestSha256":"%s","baseCommitSha":"%s","selectedPaths":["src/App.java"],"overrides":[]}
+                {"planDigestSha256":"%s","baseCommitSha":"%s","selectedPaths":["src/App.java"],"overrides":[],"blockerDecisions":[{"path":".git/config","decision":"ACKNOWLEDGE_EXCLUSION"},{"path":".github/workflows/ci.yml","decision":"EXCLUDE"}]}
                 """.formatted(PLAN_DIGEST, BASE);
 
         given().cookie(CurrentUserProvider.SESSION_COOKIE, cookieA).contentType(ContentType.JSON).body(body)
                 .post("/api/imports/{id}/selection", importId).then().statusCode(201)
-                .body("selectionVersion", equalTo("selection-1"))
+                .body("selectionVersion", equalTo("selection-2"))
                 .body("selectedPaths", equalTo(List.of("src/App.java")))
                 .body("excludedPaths", hasItems(".git/config", ".github/workflows/ci.yml"));
 
@@ -75,7 +75,7 @@ class ImportSelectionResourceTest {
                 .body("selectedPaths", equalTo(List.of("src/App.java")));
 
         given().cookie(CurrentUserProvider.SESSION_COOKIE, cookieA).contentType(ContentType.JSON)
-                .body("{\"planDigestSha256\":\"%s\",\"baseCommitSha\":\"%s\",\"selectedPaths\":[\".github/workflows/ci.yml\"],\"overrides\":[{\"path\":\".github/workflows/ci.yml\",\"acknowledgement\":\"accepted\"}]}".formatted(PLAN_DIGEST, BASE))
+                .body("{\"planDigestSha256\":\"%s\",\"baseCommitSha\":\"%s\",\"selectedPaths\":[\".github/workflows/ci.yml\"],\"overrides\":[{\"path\":\".github/workflows/ci.yml\",\"acknowledgement\":\"accepted\"}],\"blockerDecisions\":[{\"path\":\".git/config\",\"decision\":\"ACKNOWLEDGE_EXCLUSION\"},{\"path\":\".github/workflows/ci.yml\",\"decision\":\"INCLUDE_OVERRIDE\"}]}".formatted(PLAN_DIGEST, BASE))
                 .post("/api/imports/{id}/selection", importId).then().statusCode(409)
                 .body("code", equalTo("IMPORT_SELECTION_IMMUTABLE"));
     }
@@ -83,7 +83,7 @@ class ImportSelectionResourceTest {
     @Test
     void readsRecordedApprovalForRecoveryAfterRefresh() {
         String selectionBody = """
-                {"planDigestSha256":"%s","baseCommitSha":"%s","selectedPaths":["src/App.java"],"overrides":[]}
+                {"planDigestSha256":"%s","baseCommitSha":"%s","selectedPaths":["src/App.java"],"overrides":[],"blockerDecisions":[{"path":".git/config","decision":"ACKNOWLEDGE_EXCLUSION"},{"path":".github/workflows/ci.yml","decision":"EXCLUDE"}]}
                 """.formatted(PLAN_DIGEST, BASE);
         String selectionDigest = given().cookie(CurrentUserProvider.SESSION_COOKIE, cookieA).contentType(ContentType.JSON)
                 .body(selectionBody).post("/api/imports/{id}/selection", importId).then().statusCode(201)
@@ -99,6 +99,14 @@ class ImportSelectionResourceTest {
                 .body("selectionDigestSha256", equalTo(selectionDigest))
                 .body("commitMessage", equalTo("Refresh-safe test commit"))
                 .body("status", equalTo("APPROVED"));
+    }
+
+    @Test
+    void rejectsSelectionWhenBlockingEntriesHaveNotBeenExplicitlyDecided() {
+        given().cookie(CurrentUserProvider.SESSION_COOKIE, cookieA).contentType(ContentType.JSON)
+                .body("{\"planDigestSha256\":\"%s\",\"baseCommitSha\":\"%s\",\"selectedPaths\":[\"src/App.java\"],\"overrides\":[],\"blockerDecisions\":[]}".formatted(PLAN_DIGEST, BASE))
+                .post("/api/imports/{id}/selection", importId).then().statusCode(400)
+                .body("code", equalTo("BLOCKER_DECISION_REQUIRED"));
     }
 
     @Test

@@ -6,6 +6,8 @@ public record CreateImportSelectionRequest(
         String planDigestSha256,
         String baseCommitSha,
         List<String> selectedPaths,
-        List<Override> overrides) {
+        List<Override> overrides,
+        List<BlockerDecision> blockerDecisions) {
     public record Override(String path, String acknowledgement) { }
+    public record BlockerDecision(String path, String decision) { }
 }

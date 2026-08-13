@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.91"
+expected_version="1.0.0-rc.96"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.91 - 2026-08-13' CHANGELOG.md
+grep -q '## 1.0.0-rc.96 - 2026-08-13' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -23,13 +23,13 @@ for required in \
   test -s "$required" || { printf 'Missing or empty release artifact: %s\n' "$required" >&2; exit 1; }
 done
 
-grep -q 'Repository revision: `r0139`' docs/implementation-status.md
+grep -q 'Repository revision: `r0144`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'body: JSON.stringify(target)' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.23`' docs/implementation-status.md
+grep -q 'Last completed step: `9.25`' docs/implementation-status.md
 test -s docs/rc78-step-9.17-frontend-ci-correction.md
 test -s docs/rc79-step-9.17-commit-order-ci-correction.md
 test -s docs/rc80-step-9.16-merged-pr-race-correction.md
@@ -45,7 +45,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.23 COMPLETE — PRODUCT NAMING CLEANUP`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.25 COMPLETE — SAFE WORK BRANCH MAINTENANCE`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -67,10 +67,27 @@ grep -q '| `9.20` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `9.21` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `9.22` .*\*\*DONE\*\*' docs/implementation-status.md
 grep -q '| `9.23` .*\*\*DONE\*\*' docs/implementation-status.md
-grep -q '| `9.24` .*\*\*NEXT\*\*' docs/implementation-status.md
-grep -q '| `9.25` .*\*\*PENDING\*\*' docs/implementation-status.md
 test -s docs/step-9.23-report.md
 grep -Fq '<title>zip-GitHub</title>' frontend/index.html
+grep -q '| `9.24` .*\*\*DONE\*\*' docs/implementation-status.md
+grep -q '| `9.25` .*\*\*DONE\*\*' docs/implementation-status.md
+test -s docs/step-9.25-report.md
+test -s docs/rc96-step-9.25-frontend-ci-correction.md
+grep -Fq "import { afterEach, beforeEach, expect, test, vi } from 'vitest';" frontend/src/pages/MaintenancePage.test.tsx
+grep -q 'WorkBranchMaintenanceService' backend/src/main/java/info/isaksson/erland/zipgithub/api/MaintenanceResource.java
+grep -q 'nonTerminalBranchInUse' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/WorkPersistenceStore.java
+grep -q 'hasOpenPullRequestForHead' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'page <= 20' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'Ta bort .* säkert identifierade brancher' frontend/src/pages/MaintenancePage.tsx
+grep -q 'cleanupConfirmed' frontend/src/pages/MaintenancePage.tsx
+test -s docs/step-9.24-report.md
+grep -q 'SELECTION_VERSION = "selection-2"' backend/src/main/java/info/isaksson/erland/zipgithub/selection/ImportSelectionFactory.java
+grep -q 'BLOCKER_DECISION_REQUIRED' backend/src/main/java/info/isaksson/erland/zipgithub/selection/ImportSelectionFactory.java
+grep -q 'validateBlockerDecisions(plan, selection)' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -q 'import info.isaksson.erland.zipgithub.plan.ImmutableImportPlanEntry;' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -q 'blockerDecisions' backend/src/main/java/info/isaksson/erland/zipgithub/api/dto/CreateImportSelectionRequest.java frontend/src/api/imports.ts
+grep -q 'Ta inte med' frontend/src/components/ReviewFileTree.tsx
+grep -q 'Jag har sett att denna hårt blockerade förändring inte kommer att tas med' frontend/src/components/ReviewFileTree.tsx
 ! grep -Fq '<title>zip-buildserver</title>' frontend/index.html
 grep -q 'Steg 9.23 - Produktnamn i aktiv webbklient' docs/implementation-steps.md
 grep -q 'Steg 9.24 - Explicita beslut för blockerande review-poster' docs/implementation-steps.md
@@ -213,7 +230,7 @@ grep -q 'OVERRIDABLE_BLOCKED' backend/src/main/java/info/isaksson/erland/zipgith
 grep -q 'blockerType' backend/src/main/java/info/isaksson/erland/zipgithub/plan/ImmutableImportPlanEntry.java
 grep -q 'hardBlocked' frontend/src/api/imports.ts
 grep -q 'public record ApprovedSelection' backend/src/main/java/info/isaksson/erland/zipgithub/selection/ApprovedSelection.java
-grep -q 'SELECTION_VERSION = "selection-1"' backend/src/main/java/info/isaksson/erland/zipgithub/selection/ImportSelectionFactory.java
+grep -q 'SELECTION_VERSION = "selection-2"' backend/src/main/java/info/isaksson/erland/zipgithub/selection/ImportSelectionFactory.java
 grep -q '@Path("/{importId}/selection")' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
 grep -q 'HARD_BLOCKED_PATH_SELECTED' backend/src/main/java/info/isaksson/erland/zipgithub/selection/ImportSelectionFactory.java
 grep -q 'function ReviewFileTree' frontend/src/components/ReviewFileTree.tsx
@@ -224,7 +241,7 @@ grep -q 'selectionDigestSha256' backend/src/main/java/info/isaksson/erland/zipgi
 grep -q 'sources.selection()' backend/src/main/java/info/isaksson/erland/zipgithub/api/ImportResource.java
 grep -q 'WOULD_DELETE' backend/src/main/java/info/isaksson/erland/zipgithub/workspace/ImportWorkspaceService.java
 grep -q 'explicit per-path policy overrides' frontend/src/styles/global.css
-grep -q 'Jag förstår risken och vill ta med denna blockerade förändring' frontend/src/components/ReviewFileTree.tsx
+grep -q 'Jag förstår risken – godkänn och ta med' frontend/src/components/ReviewFileTree.tsx
 grep -q 'hardBlockCannotBeBypassedWithAnOverrideRecord' backend/src/test/java/info/isaksson/erland/zipgithub/selection/ImportSelectionFactoryTest.java
 grep -q 'workspace diff did not exactly match selection' backend/src/test/java/info/isaksson/erland/zipgithub/workspace/ImportWorkspaceServiceSelfTest.java
 grep -q 'stale base branch was accepted' backend/src/test/java/info/isaksson/erland/zipgithub/delivery/GitDeliveryServiceSelfTest.java

@@ -158,9 +158,9 @@ class AlternativeZipIngestionRegressionTest {
 
         ImportSelectionFactory selectionFactory = new ImportSelectionFactory();
         var selectionA = selectionFactory.create(fixture.owner, planA, planA.planDigestSha256(), BASE_SHA,
-                List.of("README.md"), List.of(), NOW);
+                List.of("README.md"), List.of(), List.of(), NOW);
         var selectionB = selectionFactory.create(fixture.owner, planA, planA.planDigestSha256(), BASE_SHA,
-                List.of("README.md"), List.of(), NOW.plusSeconds(10));
+                List.of("README.md"), List.of(), List.of(), NOW.plusSeconds(10));
         assertEquals(selectionA.selectionDigestSha256(), selectionB.selectionDigestSha256(),
                 "creation time and import-source audit metadata are outside selection identity");
     }

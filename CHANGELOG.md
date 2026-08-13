@@ -1,3 +1,10 @@
+## 1.0.0-rc.94 - 2026-08-13
+
+### Fixed
+
+- Corrected the remaining Step 9.24 backend test compilation failure in `AlternativeZipIngestionRegressionTest` by passing the explicit blocker-decision list required by the `selection-2` `ImportSelectionFactory.create(...)` contract.
+- No product behavior changed; this is a focused CI correction after rc.93.
+
 ## 1.0.0-rc.93 - 2026-08-13
 
 - Corrects the Step 9.24 backend compilation failure by importing `ImmutableImportPlanEntry` in `ProjectApplicationService`.

@@ -1,4 +1,4 @@
-> **Current handoff r0141 / 1.0.0-rc.93:** Focused backend CI correction after Step 9.24. `ProjectApplicationService` now imports `ImmutableImportPlanEntry`, allowing the blocker-decision delivery validation added in rc.92 to compile. No product semantics changed; Step 9.25 remains `NEXT`.
+> **Current handoff r0142 / 1.0.0-rc.94:** Focused backend test CI correction after Step 9.24. `AlternativeZipIngestionRegressionTest` now passes the explicit blocker-decision list required by the `selection-2` factory contract. No product semantics changed; Step 9.25 remains `NEXT`.
 
 > **Current handoff r0140 / 1.0.0-rc.92:** Step 9.24 requires an explicit decision for every blocking review entry. Overridable blockers must be explicitly excluded or override-included, hard blockers must be acknowledged as omitted, and immutable `selection-2` persists those decisions in the selection digest. Backend validation prevents incomplete or inconsistent blocker decisions from reaching approval. Step 9.25 is now `NEXT` for conservative global cleanup of orphaned `zip-github/work-*` branches.
 

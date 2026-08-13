@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0141`
+- Repository revision: `r0142`
 - Last completed step: `9.24`
 - Next step: `9.25` — safe orphaned Work branch cleanup
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.24 COMPLETE — EXPLICIT BLOCKER DECISIONS`
@@ -116,6 +116,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
 | `r0141` | 2026-08-13 | Backend CI correction after `9.24` | Added the missing `ImmutableImportPlanEntry` import required by the Step 9.24 blocker-decision delivery guard; no production behavior changed | `9.25` |
+| `r0142` | 2026-08-13 | Backend test CI correction after `9.24` | Updated the remaining `AlternativeZipIngestionRegressionTest` factory calls to the `selection-2` blocker-decision signature; no production behavior changed | `9.25` |
 | `r0140` | 2026-08-13 | `9.24` explicit blocker decisions | UI requires explicit include/exclude/acknowledge decisions; immutable `selection-2` persists decisions in its digest; backend rejects incomplete/inconsistent blocker coverage | `9.25` |
 | `r0139` | 2026-08-13 | `9.23` product naming cleanup | Active browser title corrected to `zip-GitHub`; legacy/migration references preserved; release regression added | `9.24` |
 | `r0116` | 2026-08-08 | `9.12` gitignore/review UX correction | Repository `.gitignore` now classifies untracked ZIP paths as non-selectable warnings, removes Shortcut filename special-casing and simplifies duplicated review summary/filter affordances | `none` |

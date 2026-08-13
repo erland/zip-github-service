@@ -1,7 +1,7 @@
 # Implementation status — zip-github
 
 Version 1.0  
-Updated: 11 August 2026
+Updated: 13 August 2026
 
 ## Purpose
 
@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0138`
-- Last completed step: `9.22`
-- Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.22 COMPLETE — SMART SHORTCUT REPOSITORY SUGGESTION`
+- Repository revision: `r0139`
+- Last completed step: `9.23`
+- Next step: `9.24` — explicit blocker decisions
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.23 COMPLETE — PRODUCT NAMING CLEANUP`
 
 ## Step ledger
 
@@ -107,11 +107,15 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.20` | Fas 9 — PR UX | Förenkla commit-derived PR title/description | **DONE** | 2026-08-11 | `docs/step-9.20-report.md`, `frontend/src/components/PullRequestComposer.tsx` |
 | `9.21` | Fas 9 — Repository selection UX | Gemensam sökbar repository-picker, senaste repositories och separat scroll | **DONE** | 2026-08-11 | `docs/step-9.21-report.md`, `frontend/src/components/RepositoryPicker.tsx` |
 | `9.22` | Fas 9 — Shortcut repository suggestion | Smart förslag från ZIP-namn, uploadhistorik och recency | **DONE** | 2026-08-11 | `docs/step-9.22-report.md`, `frontend/src/repositories/repositorySuggestion.ts` |
+| `9.23` | Fas 9 — Product naming cleanup | Korrekt produktnamn i aktiv webbklient/browser title | **DONE** | 2026-08-13 | `docs/step-9.23-report.md`, `frontend/index.html` |
+| `9.24` | Fas 9 — Review safety | Explicita beslut för blockerande review-poster | **NEXT** | — | — |
+| `9.25` | Fas 9 — Work branch maintenance | Säker global städning av föräldralösa Work-brancher | **PENDING** | — | — |
 
 ## Revision history
 
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
+| `r0139` | 2026-08-13 | `9.23` product naming cleanup | Active browser title corrected to `zip-GitHub`; legacy/migration references preserved; release regression added | `9.24` |
 | `r0116` | 2026-08-08 | `9.12` gitignore/review UX correction | Repository `.gitignore` now classifies untracked ZIP paths as non-selectable warnings, removes Shortcut filename special-casing and simplifies duplicated review summary/filter affordances | `none` |
 | `r0117` | 2026-08-08 | Frontend review CI correction after `9.12` | Removed disabled checkbox affordance from ignored rows and aligned E2E filter assertions with counted labels; no backend behavior changed | `none` |
 | `r0118` | 2026-08-09 | `9.13` repository-first UX | Repository list/search replaces manual Project creation; Project is lazily created/reused when Work or Shortcut promotion actually begins | `none` |

@@ -1,3 +1,16 @@
+## 1.0.0-rc.118 - 2026-08-14
+
+Repository revision: `r0166`
+
+- Implements step 9.35: repository attention overview.
+- Repositories with existing zip-GitHub projects are reconciled through current Work/import state and, when a current commit exists, current GitHub Actions state.
+- The repository picker groups the normal unfiltered view into `Behöver din uppmärksamhet`, `Pågående` and `Övriga repositories`.
+- Attention includes resumable upload/review imports, externally changed Work branches, PR_CLOSED, failed/cancelled/unavailable Actions, and status that cannot be verified.
+- Attention entries navigate directly to the relevant review/result/project task where possible.
+- ACTIVE and PR_OPEN Work appear under `Pågående`; repositories without a project remain under `Övriga repositories`.
+- Search remains a flat cross-group repository finder and no KPI/statistics dashboard is introduced.
+- No backend persistence or Work lifecycle semantics change.
+
 ## 1.0.0-rc.117 - 2026-08-14
 
 Repository revision: `r0165`

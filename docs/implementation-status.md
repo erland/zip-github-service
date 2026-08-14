@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0165`
-- Last completed step: `9.34`
-- Next step: `9.35`
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.34 COMPLETE — UX SIMPLIFICATION IN PROGRESS`
+- Repository revision: `r0166`
+- Last completed step: `9.35`
+- Next step: `none` — implementation plan complete
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.35 COMPLETE — UX SIMPLIFICATION SEQUENCE COMPLETE`
 
 ## Step ledger
 
@@ -119,7 +119,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.32` | Fas 9 — guided UX | Visa en state-driven rekommenderad nästa handling på projektsidan | **DONE** | 2026-08-14 | `docs/step-9.32-report.md`, `frontend/src/pages/ProjectDetailPage.tsx` |
 | `9.33` | Fas 9 — guided UX | Starta Work automatiskt vid första normala ZIP-upload | **DONE** | 2026-08-14 | `docs/step-9.33-report.md`, `frontend/src/pages/NewImportPage.tsx` |
 | `9.34` | Fas 9 — review UX | Prioritera blockers, externa konflikter och varningar före vanlig filinformation | **DONE** | 2026-08-14 | `docs/step-9.34-report.md`, `frontend/src/pages/ImportReviewPage.tsx` |
-| `9.35` | Fas 9 — repository UX | Repository attention overview | **NEXT** | — | `docs/implementation-steps.md` |
+| `9.35` | Fas 9 — repository UX | Repository attention overview | **DONE** | 2026-08-14 | `docs/step-9.35-report.md`, `frontend/src/pages/ProjectListPage.tsx`, `frontend/src/components/RepositoryPicker.tsx` |
 
 ## Revision history
 

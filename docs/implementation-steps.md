@@ -980,7 +980,7 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Varje attention-status ska ha en direkt relevant nästa handling eller navigationsmål.
 - Reconciliation ska ske där statusen används så att listan inte kräver att användaren först öppnar ett projekt för att bli korrekt.
 
-**Status:** PLANNED.
+**Status:** DONE (2026-08-14, r0166 / 1.0.0-rc.118). Se `docs/step-9.35-report.md`.
 
 **Kvalitetsgrind för 9.35:** repositoryöversikten ska hjälpa användaren hitta nästa konkreta uppgift snabbare utan att bli en generell statistikdashboard eller visa stale livscykelstatus som auktoritativ.
 

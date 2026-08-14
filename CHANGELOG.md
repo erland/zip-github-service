@@ -1,3 +1,12 @@
+## 1.0.0-rc.125 - 2026-08-14
+
+Repository revision: `r0173`
+
+- Fixes the remaining rc.124 ProjectDetailPage progressive-disclosure test ambiguity.
+- The Work branch name is intentionally present both in the expanded technical Work details and in visible Actions controls.
+- The regression assertion is now scoped with `within(technicalDetails)` to verify the branch inside the intended disclosure section.
+- No production behavior changes from rc.124.
+
 ## 1.0.0-rc.124 - 2026-08-14
 
 Repository revision: `r0172`

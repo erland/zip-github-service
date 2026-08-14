@@ -124,7 +124,7 @@ describe('ProjectDetailPage progressive disclosure', () => {
     await user.click(screen.getByText('Visa tekniska Work-detaljer'));
     expect(technicalDetails).toHaveAttribute('open');
     expect(screen.getByRole('heading', { name: 'Commits i arbetet' })).toBeInTheDocument();
-    expect(screen.getByText('zip-github/work-1')).toBeInTheDocument();
+    expect(within(technicalDetails as HTMLElement).getByText('zip-github/work-1')).toBeInTheDocument();
   });
 });
 

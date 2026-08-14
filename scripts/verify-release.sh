@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.124"
+expected_version="1.0.0-rc.125"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.124 - 2026-08-14' CHANGELOG.md
+grep -q '## 1.0.0-rc.125 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,7 +25,7 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0172`' docs/implementation-status.md
+grep -q 'Repository revision: `r0173`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -727,3 +727,5 @@ grep -Fq "expect(technicalDetails).not.toHaveAttribute('open');" frontend/src/pa
 grep -Fq "expect(technicalDetails).toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
 grep -Fq "expect(repositoryDetails).not.toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
 printf 'rc.124 progressive-disclosure details-state assertions verified for %s.\n' "$actual_version"
+grep -Fq "within(technicalDetails as HTMLElement).getByText('zip-github/work-1')" frontend/src/pages/ProjectDetailPage.test.tsx
+printf 'rc.125 scoped Work branch disclosure assertion verified for %s.\n' "$actual_version"

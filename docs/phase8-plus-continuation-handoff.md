@@ -1,4 +1,4 @@
-> **Current handoff r0170 / 1.0.0-rc.122:** Step 9.31 displays the running frontend release on `Om tjänsten` by injecting the authoritative root `VERSION` during the verified CI/Vite build. Import result now loads/reconciles current Work before presenting PR actions: PR_OPEN links to the existing automatically updated PR instead of offering a duplicate, PR_CLOSED offers a new PR, and uncertainty fails closed. Empty-repository support from rc.110 remains intact. No next implementation step is currently defined.
+> **Current handoff r0171 / 1.0.0-rc.123:** Step 9.31 displays the running frontend release on `Om tjänsten` by injecting the authoritative root `VERSION` during the verified CI/Vite build. Import result now loads/reconciles current Work before presenting PR actions: PR_OPEN links to the existing automatically updated PR instead of offering a duplicate, PR_CLOSED offers a new PR, and uncertainty fails closed. Empty-repository support from rc.110 remains intact. No next implementation step is currently defined.
 
 > **Current handoff r0158 / 1.0.0-rc.110:** Empty-repository startup correction after rc.109 diagnostics showed that `branchExists()` missed a nested GitHub HTTP 404. The 404 is now interpreted as “branch does not exist”, allowing the verified empty-repository Contents bootstrap path to run. rc.109 diagnostic logging remains available. Step 9.30 remained the latest completed functional step at that revision.
 
@@ -321,11 +321,14 @@ GitHub Actions showed that rc.85 fixed nullable deletion metadata but TypeScript
 `Starta arbete` now bootstraps a truly empty repository before persisting the internal project, then re-verifies the initialized default branch. Bootstrap failures are surfaced as explicit API problems rather than generic internal errors.
 
 ## Senaste UX-förenkling
-Steg 9.32-9.35 är DONE. r0170/rc.118 slutför den planerade förenklingssekvensen med repository attention overview: repositorylistan grupperar verifierad aktuell status i `Behöver din uppmärksamhet`, `Pågående` och `Övriga repositories`, med direkt navigation till relevant review/result/project. Ingen ny backendstatus lagras; Work hämtas via befintlig reconciliation och osäker status failar till attention i stället för att gissas.
+Steg 9.32-9.35 är DONE. r0171/rc.118 slutför den planerade förenklingssekvensen med repository attention overview: repositorylistan grupperar verifierad aktuell status i `Behöver din uppmärksamhet`, `Pågående` och `Övriga repositories`, med direkt navigation till relevant review/result/project. Ingen ny backendstatus lagras; Work hämtas via befintlig reconciliation och osäker status failar till attention i stället för att gissas.
 
 ## Session expiry
-Steg 9.36 är DONE i r0170/rc.120. Frontend har ett centralt `api/session.ts`-kontrakt: autentiserade API-anrop som får HTTP 401 signalerar session expiry, `AppLayout` visar login med aktuell route som `returnTo`, och ZIP-uploadens XHR använder samma signal. Initial `/api/auth/me`-401 förblir normal anonymous-semantik; 403 och andra API-fel påverkas inte.
+Steg 9.36 är DONE i r0171/rc.120. Frontend har ett centralt `api/session.ts`-kontrakt: autentiserade API-anrop som får HTTP 401 signalerar session expiry, `AppLayout` visar login med aktuell route som `returnTo`, och ZIP-uploadens XHR använder samma signal. Initial `/api/auth/me`-401 förblir normal anonymous-semantik; 403 och andra API-fel påverkas inte.
 
 ## UX revision 9.37-9.42
-Steg 9.37 är DONE i r0170/rc.121: nya repositories visar nu `Ladda upp första ZIP` och går direkt till upload efter oförändrad project/Work-provisionering. Steg 9.38 är NEXT: project progressive disclosure. Därefter följer 9.39 review completion guidance, 9.40 simplified upload, 9.41 Actions-aware result next action och 9.42 attention-first Actions presentation.
+Steg 9.37 är DONE i r0171/rc.121: nya repositories visar nu `Ladda upp första ZIP` och går direkt till upload efter oförändrad project/Work-provisionering. Steg 9.38 är NEXT: project progressive disclosure. Därefter följer 9.39 review completion guidance, 9.40 simplified upload, 9.41 Actions-aware result next action och 9.42 attention-first Actions presentation.
+
+## Steg 9.38
+DONE i r0171/rc.123. Projektsidan prioriterar nu `Nästa steg`, behåller PR/external-change/active-import/Actions synligt och flyttar repositorymetadata, branch/SHA/commit history samt avancerade/destruktiva Work/repositoryåtgärder bakom progressive disclosure. 9.39 Review completion guidance är NEXT.
 

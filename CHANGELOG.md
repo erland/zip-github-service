@@ -1,3 +1,17 @@
+## 1.0.0-rc.123 - 2026-08-14
+
+Repository revision: `r0171`
+
+- Implements step 9.38: project progressive disclosure.
+- `Nästa steg` now precedes repository metadata so the recommended action is the first substantial project content.
+- Repository metadata is retained under expandable `Repositoryinformation`.
+- The standard Work view now shows a compact user-level status while branch/base/SHA and commit history are retained under `Visa tekniska Work-detaljer`.
+- Explicit resume of an old branch is retained under `Avancerat: återuppta befintlig branch`.
+- Destructive Work and repository actions are retained under clearly separate advanced sections.
+- Active-import guidance, PR status, external-branch warnings and GitHub Actions remain visible in the normal view.
+- No backend lifecycle, Work, PR, Actions or safety semantics change.
+- Step 9.39 `Review completion guidance` is now NEXT.
+
 ## 1.0.0-rc.122 - 2026-08-14
 
 Repository revision: `r0170`

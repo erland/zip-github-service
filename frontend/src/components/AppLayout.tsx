@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout, type AuthenticatedUser } from '../api/auth';
+import { subscribeSessionExpired } from '../api/session';
 import { captureClaimToken } from '../staging/claimToken';
 
 const navClassName = ({ isActive }: { isActive: boolean }) =>
@@ -36,6 +37,12 @@ export default function AppLayout() {
       });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => subscribeSessionExpired(() => {
+    setUser(null);
+    setAuthError('Din session har gått ut. Logga in igen för att fortsätta där du var.');
+    setAuthState('anonymous');
+  }), []);
 
   useEffect(() => {
     const main = document.getElementById('main-content');
@@ -110,8 +117,10 @@ export default function AppLayout() {
           <section className="page-card auth-card" aria-labelledby="login-heading">
             <p className="eyebrow">GitHub-inloggning</p>
             <h1 id="login-heading">Logga in för att fortsätta</h1>
-            <p className="lead">zip-github använder GitHub OAuth för din identitet och GitHub App-installationer för åtkomst till de repositories du uttryckligen har tillåtit.</p>
-            {authError && <p className="status-message status-message--error" role="alert">{authError}</p>}
+            <p className="lead">{authError
+              ? 'Logga in igen för att fortsätta på samma sida.'
+              : 'zip-github använder GitHub OAuth för din identitet och GitHub App-installationer för åtkomst till de repositories du uttryckligen har tillåtit.'}</p>
+            {authError && <p className="status-message status-message--warning" role="alert">{authError}</p>}
             <a className="button" href={loginUrl}>Logga in med GitHub</a>
           </section>
         )}

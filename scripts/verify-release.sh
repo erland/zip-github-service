@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.119"
+expected_version="1.0.0-rc.120"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.119 - 2026-08-14' CHANGELOG.md
+grep -q '## 1.0.0-rc.120 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,13 +25,13 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0167`' docs/implementation-status.md
+grep -q 'Repository revision: `r0168`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'confirmOpenPullRequest' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.35`' docs/implementation-status.md
+grep -q 'Last completed step: `9.36`' docs/implementation-status.md
 test -s docs/rc103-step-9.29-empty-repository-start-correction.md
 grep -q 'verifyForWorkStart' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
 grep -q 'ensureProjectForRepositoryReadyForWork' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
@@ -52,7 +52,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.35 COMPLETE — UX SIMPLIFICATION SEQUENCE COMPLETE`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.36 COMPLETE — CENTRAL SESSION EXPIRY HANDLING`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -694,3 +694,13 @@ printf 'Step 9.35 repository attention overview assertions verified for %s.\n' "
 grep -Fq "findByRole('link', { name: /example-book-project/ })" frontend/src/App.test.tsx
 grep -Fq "queryByRole('link', { name: /example-book-project/ })" frontend/src/App.test.tsx
 printf 'rc.119 repository accessible-name test assertion verified for %s.\n' "$actual_version"
+grep -Fq "export class SessionExpiredError" frontend/src/api/session.ts
+grep -Fq "assertSessionActive(response);" frontend/src/api/projects.ts
+grep -Fq "assertSessionActive(response);" frontend/src/api/imports.ts
+grep -Fq "request.status === 401" frontend/src/api/imports.ts
+grep -Fq "signalSessionExpired();" frontend/src/api/imports.ts
+grep -Fq "subscribeSessionExpired" frontend/src/components/AppLayout.tsx
+grep -Fq "Din session har gått ut. Logga in igen för att fortsätta där du var." frontend/src/components/AppLayout.tsx
+grep -Fq "returns to login on API 401 after an authenticated session expires" frontend/src/App.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0168 / 1.0.0-rc.120)." docs/implementation-steps.md
+printf 'Step 9.36 central session-expiry assertions verified for %s.\n' "$actual_version"

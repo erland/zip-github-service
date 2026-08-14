@@ -984,3 +984,17 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 
 **Kvalitetsgrind för 9.35:** repositoryöversikten ska hjälpa användaren hitta nästa konkreta uppgift snabbare utan att bli en generell statistikdashboard eller visa stale livscykelstatus som auktoritativ.
 
+## Steg 9.36 - Central session-expiry handling
+
+- Inför ett gemensamt frontendkontrakt för HTTP `401` från autentiserade API-anrop.
+- `401` efter etablerad session ska signalera session timeout centralt i stället för att visas som ett vanligt sidfel.
+- `AppLayout` ska växla till befintlig login-UI med tydlig text om att sessionen gått ut och behålla aktuell route som OAuth `returnTo`.
+- Vanliga `fetch`-baserade API-klienter samt ZIP-upload via `XMLHttpRequest` ska använda samma timeoutsignal.
+- `/api/auth/me` ska fortsatt tolka `401` som anonym användare vid initial sidladdning.
+- `403` och övriga API-/GitHub-fel ska inte klassificeras som session timeout.
+- Lösningen ska vara liten och tvärgående; ingen stor API-refaktor eller backendändring krävs.
+
+**Status:** DONE (2026-08-14, r0168 / 1.0.0-rc.120). Se `docs/step-9.36-report.md`.
+
+**Kvalitetsgrind för 9.36:** en utgången session ska på alla centrala frontend-API-vägar leda tillbaka till login med bevarad return route, medan initial anonymitet, 403 och vanliga API-fel behåller sina tidigare semantiker.
+

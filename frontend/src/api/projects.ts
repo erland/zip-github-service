@@ -1,3 +1,4 @@
+import { assertSessionActive } from './session';
 export type ProjectResponse = {
   id: string;
   name: string;
@@ -75,6 +76,7 @@ export type WorkSessionResponse = {
 
 export async function getProjectWork(projectId: string): Promise<WorkSessionResponse | null> {
   const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/work`, { credentials: 'include' });
+  assertSessionActive(response);
   if (response.status === 204) return null;
   if (!response.ok) throw new Error(`API-fel ${response.status}`);
   return response.json() as Promise<WorkSessionResponse>;
@@ -131,11 +133,13 @@ export async function archiveProject(projectId: string): Promise<void> {
   const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
     method: 'DELETE', credentials: 'include', headers: { 'X-Zip-GitHub-Request': '1' },
   });
+  assertSessionActive(response);
   if (!response.ok) throw new Error(`API-fel ${response.status}`);
 }
 
 async function requestJson<T>(url: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(url, { credentials: 'include', ...init });
+  assertSessionActive(response);
   if (!response.ok) {
     try {
       const problem = await response.json() as { detail?: string; title?: string };

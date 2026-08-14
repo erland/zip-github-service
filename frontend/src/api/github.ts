@@ -1,3 +1,4 @@
+import { assertSessionActive } from './session';
 export type GitHubInstallation = {
   id: number;
   accountId: number;
@@ -25,6 +26,7 @@ export async function getInstallationRepositories(installationId: number): Promi
 
 async function requestJson<T>(url: string): Promise<T> {
   const response = await fetch(url, { credentials: 'include' });
+  assertSessionActive(response);
   if (!response.ok) {
     try {
       const problem = await response.json() as { detail?: string; title?: string };

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { resetSessionExpiredForTests } from './api/session';
 
 const authenticatedUser = { id: 'user-1', githubUserId: 123, login: 'erland', avatarUrl: null, gitName: 'Erland', gitEmail: '123+erland@users.noreply.github.com' };
 const project = {
@@ -23,6 +24,7 @@ function renderAt(route: string) {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  resetSessionExpiredForTests();
 });
 
 describe('App routing and authentication', () => {
@@ -34,6 +36,22 @@ describe('App routing and authentication', () => {
     renderAt('/projects');
     expect(await screen.findByRole('heading', { name: 'Logga in för att fortsätta' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Logga in med GitHub' })).toHaveAttribute('href', '/api/auth/github/login?returnTo=%2Fprojects');
+  });
+
+  it('returns to login on API 401 after an authenticated session expires and preserves the current route', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === '/api/auth/me') return json(authenticatedUser);
+      if (url === '/api/repositories') return json({ title: 'Unauthorized' }, 401);
+      return Promise.reject(new Error(`Unexpected fetch: ${url}`));
+    }));
+
+    renderAt('/projects');
+
+    expect(await screen.findByRole('heading', { name: 'Logga in för att fortsätta' })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Din session har gått ut. Logga in igen för att fortsätta där du var.');
+    expect(screen.getByRole('link', { name: 'Logga in med GitHub' })).toHaveAttribute('href', '/api/auth/github/login?returnTo=%2Fprojects');
+    expect(screen.queryByText('API-fel 401')).not.toBeInTheDocument();
   });
 
   it('lists GitHub App repositories and filters them by partial name', async () => {

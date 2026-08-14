@@ -20,6 +20,7 @@ export async function logout(): Promise<void> {
     credentials: 'include',
     headers: { 'X-Zip-GitHub-Request': '1' },
   });
+  if (response.status === 401) return;
   if (!response.ok) throw await apiError(response);
 }
 

@@ -1,3 +1,4 @@
+import { assertSessionActive } from './session';
 import type { ProjectResponse, WorkSessionResponse } from './projects';
 
 export type RepositoryEntry = {
@@ -28,6 +29,7 @@ export async function startRepositoryWork(installationId: number, repositoryId: 
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { credentials: 'include', ...init });
+  assertSessionActive(response);
   if (!response.ok) {
     try {
       const problem = await response.json() as { detail?: string; title?: string };

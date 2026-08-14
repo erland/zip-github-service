@@ -22,14 +22,14 @@ export default function RepositoryDetailPage() {
     return () => { cancelled = true; };
   }, [installationId, repositoryId, navigate]);
 
-  async function start() {
+  async function startFirstImport() {
     if (!repository || starting) return;
     setStarting(true); setError('');
     try {
       const result = await startRepositoryWork(repository.githubInstallationId, repository.githubRepositoryId);
-      navigate(`/projects/${result.project.id}`, { replace: true });
+      navigate(`/projects/${result.project.id}/imports/new`, { replace: true });
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Arbetet kunde inte startas.');
+      setError(reason instanceof Error ? reason.message : 'Repositoryt kunde inte förberedas för den första ZIP-filen.');
       setStarting(false);
     }
   }
@@ -41,8 +41,8 @@ export default function RepositoryDetailPage() {
     <p><Link className="back-link" to="/projects">← Repositories</Link></p>
     <p className="eyebrow">Repository</p>
     <h1 id="repository-heading">{repository.repositoryName}</h1>
-    <p className="lead">zip-github förbereder repositoryt automatiskt när du startar arbetet.</p>
+    <p className="lead">Ladda upp den första ZIP-filen. zip-github skapar projekt och arbetsbranch automatiskt innan uploaden öppnas.</p>
     {error && <p role="alert" className="status-message status-message--error">{error}</p>}
-    <div className="result-primary-action"><button className="button" type="button" disabled={starting} onClick={()=>void start()}>{starting ? 'Startar arbete…' : 'Starta arbete'}</button></div>
+    <div className="result-primary-action"><button className="button" type="button" disabled={starting} onClick={()=>void startFirstImport()}>{starting ? 'Förbereder repository…' : 'Ladda upp första ZIP'}</button></div>
   </section>;
 }

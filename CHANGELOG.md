@@ -1,3 +1,23 @@
+## 1.0.0-rc.122 - 2026-08-14
+
+Repository revision: `r0170`
+
+- Fixes the rc.121 App integration test timing regression for the new-repository first-ZIP flow.
+- The route correctly reached `Ladda upp projekt-ZIP`, but the test synchronously asserted the file input before `NewImportPage` had completed its async project/Work/user loading.
+- The test now waits for the `Projektarkiv` input to become available before asserting it is enabled.
+- No production behavior changes from rc.121.
+
+## 1.0.0-rc.121 - 2026-08-14
+
+Repository revision: `r0169`
+
+- Documents the next UX/progressive-disclosure sequence as steps 9.37-9.42.
+- Implements step 9.37: a repository without an internal project now offers `Ladda upp första ZIP` instead of exposing `Starta arbete`.
+- The existing repository Work provisioning endpoint is reused unchanged; after successful project + Work creation the UI navigates directly to the new-import route.
+- Existing repositories with a project continue to redirect to their project page.
+- No backend Work, bootstrap, authorization or repository safety semantics change.
+- Step 9.38 `Project progressive disclosure` is now NEXT.
+
 ## 1.0.0-rc.120 - 2026-08-14
 
 Repository revision: `r0168`

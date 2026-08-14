@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.122"
+expected_version="1.0.0-rc.125"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.122 - 2026-08-14' CHANGELOG.md
+grep -q '## 1.0.0-rc.125 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,13 +25,13 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0170`' docs/implementation-status.md
+grep -q 'Repository revision: `r0173`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'confirmOpenPullRequest' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.37`' docs/implementation-status.md
+grep -q 'Last completed step: `9.38`' docs/implementation-status.md
 test -s docs/rc103-step-9.29-empty-repository-start-correction.md
 grep -q 'verifyForWorkStart' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
 grep -q 'ensureProjectForRepositoryReadyForWork' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
@@ -52,7 +52,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.37 COMPLETE — PROJECT UX REVISION IN PROGRESS`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.38 COMPLETE — PROJECT UX REVISION IN PROGRESS`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -714,3 +714,18 @@ grep -Fq "**Status:** NEXT." docs/implementation-steps.md
 printf 'Step 9.37 new repository first-ZIP flow assertions verified for %s.\n' "$actual_version"
 grep -Fq "expect(await screen.findByLabelText('Projektarkiv')).toBeEnabled();" frontend/src/App.test.tsx
 printf 'rc.122 first-ZIP App timing assertion verified for %s.\n' "$actual_version"
+grep -Fq "Repositoryinformation" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Visa tekniska Work-detaljer" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Avancerat: återuppta befintlig branch" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Avancerade Work-åtgärder" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Avancerade repositoryåtgärder" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "puts next step before repository metadata and keeps technical Work details collapsed by default" frontend/src/pages/ProjectDetailPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0171 / 1.0.0-rc.123)." docs/implementation-steps.md
+grep -Fq "## Steg 9.39 - Review completion guidance" docs/implementation-steps.md
+printf 'Step 9.38 project progressive disclosure assertions verified for %s.\n' "$actual_version"
+grep -Fq "expect(technicalDetails).not.toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
+grep -Fq "expect(technicalDetails).toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
+grep -Fq "expect(repositoryDetails).not.toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
+printf 'rc.124 progressive-disclosure details-state assertions verified for %s.\n' "$actual_version"
+grep -Fq "within(technicalDetails as HTMLElement).getByText('zip-github/work-1')" frontend/src/pages/ProjectDetailPage.test.tsx
+printf 'rc.125 scoped Work branch disclosure assertion verified for %s.\n' "$actual_version"

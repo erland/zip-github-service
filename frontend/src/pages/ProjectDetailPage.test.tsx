@@ -26,9 +26,15 @@ beforeEach(() => {
 });
 
 describe('ProjectDetailPage work history', () => {
-  it('shows Git commits and only the active import in the primary project view', async () => {
+  it('shows Git commits on demand and only the active import in the primary project view', async () => {
+    const user = userEvent.setup();
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'repo' })).toBeInTheDocument();
+    const technicalDetails = screen.getByText('Visa tekniska Work-detaljer').closest('details');
+    expect(technicalDetails).not.toBeNull();
+    expect(technicalDetails).not.toHaveAttribute('open');
+    await user.click(screen.getByText('Visa tekniska Work-detaljer'));
+    expect(technicalDetails).toHaveAttribute('open');
     expect(screen.getByRole('heading', { name: 'Commits i arbetet' })).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'GitHub Actions' })).toBeInTheDocument();
     expect(await screen.findByText('Fel och jobbloggar')).toBeInTheDocument();
@@ -83,14 +89,44 @@ describe('ProjectDetailPage degraded Work history', () => {
       return new Response(JSON.stringify({ id: 'project-1', name: 'Bokprojekt', githubInstallationId: 1, githubRepositoryId: 2, repositoryFullName: 'owner/repo', privateRepository: true, defaultBranch: 'main', active: true, createdAt: '2026-08-06T18:00:00Z', updatedAt: '2026-08-06T18:00:00Z' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }));
 
+    const user = userEvent.setup();
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'repo' })).toBeInTheDocument();
+    await user.click(screen.getByText('Visa tekniska Work-detaljer'));
     expect(screen.getByText('GitHub-historiken kunde inte läsas just nu. Senaste lokalt kända commit visas.')).toBeInTheDocument();
     expect(screen.getByText('Senaste kända Work-commit')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Fortsätt granska' })).toHaveAttribute('href', '/projects/project-1/imports/import-review/review');
   });
 });
 
+
+describe('ProjectDetailPage progressive disclosure', () => {
+  it('puts next step before repository metadata and keeps technical Work details collapsed by default', async () => {
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
+
+    const nextStep = await screen.findByRole('heading', { name: 'Nästa steg' });
+    const repositorySummary = screen.getByText('Repositoryinformation');
+    expect(nextStep.compareDocumentPosition(repositorySummary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    const repositoryDetails = repositorySummary.closest('details');
+    expect(repositoryDetails).not.toBeNull();
+    expect(repositoryDetails).not.toHaveAttribute('open');
+    const technicalDetails = screen.getByText('Visa tekniska Work-detaljer').closest('details');
+    expect(technicalDetails).not.toBeNull();
+    expect(technicalDetails).not.toHaveAttribute('open');
+    expect(screen.getByRole('heading', { name: 'GitHub Actions' })).toBeInTheDocument();
+
+    await user.click(repositorySummary);
+    expect(repositoryDetails).toHaveAttribute('open');
+    expect(screen.getByText('Standardbranch')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Visa tekniska Work-detaljer'));
+    expect(technicalDetails).toHaveAttribute('open');
+    expect(screen.getByRole('heading', { name: 'Commits i arbetet' })).toBeInTheDocument();
+    expect(within(technicalDetails as HTMLElement).getByText('zip-github/work-1')).toBeInTheDocument();
+  });
+});
 
 describe('ProjectDetailPage state-based Work actions', () => {
   it('shows exactly one next-ZIP action when Work is open without an active import', async () => {
@@ -220,10 +256,13 @@ describe('ProjectDetailPage step 9.8 lifecycle', () => {
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
     const repo = await screen.findByRole('link', { name: 'owner/repo' });
     expect(repo).toHaveAttribute('href', 'https://github.com/owner/repo/tree/main');
+    await user.click(screen.getByText('Avancerat: återuppta befintlig branch'));
     expect(await screen.findByRole('option', { name: 'old-work' })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText('Eller fortsätt på befintlig branch'), 'old-work');
     await user.click(screen.getByRole('button', { name: 'Fortsätt på vald branch' }));
-    expect(await screen.findByText('zip-github/work-2')).toBeInTheDocument();
+    expect(await screen.findByText('Work pågår')).toBeInTheDocument();
+    await user.click(screen.getByText('Visa tekniska Work-detaljer'));
+    expect(screen.getByText('zip-github/work-2')).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith('/api/projects/project-1/work', expect.objectContaining({ method: 'POST', body: JSON.stringify({ existingBranch: 'old-work' }) }));
   });
   it('keeps an open pull request as active work and surfaces remote branch changes', async () => {

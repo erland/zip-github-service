@@ -93,8 +93,6 @@ export default function ProjectDetailPage() {
     <div className="page-heading-row"><div><p className="eyebrow">Repository</p><h1 id="project-heading">{project.repositoryFullName.split('/').at(-1) ?? project.repositoryFullName}</h1><p className="lead"><a href={repositoryUrl} target="_blank" rel="noreferrer">{project.repositoryFullName}</a></p></div></div>
     {error && <p role="alert" className="status-message status-message--error">{error}</p>}
     {completedPullRequestUrl && <p className="status-message" role="status">Arbetets pull request är skapad och arbetet fortsätter tills PR:n mergas eller avslutas. <a href={completedPullRequestUrl} target="_blank" rel="noreferrer">Öppna pull request</a></p>}
-    <dl className="detail-grid"><div><dt>Repository</dt><dd>{project.repositoryFullName}</dd></div><div><dt>Standardbranch</dt><dd>{project.defaultBranch}</dd></div><div><dt>Åtkomst</dt><dd>{project.privateRepository?'Privat repository':'Publikt repository'}</dd></div><div><dt>Status</dt><dd>{project.active?'Aktivt':'Inaktivt'}</dd></div></dl>
-
     <section className="status-message" aria-labelledby="next-action-heading">
       <p className="eyebrow">Rekommenderad åtgärd</p>
       <h2 id="next-action-heading">Nästa steg</h2>
@@ -116,28 +114,50 @@ export default function ProjectDetailPage() {
       </>}
     </section>
 
+    <details className="project-details">
+      <summary>Repositoryinformation</summary>
+      <dl className="detail-grid"><div><dt>Repository</dt><dd>{project.repositoryFullName}</dd></div><div><dt>Standardbranch</dt><dd>{project.defaultBranch}</dd></div><div><dt>Åtkomst</dt><dd>{project.privateRepository?'Privat repository':'Publikt repository'}</dd></div><div><dt>Status</dt><dd>{project.active?'Aktivt':'Inaktivt'}</dd></div></dl>
+    </details>
+
     <section aria-labelledby="work-heading"><h2 id="work-heading">Pågående arbete</h2>
-      {!work ? <div className="empty-state"><p>Inget arbete är startat.</p>
-        {branches.length > 0 && <div className="identity-fields"><label htmlFor="existing-work-branch">Eller fortsätt på befintlig branch</label><select id="existing-work-branch" value={existingBranch} onChange={e=>setExistingBranch(e.target.value)}><option value="">Välj branch…</option>{branches.map(branch=><option key={branch.name} value={branch.name}>{branch.name}</option>)}</select><button className="button button--secondary" type="button" disabled={!existingBranch || workBusy} onClick={()=>void startWork(true)}>Fortsätt på vald branch</button></div>}
-        <p>Normalflödet startar Work automatiskt när du laddar upp den första ZIP-filen. Välj bara en befintlig branch ovan om du uttryckligen vill återuppta ett tidigare arbete.</p>
+      {!work ? <div className="empty-state"><p>Inget arbete är startat. Normalflödet startar Work automatiskt när du laddar upp den första ZIP-filen.</p>
+        {branches.length > 0 && <details className="project-details">
+          <summary>Avancerat: återuppta befintlig branch</summary>
+          <div className="identity-fields"><label htmlFor="existing-work-branch">Eller fortsätt på befintlig branch</label><select id="existing-work-branch" value={existingBranch} onChange={e=>setExistingBranch(e.target.value)}><option value="">Välj branch…</option>{branches.map(branch=><option key={branch.name} value={branch.name}>{branch.name}</option>)}</select><button className="button button--secondary" type="button" disabled={!existingBranch || workBusy} onClick={()=>void startWork(true)}>Fortsätt på vald branch</button></div>
+          <p>Välj bara en befintlig branch om du uttryckligen vill återuppta ett tidigare arbete.</p>
+        </details>}
       </div> : <div className="work-card">
-        <p><strong>Arbetsbranch:</strong> <code>{work.branchName}</code>{branchUrl && <> · <a href={branchUrl} target="_blank" rel="noreferrer">Öppna på GitHub</a></>}</p><p><strong>Bas:</strong> {work.baseBranch}</p>
+        <p><strong>Status:</strong> {work.status === 'PR_OPEN' ? 'Pull request öppen' : work.status === 'PR_CLOSED' ? 'Pull request stängd utan merge' : 'Work pågår'}</p>
         {work.pullRequestUrl && <aside className="status-message" aria-label="Pull request-status"><strong>Pull request #{work.pullRequestNumber}</strong> · <span className="status-badge">{work.status === 'PR_OPEN' ? 'Öppen' : work.status === 'PR_CLOSED' ? 'Stängd' : work.status}</span> · <a href={work.pullRequestUrl} target="_blank" rel="noreferrer">Öppna på GitHub</a><p>{work.status === 'PR_OPEN' ? 'Du kan fortsätta ladda upp ZIP-filer. Nya commits pushas till samma Work-branch och uppdaterar automatiskt denna PR.' : 'PR:n är stängd utan merge. Du kan fortsätta arbetet och skapa en ny PR, eller avsluta Work.'}</p></aside>}
         {work.branchChangedExternally && <aside className="status-message status-message--warning" aria-label="Work-branchen har ändrats externt"><strong>Work-branchen har ändrats på GitHub.</strong><p>zip-github visar Actions för aktuell remote HEAD. Nästa ZIP granskas mot den aktuella branchen och markerar filer där ZIP:en skulle ersätta senare GitHub-ändringar.</p>{work.headCommitSha && work.remoteHeadCommitSha && <p><code>{work.headCommitSha.slice(0,12)}</code> → <code>{work.remoteHeadCommitSha.slice(0,12)}</code></p>}</aside>}
         {activeImport && <ActiveImportCard item={activeImport} onCancelled={load} />}
         {(work.remoteHeadCommitSha || work.headCommitSha) && <WorkActionsPanel projectId={project.id} importId={work.lastImportId} repositoryFullName={project.repositoryFullName} branchName={work.branchName} expectedCommitSha={work.remoteHeadCommitSha || work.headCommitSha!} />}
-        <section aria-labelledby="work-history-heading" className="work-history">
-          <div className="review-list-heading"><div><h3 id="work-history-heading">Commits i arbetet</h3><p>Git-historiken på arbetsbranchen är arbetets primära historik.</p></div></div>
-          {!githubHistoryAvailable && <p className="status-message" role="status">GitHub-historiken kunde inte läsas just nu. Senaste lokalt kända commit visas.</p>}
-          {commits.length === 0 ? <div className="empty-state"><p>Ännu ingen commit i arbetet.</p></div> : <ol className="work-commit-list">{commits.map(commit => <WorkCommitRow key={commit.sha} commit={commit} />)}</ol>}
-        </section>
+        <details className="project-details">
+          <summary>Visa tekniska Work-detaljer</summary>
+          <p><strong>Arbetsbranch:</strong> <code>{work.branchName}</code>{branchUrl && <> · <a href={branchUrl} target="_blank" rel="noreferrer">Öppna på GitHub</a></>}</p>
+          <p><strong>Bas:</strong> {work.baseBranch}</p>
+          {work.headCommitSha && <p><strong>Senaste kända commit:</strong> <code>{work.headCommitSha.slice(0,12)}</code></p>}
+          {work.remoteHeadCommitSha && work.remoteHeadCommitSha !== work.headCommitSha && <p><strong>Aktuell remote HEAD:</strong> <code>{work.remoteHeadCommitSha.slice(0,12)}</code></p>}
+          <section aria-labelledby="work-history-heading" className="work-history">
+            <div className="review-list-heading"><div><h3 id="work-history-heading">Commits i arbetet</h3><p>Git-historiken på arbetsbranchen är arbetets primära historik.</p></div></div>
+            {!githubHistoryAvailable && <p className="status-message" role="status">GitHub-historiken kunde inte läsas just nu. Senaste lokalt kända commit visas.</p>}
+            {commits.length === 0 ? <div className="empty-state"><p>Ännu ingen commit i arbetet.</p></div> : <ol className="work-commit-list">{commits.map(commit => <WorkCommitRow key={commit.sha} commit={commit} />)}</ol>}
+          </section>
+        </details>
         {showPullRequestComposer && projectId && work.status !== 'PR_OPEN' && <PullRequestComposer projectId={projectId}
           onCreated={async created => { setCompletedPullRequestUrl(created.pullRequestUrl); setShowPullRequestComposer(false); await load(); }}
           onCancel={() => setShowPullRequestComposer(false)} />}
-        <div className="result-primary-action">{work.status === 'ACTIVE' && !showPullRequestComposer && <button className="button button--secondary" type="button" disabled={!work.headCommitSha || Boolean(activeImport)} onClick={()=>setShowPullRequestComposer(true)}>Skapa pull request</button>}{!abandonConfirm ? <button className="button button--secondary" type="button" disabled={Boolean(activeImport) || workBusy} onClick={()=>setAbandonConfirm(true)}>{work.status === 'PR_OPEN'?'Avsluta Work':'Avsluta utan PR'}</button> : <div><label className="checkbox-row"><input type="checkbox" checked={deleteWorkBranch} onChange={e=>setDeleteWorkBranch(e.target.checked)} /> Ta även bort Work-branchen från GitHub</label><button className="button" type="button" disabled={workBusy} onClick={()=>void abandonWork()}>{workBusy?'Avslutar…':'Bekräfta avslut'}</button><button className="button button--secondary" type="button" disabled={workBusy} onClick={()=>setAbandonConfirm(false)}>Behåll arbetet</button></div>}</div>
+        {work.status === 'ACTIVE' && !showPullRequestComposer && <div className="result-primary-action"><button className="button button--secondary" type="button" disabled={!work.headCommitSha || Boolean(activeImport)} onClick={()=>setShowPullRequestComposer(true)}>Skapa pull request</button></div>}
+        <details className="project-details">
+          <summary>Avancerade Work-åtgärder</summary>
+          {!abandonConfirm ? <button className="button button--secondary" type="button" disabled={Boolean(activeImport) || workBusy} onClick={()=>setAbandonConfirm(true)}>{work.status === 'PR_OPEN'?'Avsluta Work':'Avsluta utan PR'}</button> : <div><label className="checkbox-row"><input type="checkbox" checked={deleteWorkBranch} onChange={e=>setDeleteWorkBranch(e.target.checked)} /> Ta även bort Work-branchen från GitHub</label><button className="button" type="button" disabled={workBusy} onClick={()=>void abandonWork()}>{workBusy?'Avslutar…':'Bekräfta avslut'}</button><button className="button button--secondary" type="button" disabled={workBusy} onClick={()=>setAbandonConfirm(false)}>Behåll arbetet</button></div>}
+        </details>
       </div>}
     </section>
-    <section aria-labelledby="project-actions-heading"><h2 id="project-actions-heading">Repositoryåtgärder</h2>{!archiveConfirm ? <button className="button button--secondary" type="button" disabled={Boolean(work)} onClick={()=>setArchiveConfirm(true)}>Ta bort från zip-github</button> : <div className="status-message"><p>Repositoryts zip-github-koppling tas bort från den aktiva vyn men historiken behålls. GitHub-repositoryt påverkas inte.</p><button className="button" type="button" disabled={workBusy} onClick={()=>void removeProject()}>Ja, ta bort från zip-github</button><button className="button button--secondary" type="button" onClick={()=>setArchiveConfirm(false)}>Avbryt</button></div>}</section>
+    <details className="project-details">
+      <summary>Avancerade repositoryåtgärder</summary>
+      <section aria-labelledby="project-actions-heading"><h2 id="project-actions-heading">Repositoryåtgärder</h2>{!archiveConfirm ? <button className="button button--secondary" type="button" disabled={Boolean(work)} onClick={()=>setArchiveConfirm(true)}>Ta bort från zip-github</button> : <div className="status-message"><p>Repositoryts zip-github-koppling tas bort från den aktiva vyn men historiken behålls. GitHub-repositoryt påverkas inte.</p><button className="button" type="button" disabled={workBusy} onClick={()=>void removeProject()}>Ja, ta bort från zip-github</button><button className="button button--secondary" type="button" onClick={()=>setArchiveConfirm(false)}>Avbryt</button></div>}</section>
+    </details>
   </section>;
 }
 

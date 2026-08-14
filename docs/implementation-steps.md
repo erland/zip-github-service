@@ -1018,7 +1018,7 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Lägg återuppta gammal branch, avsluta Work och branchradering i en tydligt separat avancerad/destruktiv del.
 - Blockers, externa konflikter eller annan attention-status får aldrig döljas bakom progressive disclosure.
 
-**Status:** NEXT.
+**Status:** DONE (2026-08-14, r0171 / 1.0.0-rc.123). Se `docs/step-9.38-report.md`.
 
 **Kvalitetsgrind för 9.38:** projektsidan ska först svara på vad användaren bör göra, därefter visa relevant status, och först på begäran exponera tekniska detaljer som inte behövs för normalflödet.
 
@@ -1029,7 +1029,7 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Visa kompakt hur många förändringar som är valda och om urvalet kan godkännas.
 - Fullständig filgranskning ska fortsatt vara tillgänglig och explicit selection-/approval-semantik oförändrad.
 
-**Status:** PLANNED.
+**Status:** NEXT.
 
 **Kvalitetsgrind för 9.39:** reviewn ska tydligt byta från “lös beslut” till “fortsätt till commit” när säkerhetskraven är uppfyllda, utan att hoppa över ett explicit användargodkännande.
 

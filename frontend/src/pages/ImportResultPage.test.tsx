@@ -45,7 +45,9 @@ it('shows both next-ZIP and direct finish-work actions after commit', async () =
   expect(screen.getByRole('link', { name: 'Ladda upp nästa ZIP' })).toHaveAttribute('href', '/projects/p1/imports/new');
   expect(await screen.findByRole('button', { name: 'Skapa pull request' })).toBeEnabled();
   expect(screen.getByRole('link', { name: result.branchName })).toHaveAttribute('href', expect.stringContaining('/tree/'));
-  expect(await screen.findByText('CI')).toBeInTheDocument();
+  expect(await screen.findByText(/Alla observerade Actions-kontroller/)).toBeInTheDocument();
+  await user.click(screen.getByText(/Visa Actions-detaljer/));
+  expect(screen.getByText('CI')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'backend' })).toHaveAttribute('href', expect.stringContaining('/job/11'));
   expect(screen.getByRole('link', { name: 'frontend' })).toHaveAttribute('href', expect.stringContaining('/runs/12'));
   expect(await screen.findByText('frontend-dist')).toBeInTheDocument();

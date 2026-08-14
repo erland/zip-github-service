@@ -1,3 +1,15 @@
+## 1.0.0-rc.129 - 2026-08-14
+
+Repository revision: `r0177`
+
+- Implements step 9.42: compact successful Actions, prominent failures.
+- Successful Actions now render as a compact green summary with workflow/check/artifact details behind `Visa Actions-detaljer`.
+- Pending/queued/in-progress Actions render a compact progress message with details behind `Visa pågående Actions-detaljer`.
+- Failure/cancelled remain fully expanded and prominent; diagnostic `unavailable` and `not_started` behavior is unchanged.
+- Existing Actions controls, artifacts, failure diagnostics, log copying, rerun/dispatch controls and GitHub links are preserved.
+- No Actions, Work or PR semantics change.
+- The UX revision sequence 9.37-9.42 is now complete.
+
 ## 1.0.0-rc.128 - 2026-08-14
 
 Repository revision: `r0176`

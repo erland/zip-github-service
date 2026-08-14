@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, expect, it } from 'vitest';
 import ActionsPanel from './ActionsPanel';
 import { ImportActionsStatusResponse } from '../api/imports';
@@ -31,7 +32,8 @@ it('shows condensed failure, surrounding context and an expandable bounded job l
 });
 
 
-it('falls back to the panel commit when a workflow payload has no headSha', () => {
+it('falls back to the panel commit when a workflow payload has no headSha', async () => {
+  const user = userEvent.setup();
   const actions = {
     importId: 'import-legacy', repositoryFullName: 'erland/example', commitSha: 'f'.repeat(40), state: 'success', terminal: true,
     detailsUrl: 'https://github.com/erland/example/actions', checkedAt: '2026-08-08T18:00:00Z',
@@ -40,12 +42,15 @@ it('falls back to the panel commit when a workflow payload has no headSha', () =
   } as unknown as ImportActionsStatusResponse;
 
   render(<ActionsPanel actions={actions} details={null} fallbackUrl="https://github.com/erland/example/actions" repositoryFullName="erland/example" branchName="zip-github/work-1" commitSha={'f'.repeat(40)} />);
+  expect(screen.getByText(/Alla observerade Actions-kontroller/)).toBeInTheDocument();
+  await user.click(screen.getByText(/Visa Actions-detaljer/));
 
   expect(screen.getByText('CI')).toBeInTheDocument();
   expect(screen.getAllByText('ffffffffffff').length).toBeGreaterThan(0);
 });
 
-it('deduplicates GitHub Actions checks already represented by workflow jobs and keeps other checks', () => {
+it('deduplicates GitHub Actions checks already represented by workflow jobs and keeps other checks', async () => {
+  const user = userEvent.setup();
   const commitSha = 'a'.repeat(40);
   const actions: ImportActionsStatusResponse = {
     importId:'i-dedup', repositoryFullName:'erland/example', commitSha, state:'success', terminal:true,
@@ -61,6 +66,7 @@ it('deduplicates GitHub Actions checks already represented by workflow jobs and 
   };
 
   render(<ActionsPanel actions={actions} details={null} fallbackUrl={actions.detailsUrl} repositoryFullName="erland/example" branchName="zip-github/work-1" commitSha={commitSha} />);
+  await user.click(screen.getByText(/Visa Actions-detaljer/));
 
   expect(screen.getAllByText('Frontend tests and build')).toHaveLength(1);
   expect(screen.getByRole('heading', { name:'Övriga kontroller' })).toBeInTheDocument();
@@ -73,7 +79,8 @@ it('deduplicates GitHub Actions checks already represented by workflow jobs and 
   expect(screen.queryByRole('heading', { name:'Checks' })).not.toBeInTheDocument();
 });
 
-it('omits the extra-check section when every check is the GitHub Actions representation of a shown job', () => {
+it('omits the extra-check section when every check is the GitHub Actions representation of a shown job', async () => {
+  const user = userEvent.setup();
   const commitSha = 'b'.repeat(40);
   const actions: ImportActionsStatusResponse = {
     importId:'i-dedup-only', repositoryFullName:'erland/example', commitSha, state:'success', terminal:true,
@@ -85,11 +92,48 @@ it('omits the extra-check section when every check is the GitHub Actions represe
   };
 
   render(<ActionsPanel actions={actions} details={null} fallbackUrl={actions.detailsUrl} repositoryFullName="erland/example" branchName="zip-github/work-2" commitSha={commitSha} />);
+  await user.click(screen.getByText(/Visa Actions-detaljer/));
 
   expect(screen.getAllByText('Backend tests and package')).toHaveLength(1);
   expect(screen.queryByRole('heading', { name:'Övriga kontroller' })).not.toBeInTheDocument();
 });
 
+
+it('keeps successful Actions compact until details are requested', async () => {
+  const user = userEvent.setup();
+  const commitSha = 'e'.repeat(40);
+  const actions: ImportActionsStatusResponse = {
+    importId:'i-success-compact', repositoryFullName:'erland/example', commitSha, state:'success', terminal:true,
+    detailsUrl:'https://github.com/erland/example/actions', diagnosticCode:null, diagnosticMessage:null, checkedAt:'2026-08-14T20:00:00Z', checks:[],
+    workflows:[{ id:501, workflowId:61, workflowPath:'.github/workflows/ci.yml', headBranch:'zip-github/work-5', headSha:commitSha,
+      name:'CI', state:'success', terminal:true, event:'push', htmlUrl:null, createdAt:null, updatedAt:null, jobs:[] }],
+  };
+  render(<ActionsPanel actions={actions} details={null} fallbackUrl={actions.detailsUrl} repositoryFullName="erland/example" branchName="zip-github/work-5" commitSha={commitSha} />);
+
+  expect(screen.getByText(/Alla observerade Actions-kontroller/)).toBeInTheDocument();
+  const details = screen.getByText(/Visa Actions-detaljer/).closest('details');
+  expect(details).not.toBeNull();
+  expect(details).not.toHaveAttribute('open');
+
+  await user.click(screen.getByText(/Visa Actions-detaljer/));
+  expect(details).toHaveAttribute('open');
+  expect(screen.getByText('CI')).toBeInTheDocument();
+});
+
+it('keeps failed Actions prominent without requiring expansion', () => {
+  const commitSha = 'f'.repeat(40);
+  const actions: ImportActionsStatusResponse = {
+    importId:'i-failure-prominent', repositoryFullName:'erland/example', commitSha, state:'failure', terminal:true,
+    detailsUrl:'https://github.com/erland/example/actions', diagnosticCode:null, diagnosticMessage:null, checkedAt:'2026-08-14T20:01:00Z', checks:[],
+    workflows:[{ id:601, workflowId:71, workflowPath:'.github/workflows/ci.yml', headBranch:'zip-github/work-6', headSha:commitSha,
+      name:'CI failure', state:'failure', terminal:true, event:'push', htmlUrl:null, createdAt:null, updatedAt:null, jobs:[] }],
+  };
+  render(<ActionsPanel actions={actions} details={null} fallbackUrl={actions.detailsUrl} repositoryFullName="erland/example" branchName="zip-github/work-6" commitSha={commitSha} />);
+
+  expect(screen.getByText(/observerade Actions-kontroller har misslyckats/)).toBeInTheDocument();
+  expect(screen.getByText('CI failure')).toBeInTheDocument();
+  expect(screen.queryByText(/Visa Actions-detaljer/)).not.toBeInTheDocument();
+});
 
 it('groups push and pull_request runs for the same workflow and commit without losing their individual status', () => {
   const commitSha = 'c'.repeat(40);
@@ -116,7 +160,8 @@ it('groups push and pull_request runs for the same workflow and commit without l
   expect(screen.getByText('pull_request')).toBeInTheDocument();
 });
 
-it('does not group different workflows that happen to share the same display name', () => {
+it('does not group different workflows that happen to share the same display name', async () => {
+  const user = userEvent.setup();
   const commitSha = 'd'.repeat(40);
   const actions: ImportActionsStatusResponse = {
     importId:'i-distinct-workflows', repositoryFullName:'erland/example', commitSha, state:'success', terminal:true,
@@ -130,6 +175,7 @@ it('does not group different workflows that happen to share the same display nam
   };
 
   render(<ActionsPanel actions={actions} details={null} fallbackUrl={actions.detailsUrl} repositoryFullName="erland/example" branchName="zip-github/work-4" commitSha={commitSha} />);
+  await user.click(screen.getByText(/Visa Actions-detaljer/));
 
   expect(screen.getAllByText('CI')).toHaveLength(2);
   expect(screen.queryByText(/GitHub-körningar/)).not.toBeInTheDocument();

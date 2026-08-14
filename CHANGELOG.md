@@ -1,3 +1,12 @@
+## 1.0.0-rc.124 - 2026-08-14
+
+Repository revision: `r0172`
+
+- Fixes the rc.123 ProjectDetailPage progressive-disclosure test assumptions.
+- HTML `<details>` keeps its child content in the DOM while visually collapsed, so DOM absence is not a valid assertion for collapsed content.
+- Tests now verify the `open` state of the relevant `<details>` elements before and after explicit user expansion.
+- No production behavior changes from rc.123.
+
 ## 1.0.0-rc.123 - 2026-08-14
 
 Repository revision: `r0171`

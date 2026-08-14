@@ -30,8 +30,11 @@ describe('ProjectDetailPage work history', () => {
     const user = userEvent.setup();
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'repo' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Commits i arbetet' })).not.toBeInTheDocument();
+    const technicalDetails = screen.getByText('Visa tekniska Work-detaljer').closest('details');
+    expect(technicalDetails).not.toBeNull();
+    expect(technicalDetails).not.toHaveAttribute('open');
     await user.click(screen.getByText('Visa tekniska Work-detaljer'));
+    expect(technicalDetails).toHaveAttribute('open');
     expect(screen.getByRole('heading', { name: 'Commits i arbetet' })).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'GitHub Actions' })).toBeInTheDocument();
     expect(await screen.findByText('Fel och jobbloggar')).toBeInTheDocument();
@@ -106,14 +109,20 @@ describe('ProjectDetailPage progressive disclosure', () => {
     const repositorySummary = screen.getByText('Repositoryinformation');
     expect(nextStep.compareDocumentPosition(repositorySummary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
-    expect(screen.queryByText('Standardbranch')).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Commits i arbetet' })).not.toBeInTheDocument();
+    const repositoryDetails = repositorySummary.closest('details');
+    expect(repositoryDetails).not.toBeNull();
+    expect(repositoryDetails).not.toHaveAttribute('open');
+    const technicalDetails = screen.getByText('Visa tekniska Work-detaljer').closest('details');
+    expect(technicalDetails).not.toBeNull();
+    expect(technicalDetails).not.toHaveAttribute('open');
     expect(screen.getByRole('heading', { name: 'GitHub Actions' })).toBeInTheDocument();
 
     await user.click(repositorySummary);
+    expect(repositoryDetails).toHaveAttribute('open');
     expect(screen.getByText('Standardbranch')).toBeInTheDocument();
 
     await user.click(screen.getByText('Visa tekniska Work-detaljer'));
+    expect(technicalDetails).toHaveAttribute('open');
     expect(screen.getByRole('heading', { name: 'Commits i arbetet' })).toBeInTheDocument();
     expect(screen.getByText('zip-github/work-1')).toBeInTheDocument();
   });

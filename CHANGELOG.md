@@ -1,3 +1,12 @@
+## 1.0.0-rc.115 - 2026-08-14
+
+Repository revision: `r0163`
+
+- Fixes the GitHub Actions regression in `SimplifiedImportFlow.test.tsx` after step 9.33 introduced automatic Work start.
+- The E2E test had its own `../api/projects` module mock and did not export `startProjectWork`, so the test stopped before the review route even though the production path and focused NewImportPage tests were correct.
+- The shared simplified-flow fixture now mocks `startProjectWork`, returns an ACTIVE Work, and asserts that Work starts before import creation.
+- No production application behavior changes from rc.114.
+
 ## 1.0.0-rc.114 - 2026-08-14
 
 Repository revision: `r0162`

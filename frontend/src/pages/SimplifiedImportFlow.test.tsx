@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   deliverImport: vi.fn(),
   getProject: vi.fn(),
   getProjectWork: vi.fn(),
+  startProjectWork: vi.fn(),
   getCurrentUser: vi.fn(),
 }));
 
@@ -37,7 +38,7 @@ vi.mock('../api/imports', () => ({
   prepareImportWorkspace: mocks.prepareImportWorkspace,
   deliverImport: mocks.deliverImport,
 }));
-vi.mock('../api/projects', () => ({ getProject: mocks.getProject, getProjectWork: mocks.getProjectWork }));
+vi.mock('../api/projects', () => ({ getProject: mocks.getProject, getProjectWork: mocks.getProjectWork, startProjectWork: mocks.startProjectWork }));
 vi.mock('../api/auth', () => ({ getCurrentUser: mocks.getCurrentUser }));
 
 const project = {
@@ -47,6 +48,9 @@ const project = {
 };
 const currentUser = { id: 'user-1', githubUserId: 1, login: 'erland', avatarUrl: null,
   gitName: 'Erland', gitEmail: '1+erland@users.noreply.github.com' };
+const activeWork = { id: 'work-1', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-work-1', status: 'ACTIVE',
+  headCommitSha: null, remoteHeadCommitSha: null, branchChangedExternally: false, lastImportId: null,
+  pullRequestNumber: null, pullRequestUrl: null, createdAt: '2026-08-07T17:59:00Z', updatedAt: '2026-08-07T17:59:00Z' };
 const upload = { id: 'upload-1', importId: 'import-1', originalFilename: 'project.zip', sizeBytes: 42,
   sha256: 'a'.repeat(64), status: 'STORED', createdAt: '2026-08-07T10:00:00Z', retentionDeadline: '2026-08-08T10:00:00Z' };
 const plan = {
@@ -104,9 +108,11 @@ beforeEach(() => {
   mocks.deliverImport.mockReset();
   mocks.getProject.mockReset();
   mocks.getProjectWork.mockReset();
+  mocks.startProjectWork.mockReset();
   mocks.getCurrentUser.mockReset();
   mocks.getProject.mockResolvedValue(project);
   mocks.getProjectWork.mockResolvedValue(null);
+  mocks.startProjectWork.mockResolvedValue(activeWork);
   mocks.getCurrentUser.mockResolvedValue(currentUser);
   mocks.createImport.mockResolvedValue({ id: 'import-1', projectId: project.id, baseBranch: 'main', status: 'CREATED', createdAt: '2026-08-07T18:00:00Z' });
   mocks.uploadZip.mockImplementation(async (_id, _file, onProgress: (value: number) => void) => { onProgress(100); return upload; });
@@ -137,6 +143,7 @@ describe('simplified import flow E2E regression', () => {
     await user.click(screen.getByRole('button', { name: 'Ladda upp ZIP' }));
 
     expect(await screen.findByRole('heading', { name: 'Granska förändringar' })).toBeInTheDocument();
+    expect(mocks.startProjectWork).toHaveBeenCalledWith('project-1');
     expect(mocks.createImport).toHaveBeenCalledWith('project-1', { name: 'Anna Andersson', email: 'anna@example.com' }, false);
     expect(mocks.uploadZip).toHaveBeenCalledTimes(1);
     expect(mocks.prepareImportReview).toHaveBeenCalledTimes(1);

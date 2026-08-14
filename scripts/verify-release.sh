@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.114"
+expected_version="1.0.0-rc.115"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.114 - 2026-08-14' CHANGELOG.md
+grep -q '## 1.0.0-rc.115 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,7 +25,7 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0162`' docs/implementation-status.md
+grep -q 'Repository revision: `r0163`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -665,5 +665,10 @@ grep -Fq "const importId = existingImportId || (await createImport" frontend/src
 grep -Fq "Ladda upp första ZIP" frontend/src/pages/ProjectDetailPage.tsx
 grep -Fq "stops before import creation and upload when automatic Work start fails" frontend/src/pages/NewImportPage.test.tsx
 grep -Fq "reuses an existing Work without starting another one" frontend/src/pages/NewImportPage.test.tsx
+grep -Fq "## Steg 9.33 - Upload starts Work automatically" docs/implementation-steps.md
 grep -Fq "**Status:** DONE (2026-08-14, r0162 / 1.0.0-rc.114)." docs/implementation-steps.md
 printf 'Step 9.33 automatic Work start assertions verified for %s.\n' "$actual_version"
+grep -Fq "startProjectWork: vi.fn()" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -Fq "startProjectWork: mocks.startProjectWork" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -Fq "expect(mocks.startProjectWork).toHaveBeenCalledWith('project-1')" frontend/src/pages/SimplifiedImportFlow.test.tsx
+printf 'rc.115 simplified import flow fixture assertion verified for %s.\n' "$actual_version"

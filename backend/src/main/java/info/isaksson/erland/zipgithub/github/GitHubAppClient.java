@@ -516,9 +516,20 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
             getJson("https://api.github.com/repos/" + repositoryFullName + "/branches/" + encodedBranch, userAccessToken);
             return true;
         } catch (IllegalStateException e) {
-            if (e.getMessage() != null && e.getMessage().contains("HTTP 404")) return false;
+            if (hasHttpStatus(e, 404)) return false;
             throw e;
         }
+    }
+
+    static boolean hasHttpStatus(Throwable error, int statusCode) {
+        String marker = "HTTP " + statusCode;
+        for (Throwable current = error; current != null; current = current.getCause()) {
+            String message = current.getMessage();
+            if (message != null && message.contains(marker)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.109"
+expected_version="1.0.0-rc.110"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.109 - 2026-08-14' CHANGELOG.md
+grep -q '## 1.0.0-rc.110 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,7 +25,7 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0157`' docs/implementation-status.md
+grep -q 'Repository revision: `r0158`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -634,3 +634,8 @@ grep -Fq 'GitHub empty-repository marker cleanup completed' backend/src/main/jav
 ! grep -Fq 'Authorization' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
 printf 'rc.109 empty-repository Work-start diagnostic assertions verified for %s.\n' "$actual_version"
 
+grep -q 'if (hasHttpStatus(e, 404)) return false;' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'for (Throwable current = error; current != null; current = current.getCause())' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'nestedGithub404IsRecognizedAsMissingResource' backend/src/test/java/info/isaksson/erland/zipgithub/github/GitHubAppClientContractTest.java
+grep -q 'differentGithubStatusIsNotRecognizedAs404' backend/src/test/java/info/isaksson/erland/zipgithub/github/GitHubAppClientContractTest.java
+printf 'rc.110 empty-repository branch 404 assertions verified for %s.\n' "$actual_version"

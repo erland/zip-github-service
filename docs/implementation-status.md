@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0157`
+- Repository revision: `r0158`
 - Last completed step: `9.30`
 - Next step: `none` — implementation plan complete
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.30 COMPLETE — EMPTY-REPOSITORY START DIAGNOSTICS ADDED`
@@ -130,7 +130,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0151` | 2026-08-13 | `9.29` startup correction | Bootstrap moved before project persistence and bootstrap failures mapped explicitly | `none` |
 | `r0152` | 2026-08-13 | `9.29` GitHub Contents API correction | Empty repositories initialize through the GitHub-supported Contents API create/delete sequence before normal Work provisioning; repository-start runtime errors are explicitly mapped | `none` |
 | `r0156` | 2026-08-14 | `9.30` maintenance reconciliation and navigation | Underhåll reconciles stale PR-backed Work before classification and adds user-safe project, branch and PR navigation links | `none` |
-| `r0157` | 2026-08-14 | Empty-repository Work-start diagnostics | Adds correlation id, stage logging and safe stack-trace diagnostics around repository preparation/bootstrap without functional workflow changes | `none` |
+| `r0158` | 2026-08-14 | Empty-repository Work-start diagnostics | Adds correlation id, stage logging and safe stack-trace diagnostics around repository preparation/bootstrap without functional workflow changes | `none` |
 | `r0144` | 2026-08-13 | `9.25` frontend CI correction | Explicit Vitest lifecycle/assertion imports for the new maintenance page regression; no product behavior change | `none — define next step before further product work` |
 | `r0141` | 2026-08-13 | Backend CI correction after `9.24` | Added the missing `ImmutableImportPlanEntry` import required by the Step 9.24 blocker-decision delivery guard; no production behavior changed | `9.25` |
 | `r0142` | 2026-08-13 | Backend test CI correction after `9.24` | Updated the remaining `AlternativeZipIngestionRegressionTest` factory calls to the `selection-2` blocker-decision signature; no production behavior changed | `9.25` |

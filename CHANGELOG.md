@@ -1,3 +1,14 @@
+## 1.0.0-rc.110 - 2026-08-14
+
+Repository revision: `r0158`
+
+- Fixes empty-repository Work startup after rc.109 diagnostics identified the actual failure in `GitHubAppClient.branchExists`.
+- A missing default branch returns GitHub HTTP 404 for a completely empty repository. `branchExists` already intended to map that to `false`, but `getJson` wrapped the status exception in `GitHub API request failed`, so the outer message check never saw the 404.
+- The 404 check now walks the exception cause chain. A nested GitHub HTTP 404 is treated as “branch does not exist”, allowing preflight to continue to the explicit repository-empty/bootstrap path.
+- Other GitHub failures remain fail-closed and are still propagated.
+- Keeps the rc.109 diagnostic-id and safe backend logging intact until the complete empty-repository flow has been verified in production.
+- Adds focused regression coverage for the exact wrapped-404 shape observed in production and for a non-404 status.
+
 ## 1.0.0-rc.109 - 2026-08-14
 
 Repository revision: `r0157`

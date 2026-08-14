@@ -9,8 +9,12 @@ public interface GitHubPullRequestClient {
     Optional<GitHubPullRequest> findOpenPullRequest(String accessToken, String repositoryFullName,
                                                     String headBranch, String baseBranch);
 
-    default boolean hasOpenPullRequestForHead(String accessToken, String repositoryFullName, String headBranch) {
+    default Optional<GitHubPullRequest> findOpenPullRequestForHead(String accessToken, String repositoryFullName, String headBranch) {
         throw new UnsupportedOperationException("Open pull request lookup by head is not implemented");
+    }
+
+    default boolean hasOpenPullRequestForHead(String accessToken, String repositoryFullName, String headBranch) {
+        return findOpenPullRequestForHead(accessToken, repositoryFullName, headBranch).isPresent();
     }
 
     default GitHubPullRequest getPullRequest(String accessToken, String repositoryFullName, long pullRequestNumber) {

@@ -357,6 +357,15 @@ public class ProjectApplicationService {
         }
     }
 
+    public Optional<WorkSession> reconcileWorkPullRequestStateStrict(UUID ownerUserId, UUID projectId) {
+        ProjectResponse project = requireOwnedProject(ownerUserId, projectId).response;
+        Optional<WorkSession> current = activeWork(ownerUserId, projectId);
+        if (current.isEmpty()) return Optional.empty();
+        WorkSession work = current.get();
+        if (work.pullRequestNumber() == null) return Optional.of(work);
+        return refreshPullRequestState(ownerUserId, project, work, true);
+    }
+
     /**
      * Strict lifecycle reconciliation used before a new import can reuse a Work branch.
      * Unlike the presentation-oriented sync above, GitHub unavailability must fail closed:

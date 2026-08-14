@@ -899,3 +899,19 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 **Runtimekorrigeringar:** r0150/rc.102 normaliserade saknad default branch. r0151/rc.103 flyttade bootstrap före project-persistens. r0152/rc.104 byter den första initieringen till GitHubs dokumenterade Contents API create/delete-sekvens och mappar även oväntade repository-startfel explicit.
 
 **Kvalitetsgrind för 9.29:** ett helt nytt GitHub-repository ska kunna ta emot sin första ZIP via samma säkra Work/review/PR-flöde som andra repositories. Bootstrap får inte introducera något filinnehåll utanför användarens godkända ZIP och får aldrig användas som generell reparation av en saknad branch i ett redan initierat repository.
+## Steg 9.30 - Maintenance reconciliation and navigation
+
+- Underhållsvyn ska inte klassificera en branch utifrån en potentiellt stale `PR_OPEN`/`PR_CLOSED`-status i databasen. För varje icke-terminal Work med PR ska samma GitHub reconciliation som används av projekt-/importflödet köras innan branchens delete-bedömning görs.
+- Efter reconciliation ska Work-kopplingarna läsas om. En PR som redan är mergad får därmed göra Work terminal i samma underhållsinventering, utan att användaren först behöver öppna projektsidan.
+- Reconciliation i Underhåll ska vara fail-closed: om GitHub-status inte kan verifieras ska branchen klassas `UNVERIFIED` och aldrig erbjudas för radering.
+- Behåll den separata kontrollen att branchen inte är head för någon annan öppen pull request, även när ingen icke-terminal zip-GitHub Work återstår.
+- Lägg en separat `PR`-kolumn. Visa PR-numret där som länk till GitHub när PR-identitet finns; duplicera inte PR-numret i status-/bedömningstext.
+- Branch-namnet ska länka till motsvarande GitHub-branch. Repositorynamnet ska länka till den aktuella användarens eget zip-GitHub-project när ett sådant finns. Säkerhetskontrollen får fortsatt ta hänsyn till Work-sessioner från andra zip-GitHub-användare i samma repository, men deras interna project-ID får aldrig exponeras.
+- Status-/bedömningstext ska beskriva tillståndet (`aktiv Work`, `PR öppen`, `PR stängd men inte mergad`, `kan inte verifieras`, `säker att radera`) utan att upprepa information som redan finns i PR-kolumnen.
+- Backend ska fortsatt reklassificera kandidater omedelbart före delete; preview-resultatet får aldrig användas som auktoritativ safety-flagga.
+- Lägg regression för stale `PR_OPEN` som GitHub rapporterar merged, reconciliation-fel, aktiv Work utan PR, fristående öppen PR, current-user project-link isolation samt GitHub branch-/PR-länkar.
+
+**Status:** DONE (2026-08-14, r0156 / 1.0.0-rc.108). Se `docs/step-9.30-report.md`.
+
+**Kvalitetsgrind för 9.30:** Underhåll ska ge samma branchbedömning oavsett om projektsidan har besökts först eller inte; stale PR-status ska reconcileras i själva inventeringen, osäkerhet ska stoppa deletion, och användaren ska kunna navigera direkt till eget zip-GitHub-project, GitHub-branch och känd GitHub-PR utan att interna projekt från andra användare exponeras.
+

@@ -131,10 +131,10 @@ export default function NewImportPage() {
       </ol>
 
       <form className="import-form" onSubmit={submit}>
-        <div className="work-target-summary">
-          <strong>Arbetsbranch hanteras automatiskt</strong>
+        <details className="work-target-summary">
+          <summary>Så hanteras arbetsbranchen</summary>
           <p>Första importen startar ett arbete från projektets standardbranch. Nästa ZIP jämförs automatiskt mot senaste commit på samma arbetsbranch.</p>
-        </div>
+        </details>
 
         {!existingImportId && work?.status === 'PR_OPEN' && !openPrConfirmed && (
           <aside className="status-message status-message--warning" role="alert" aria-label="Öppen pull request">
@@ -147,27 +147,6 @@ export default function NewImportPage() {
             </div>
           </aside>
         )}
-
-        <fieldset className="identity-fieldset" disabled={!project || busy || Boolean(existingImportId)}>
-          <legend>Författare till ändringarna</legend>
-          <label className="radio-option">
-            <input type="radio" name="author-mode" value="self" checked={authorMode === 'self'} onChange={() => setAuthorMode('self')} />
-            <span><strong>Jag själv</strong>{currentUser && <small>{currentUser.gitName} &lt;{currentUser.gitEmail}&gt;</small>}</span>
-          </label>
-          <label className="radio-option">
-            <input type="radio" name="author-mode" value="other" checked={authorMode === 'other'} onChange={() => setAuthorMode('other')} />
-            <span><strong>Någon annan</strong><small>Använd när ZIP-filen innehåller ändringar skapade av en annan person.</small></span>
-          </label>
-          {authorMode === 'other' && (
-            <div className="identity-fields">
-              <label htmlFor="author-name">Namn</label>
-              <input id="author-name" value={authorName} required onChange={(event) => setAuthorName(event.target.value)} autoComplete="name" />
-              <label htmlFor="author-email">E-post</label>
-              <input id="author-email" type="email" value={authorEmail} required onChange={(event) => setAuthorEmail(event.target.value)} autoComplete="email" />
-            </div>
-          )}
-          <p className="field-help">Committer är alltid den inloggade GitHub-användaren som godkänner importen. Author används i bland annat Git history och blame.</p>
-        </fieldset>
 
         <label htmlFor="zip-file">Projektarkiv</label>
         <input
@@ -187,6 +166,36 @@ export default function NewImportPage() {
         <p className="field-help" id="zip-file-help">Välj en ZIP från Filer, iCloud Drive eller enhetens lokala lagring. Filen jämförs inte och skrivs inte till GitHub förrän senare steg har granskats och godkänts.</p>
 
         {file && <p className="selected-file"><strong>Vald fil:</strong> {file.name} · {formatBytes(file.size)}</p>}
+
+        <div className="author-summary">
+          <strong>Författare:</strong>{' '}
+          {authorMode === 'self'
+            ? currentUser ? `${currentUser.gitName} <${currentUser.gitEmail}>` : 'Inloggad användare'
+            : authorName.trim() && authorEmail.trim() ? `${authorName.trim()} <${authorEmail.trim()}>` : 'Någon annan'}
+        </div>
+        <details className="identity-fieldset" open={authorMode === 'other'}>
+          <summary>Ändra författare</summary>
+          <fieldset disabled={!project || busy || Boolean(existingImportId)}>
+            <legend className="visually-hidden">Författare till ändringarna</legend>
+            <label className="radio-option">
+              <input type="radio" name="author-mode" value="self" checked={authorMode === 'self'} onChange={() => setAuthorMode('self')} />
+              <span><strong>Jag själv</strong>{currentUser && <small>{currentUser.gitName} &lt;{currentUser.gitEmail}&gt;</small>}</span>
+            </label>
+            <label className="radio-option">
+              <input type="radio" name="author-mode" value="other" checked={authorMode === 'other'} onChange={() => setAuthorMode('other')} />
+              <span><strong>Någon annan</strong><small>Använd när ZIP-filen innehåller ändringar skapade av en annan person.</small></span>
+            </label>
+            {authorMode === 'other' && (
+              <div className="identity-fields">
+                <label htmlFor="author-name">Namn</label>
+                <input id="author-name" value={authorName} required onChange={(event) => setAuthorName(event.target.value)} autoComplete="name" />
+                <label htmlFor="author-email">E-post</label>
+                <input id="author-email" type="email" value={authorEmail} required onChange={(event) => setAuthorEmail(event.target.value)} autoComplete="email" />
+              </div>
+            )}
+            <p className="field-help">Committer är alltid den inloggade GitHub-användaren som godkänner importen. Author används i bland annat Git history och blame.</p>
+          </fieldset>
+        </details>
 
         {(state === 'creating' || state === 'uploading') && (
           <div className="upload-progress" aria-live="polite">

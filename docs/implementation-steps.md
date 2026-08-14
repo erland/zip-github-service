@@ -1041,7 +1041,7 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - `PR_OPEN`-bekräftelsen ska fortsatt vara prominent och explicit.
 - Ingen author-, upload- eller Work-semantik får ändras.
 
-**Status:** NEXT.
+**Status:** DONE (2026-08-14, r0175 / 1.0.0-rc.127). Se `docs/step-9.40-report.md`.
 
 **Kvalitetsgrind för 9.40:** normal första blick på uploadsidan ska handla om att välja ZIP, medan sällan använda author-/Work-detaljer finns tillgängliga utan att konkurrera visuellt.
 
@@ -1053,7 +1053,7 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Vid lyckad Actions-status ska normal Work-/PR-vägledning åter ta över.
 - Inga workflows ska dispatchas/rerunnas automatiskt; endast vägledningen ändras.
 
-**Status:** PLANNED.
+**Status:** NEXT.
 
 **Kvalitetsgrind för 9.41:** användaren ska inte rekommenderas nästa normala leveranssteg när tjänsten redan vet att aktuell commit kräver Actions-uppmärksamhet.
 

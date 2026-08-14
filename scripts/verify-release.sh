@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.126"
+expected_version="1.0.0-rc.127"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.126 - 2026-08-14' CHANGELOG.md
+grep -q '## 1.0.0-rc.127 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,13 +25,13 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0174`' docs/implementation-status.md
+grep -q 'Repository revision: `r0175`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'confirmOpenPullRequest' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.39`' docs/implementation-status.md
+grep -q 'Last completed step: `9.40`' docs/implementation-status.md
 test -s docs/rc103-step-9.29-empty-repository-start-correction.md
 grep -q 'verifyForWorkStart' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
 grep -q 'ensureProjectForRepositoryReadyForWork' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
@@ -52,7 +52,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.39 COMPLETE — PROJECT UX REVISION IN PROGRESS`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.40 COMPLETE — PROJECT UX REVISION IN PROGRESS`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -737,3 +737,11 @@ grep -Fq "expect(screen.getByRole('textbox', { name: 'Meddelande' })).toHaveFocu
 grep -Fq "**Status:** DONE (2026-08-14, r0174 / 1.0.0-rc.126)." docs/implementation-steps.md
 grep -Fq "## Steg 9.40 - Simplified upload" docs/implementation-steps.md
 printf 'Step 9.39 review completion guidance assertions verified for %s.\n' "$actual_version"
+grep -Fq "Så hanteras arbetsbranchen" frontend/src/pages/NewImportPage.tsx
+grep -Fq "Ändra författare" frontend/src/pages/NewImportPage.tsx
+grep -Fq "className=\"author-summary\"" frontend/src/pages/NewImportPage.tsx
+grep -Fq "keeps ZIP selection primary and author/work details collapsed in the normal flow" frontend/src/pages/NewImportPage.test.tsx
+grep -Fq "await user.click(screen.getByText('Ändra författare'));" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0175 / 1.0.0-rc.127)." docs/implementation-steps.md
+grep -Fq "## Steg 9.41 - Result next action follows Actions and Work state" docs/implementation-steps.md
+printf 'Step 9.40 simplified upload assertions verified for %s.\n' "$actual_version"

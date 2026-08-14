@@ -1,3 +1,15 @@
+## 1.0.0-rc.127 - 2026-08-14
+
+Repository revision: `r0175`
+
+- Implements step 9.40: simplified upload.
+- ZIP selection now appears before author customization so the normal first glance is centered on choosing the archive.
+- The default author is shown compactly and `Någon annan` plus custom author fields are available under explicit `Ändra författare`.
+- Automatic Work-branch behavior is retained under the compact `Så hanteras arbetsbranchen` disclosure.
+- The existing `PR_OPEN` confirmation remains prominent and explicit before ZIP selection is enabled.
+- Author, upload, automatic Work start, existing-import resume and PR confirmation semantics are unchanged.
+- Step 9.41 `Result next action follows Actions and Work state` is now NEXT.
+
 ## 1.0.0-rc.126 - 2026-08-14
 
 Repository revision: `r0174`

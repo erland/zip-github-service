@@ -65,6 +65,33 @@ beforeEach(() => {
 
 afterEach(() => cleanup());
 
+describe('NewImportPage simplified upload', () => {
+  it('keeps ZIP selection primary and author/work details collapsed in the normal flow', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const input = await screen.findByLabelText('Projektarkiv');
+    expect(input).toBeEnabled();
+
+    const workDetails = screen.getByText('Så hanteras arbetsbranchen').closest('details');
+    expect(workDetails).not.toBeNull();
+    expect(workDetails).not.toHaveAttribute('open');
+
+    const authorSummary = screen.getByText((_, element) =>
+      element?.classList.contains('author-summary') === true
+      && element.textContent === `Författare: ${currentUser.gitName} <${currentUser.gitEmail}>`,
+    );
+    expect(authorSummary).toBeInTheDocument();
+    const authorDetails = screen.getByText('Ändra författare').closest('details');
+    expect(authorDetails).not.toBeNull();
+    expect(authorDetails).not.toHaveAttribute('open');
+
+    await user.click(screen.getByText('Ändra författare'));
+    expect(authorDetails).toHaveAttribute('open');
+    expect(screen.getByRole('radio', { name: /Någon annan/ })).toBeInTheDocument();
+  });
+});
+
 describe('NewImportPage open PR confirmation', () => {
   const openWork = { id: 'work-1', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-1', status: 'PR_OPEN',
     headCommitSha: 'a'.repeat(40), remoteHeadCommitSha: 'a'.repeat(40), branchChangedExternally: false, lastImportId: 'previous',

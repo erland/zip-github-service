@@ -1,4 +1,4 @@
-> **Current handoff r0163 / 1.0.0-rc.115:** Step 9.31 displays the running frontend release on `Om tjänsten` by injecting the authoritative root `VERSION` during the verified CI/Vite build. Import result now loads/reconciles current Work before presenting PR actions: PR_OPEN links to the existing automatically updated PR instead of offering a duplicate, PR_CLOSED offers a new PR, and uncertainty fails closed. Empty-repository support from rc.110 remains intact. No next implementation step is currently defined.
+> **Current handoff r0165 / 1.0.0-rc.117:** Step 9.31 displays the running frontend release on `Om tjänsten` by injecting the authoritative root `VERSION` during the verified CI/Vite build. Import result now loads/reconciles current Work before presenting PR actions: PR_OPEN links to the existing automatically updated PR instead of offering a duplicate, PR_CLOSED offers a new PR, and uncertainty fails closed. Empty-repository support from rc.110 remains intact. No next implementation step is currently defined.
 
 > **Current handoff r0158 / 1.0.0-rc.110:** Empty-repository startup correction after rc.109 diagnostics showed that `branchExists()` missed a nested GitHub HTTP 404. The 404 is now interpreted as “branch does not exist”, allowing the verified empty-repository Contents bootstrap path to run. rc.109 diagnostic logging remains available. Step 9.30 remained the latest completed functional step at that revision.
 
@@ -321,4 +321,5 @@ GitHub Actions showed that rc.85 fixed nullable deletion metadata but TypeScript
 `Starta arbete` now bootstraps a truly empty repository before persisting the internal project, then re-verifies the initialized default branch. Bootstrap failures are surfaced as explicit API problems rather than generic internal errors.
 
 ## Senaste UX-förenkling
-Steg 9.32 är DONE i r0161/rc.113 och steg 9.33 är DONE i r0162/rc.114. Projektsidan har en state-driven `Nästa steg`-yta och första normala ZIP-uploaden startar Work automatiskt när ingen Work finns. rc.115/r0163 korrigerar endast SimplifiedImportFlow-testets mock för `startProjectWork`; produktionsbeteendet från rc.114 är oförändrat. Steg 9.34-9.35 är fortsatt planerade i `docs/implementation-steps.md`.
+Steg 9.32-9.34 är DONE. r0165/rc.116 implementerar attention-first review: blockerade poster, externa konflikter och varningar lyfts överst med direkta filtervägar; vanliga ändringar sammanfattas separat och fullständig filgranskning/säkerhetsmodell är oförändrad. Steg 9.35 - Repository attention overview är nästa planerade förenkling.
+

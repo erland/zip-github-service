@@ -963,12 +963,12 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 ## Steg 9.34 - Attention-first review
 
 - Granskningssidan ska prioritera sådant som kräver användarens beslut: hard blockers, overridable blockers, externa Work-konflikter och andra avvikelser.
-- Normala additions/modifications/deletions ska sammanfattas först och kunna expanderas för filnivådetaljer.
-- Ignorerade/informativa filer ska ligga på lägre visuell nivå och vara expanderbara på begäran.
-- Ett normalt importfall utan blockers eller konflikter ska kunna presenteras kompakt med totalsiffror och en tydlig commitåtgärd, utan att säkerhetsmodellen eller den explicita selection-modellen ändras.
-- Komplicerade importer ska automatiskt visa mer detaljer; förenklingen får endast påverka presentation, inte klassificering eller beslutsregler.
+- Normala additions/modifications/deletions ska sammanfattas först och kunna nås direkt för filnivådetaljer.
+- Ignorerade/informativa filer ska ligga på lägre visuell nivå och fullständig plansammanfattning ska vara expanderbar på begäran.
+- Ett normalt importfall utan blockers eller konflikter ska presenteras som låg-risk med totalsiffror och fortsatt fullständig filgranskning, utan att säkerhetsmodellen eller den explicita selection-modellen ändras.
+- Komplicerade importer ska visa ett särskilt `Behöver din uppmärksamhet`-lager med direkta vägar till blockerade poster, externa konflikter och varningar; förenklingen påverkar endast presentation, inte klassificering eller beslutsregler.
 
-**Status:** PLANNED.
+**Status:** DONE (2026-08-14, r0164 / 1.0.0-rc.116). Se `docs/step-9.34-report.md`.
 
 **Kvalitetsgrind för 9.34:** användarens uppmärksamhet ska först riktas mot verkliga beslut och risker, medan fullständig filinformation fortfarande finns tillgänglig och alla existerande blocker-/override-invarianter bevaras.
 

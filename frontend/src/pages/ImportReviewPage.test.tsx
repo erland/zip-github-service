@@ -91,12 +91,58 @@ describe('ImportReviewPage', () => {
     renderPage();
     expect(await screen.findByRole('heading', { name: 'Granska förändringar' })).toBeInTheDocument();
     expect(await screen.findByText('1 blockerande förändring kräver beslut')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Behöver din uppmärksamhet' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Granska blockerade (1)' })).toBeInTheDocument();
+    const ordinarySection = screen.getByRole('heading', { name: 'Vanliga ändringar' }).closest('section');
+    expect(ordinarySection).not.toBeNull();
+    expect(within(ordinarySection as HTMLElement).getByText((_, element) =>
+      element?.tagName === 'P' && element.textContent === '2 vanliga filförändringar är valbara enligt ordinarie regler.',
+    )).toBeInTheDocument();
     expect(screen.getByText('README.md')).toBeInTheDocument();
     expect(screen.getByTitle('docs/new.md')).toBeInTheDocument();
     expect(screen.queryByTitle('.github/workflows/ci.yml')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeDisabled();
   });
 
+
+
+  it('lets the attention panel jump directly to blocked decisions', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole('heading', { name: 'Behöver din uppmärksamhet' });
+
+    await user.click(screen.getByRole('button', { name: 'Granska blockerade (1)' }));
+
+    const list = screen.getByRole('list', { name: 'Filträd' });
+    expect(within(list).getByTitle('.github/workflows/ci.yml')).toBeInTheDocument();
+    expect(within(list).queryByText('README.md')).not.toBeInTheDocument();
+  });
+
+  it('presents a clean plan as low-attention while keeping full file review available', async () => {
+    const cleanPlan: ImportPlanResponse = {
+      ...plan,
+      blocked: 0,
+      hardBlocked: 0,
+      overridableBlocked: 0,
+      warnings: 0,
+      entries: plan.entries
+        .filter((entry) => entry.blockerType === 'NONE' && entry.status !== 'IGNORED')
+        .map((entry) => ({ ...entry, severity: 'NONE' as const, policyCode: null, message: null })),
+    };
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (!init?.method && url.endsWith('/plan')) return response(cleanPlan);
+      if (!init?.method && (url.endsWith('/selection') || url.endsWith('/plan/approval') || url.endsWith('/delivery'))) return response({}, 404);
+      return response({});
+    }));
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Inga särskilda risker hittades' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Granska blockerade/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Visa vanliga förändringar/ })).toBeInTheDocument();
+    expect(screen.getByText('README.md')).toBeInTheDocument();
+  });
 
   it('warns when the ZIP overlaps changes made on the Work branch after the last zip-github commit', async () => {
     const user = userEvent.setup();

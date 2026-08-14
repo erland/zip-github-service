@@ -1,3 +1,12 @@
+## 1.0.0-rc.119 - 2026-08-14
+
+Repository revision: `r0167`
+
+- Fixes the rc.118 frontend regression in `App.test.tsx`.
+- Step 9.35 adds a visible status line inside repository navigation links, so the accessible link name can include the repository name plus status.
+- The legacy repository-filter test now matches the repository name as part of the accessible name instead of requiring an exact name with no suffix.
+- No production behavior changes from rc.118.
+
 ## 1.0.0-rc.118 - 2026-08-14
 
 Repository revision: `r0166`

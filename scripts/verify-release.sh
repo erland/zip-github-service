@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.118"
+expected_version="1.0.0-rc.119"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.118 - 2026-08-14' CHANGELOG.md
+grep -q '## 1.0.0-rc.119 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,7 +25,7 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0166`' docs/implementation-status.md
+grep -q 'Repository revision: `r0167`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -690,3 +690,7 @@ grep -Fq "groups={groups}" frontend/src/pages/ProjectListPage.tsx
 grep -Fq "groups attention, ongoing and other repositories" frontend/src/pages/ProjectListPage.test.tsx
 grep -Fq "**Status:** DONE (2026-08-14, r0166 / 1.0.0-rc.118)." docs/implementation-steps.md
 printf 'Step 9.35 repository attention overview assertions verified for %s.\n' "$actual_version"
+
+grep -Fq "findByRole('link', { name: /example-book-project/ })" frontend/src/App.test.tsx
+grep -Fq "queryByRole('link', { name: /example-book-project/ })" frontend/src/App.test.tsx
+printf 'rc.119 repository accessible-name test assertion verified for %s.\n' "$actual_version"

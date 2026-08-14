@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0166`
+- Repository revision: `r0167`
 - Last completed step: `9.35`
 - Next step: `none` — implementation plan complete
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.35 COMPLETE — UX SIMPLIFICATION SEQUENCE COMPLETE`

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.112"
+expected_version="1.0.0-rc.113"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.112 - 2026-08-14' CHANGELOG.md
+grep -q '## 1.0.0-rc.113 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,7 +25,7 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0160`' docs/implementation-status.md
+grep -q 'Repository revision: `r0161`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -652,3 +652,11 @@ grep -Fq 'shows the build-injected zip-GitHub version' frontend/src/pages/AboutP
 printf 'Step 9.31 runtime version and PR-aware result assertions verified for %s.\n' "$actual_version"
 grep -Fq "await screen.findByRole('button', { name: 'Skapa pull request' })" frontend/src/pages/ImportResultPage.test.tsx
 printf 'rc.112 async ImportResultPage test assertion verified for %s.\n' "$actual_version"
+grep -Fq 'id="next-action-heading">Nästa steg</h2>' frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq 'En ZIP-import väntar på att slutföras.' frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "work.status === 'PR_OPEN'" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "work.status === 'PR_CLOSED' && work.headCommitSha" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq '## Steg 9.33 - Upload starts Work automatically' docs/implementation-steps.md
+grep -Fq '## Steg 9.34 - Attention-first review' docs/implementation-steps.md
+grep -Fq '## Steg 9.35 - Repository attention overview' docs/implementation-steps.md
+printf 'Step 9.32 guided project actions assertions verified for %s.\n' "$actual_version"

@@ -1,3 +1,13 @@
+## 1.0.0-rc.113 - 2026-08-14
+
+Repository revision: `r0161`
+
+- Documents the next simplification sequence as steps 9.32-9.35: guided project actions, automatic Work start on first upload, attention-first review, and repository attention overview.
+- Implements step 9.32 with a state-driven `Nästa steg` section on the project page.
+- Active imports now own the primary continuation action; duplicate continue/upload actions are removed.
+- ACTIVE Work prioritizes the next ZIP, PR_OPEN prioritizes the next ZIP while linking the existing PR, PR_CLOSED prioritizes creating a new PR, and repositories without Work prioritize starting Work.
+- Destructive and advanced lifecycle actions remain separate and explicit; no Work lifecycle or backend API semantics change in rc.113.
+
 ## 1.0.0-rc.112 - 2026-08-14
 
 Repository revision: `r0160`

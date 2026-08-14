@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -15,6 +16,7 @@ import java.util.Base64;
 /** Initializes a truly empty GitHub repository without leaving bootstrap content in its current tree. */
 @ApplicationScoped
 public class GitRepositoryBootstrapService {
+    private static final Logger LOG = Logger.getLogger(GitRepositoryBootstrapService.class);
     private static final String CREATE_MESSAGE = "Initialize empty repository for zip-GitHub";
     private static final String CLEANUP_MESSAGE = "Remove zip-GitHub bootstrap marker";
     private static final String MARKER_PATH = ".zip-github-bootstrap";
@@ -43,8 +45,10 @@ public class GitRepositoryBootstrapService {
                     .put("content", encodedContent);
             // GitHub explicitly recommends the Contents API to initialize an empty repository.
             // Omit branch on the first write so GitHub creates the repository's configured default branch.
+            LOG.infof("GitHub empty-repository marker create starting repository=%s defaultBranch=%s", repositoryFullName, defaultBranch);
             JsonNode created = sendJson(apiBase.resolve("/repos/" + repositoryFullName + "/contents/" + MARKER_PATH), token,
                     "PUT", createPayload.toString());
+            LOG.infof("GitHub empty-repository marker create completed repository=%s defaultBranch=%s", repositoryFullName, defaultBranch);
             String markerSha = created.path("content").path("sha").asText(null);
             if (markerSha == null || markerSha.isBlank()) {
                 throw new IllegalStateException("GitHub did not return the bootstrap marker SHA.");
@@ -54,8 +58,10 @@ public class GitRepositoryBootstrapService {
                     .put("message", CLEANUP_MESSAGE)
                     .put("sha", markerSha)
                     .put("branch", defaultBranch);
+            LOG.infof("GitHub empty-repository marker cleanup starting repository=%s defaultBranch=%s", repositoryFullName, defaultBranch);
             JsonNode deleted = sendJson(apiBase.resolve("/repos/" + repositoryFullName + "/contents/" + MARKER_PATH), token,
                     "DELETE", deletePayload.toString());
+            LOG.infof("GitHub empty-repository marker cleanup completed repository=%s defaultBranch=%s", repositoryFullName, defaultBranch);
             String commitSha = deleted.path("commit").path("sha").asText(null);
             if (commitSha == null || !commitSha.matches("[0-9a-fA-F]{40,64}")) {
                 throw new IllegalStateException("GitHub did not return a valid bootstrap cleanup commit SHA.");

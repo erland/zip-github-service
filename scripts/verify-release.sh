@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.108"
+expected_version="1.0.0-rc.109"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.108 - 2026-08-14' CHANGELOG.md
+grep -q '## 1.0.0-rc.109 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,7 +25,7 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0156`' docs/implementation-status.md
+grep -q 'Repository revision: `r0157`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -52,7 +52,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.30 COMPLETE — MAINTENANCE RECONCILIATION AND NAVIGATION`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.30 COMPLETE — EMPTY-REPOSITORY START DIAGNOSTICS ADDED`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -621,3 +621,16 @@ printf 'Phase 9.30 maintenance reconciliation/navigation assertions verified for
 
 grep -Fq '.zip-github-bootstrap' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
 grep -Fq '"REPOSITORY_WORK_START_FAILED"' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+# rc.109 empty-repository Work-start diagnostic assertions.
+test -s docs/rc109-empty-repository-start-diagnostics.md
+grep -Fq 'private static final Logger LOG = Logger.getLogger(RepositoryResource.class);' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'diagnosticId = UUID.randomUUID().toString()' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'stage = "prepare-project"' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'LOG.errorf(e,' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'Diagnostic id: " + diagnosticId' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'Repository Work preflight installation permission' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'GitHub empty-repository marker create starting' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+grep -Fq 'GitHub empty-repository marker cleanup completed' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+! grep -Fq 'Authorization' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+printf 'rc.109 empty-repository Work-start diagnostic assertions verified for %s.\n' "$actual_version"
+

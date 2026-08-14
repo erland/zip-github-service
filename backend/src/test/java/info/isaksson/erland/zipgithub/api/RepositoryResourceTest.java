@@ -28,7 +28,7 @@ class RepositoryResourceTest {
     @BeforeEach
     void setup() {
         projects.clearInMemoryStateForTests();
-        var installation = new GitHubAppClient.GitHubInstallation(10L, 1L, "erland", "User", "selected", null);
+        var installation = new GitHubAppClient.GitHubInstallation(10L, 1L, "erland", "User", "selected", null, "write");
         var repository = new GitHubAppClient.GitHubRepository(20L, "erland/got-test-repo", true, "main", "https://github.com/erland/got-test-repo");
         when(catalog.listUserInstallations(anyString())).thenReturn(List.of(installation));
         when(catalog.listUserInstallationRepositories(anyString(), eq(10L))).thenReturn(List.of(repository));

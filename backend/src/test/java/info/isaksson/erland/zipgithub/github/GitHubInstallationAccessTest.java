@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class GitHubInstallationAccessTest {
     private static GitHubAppClient.GitHubInstallation installation(long id) {
-        return new GitHubAppClient.GitHubInstallation(id, 10L, "owner", "User", "selected", null);
+        return new GitHubAppClient.GitHubInstallation(id, 10L, "owner", "User", "selected", null, "write");
     }
 
     @Test

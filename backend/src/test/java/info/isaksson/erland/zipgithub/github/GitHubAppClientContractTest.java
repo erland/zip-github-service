@@ -19,7 +19,7 @@ class GitHubAppClientContractTest {
 
     @Test
     void installationDtoContainsNoCredentialMaterial() {
-        var installation = new GitHubAppClient.GitHubInstallation(7L, 9L, "owner", "User", "selected", "https://github.com/settings/installations/7");
+        var installation = new GitHubAppClient.GitHubInstallation(7L, 9L, "owner", "User", "selected", "https://github.com/settings/installations/7", "write");
         assertEquals(7L, installation.id());
         assertEquals("selected", installation.repositorySelection());
     }

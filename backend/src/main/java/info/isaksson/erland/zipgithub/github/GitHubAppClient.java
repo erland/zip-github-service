@@ -44,7 +44,8 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
                         account.path("login").asText(),
                         account.path("type").asText(),
                         item.path("repository_selection").asText(),
-                        item.path("html_url").asText(null)));
+                        item.path("html_url").asText(null),
+                        item.path("permissions").path("contents").asText("")));
             }
             if (!items.isArray() || items.size() < 100) return List.copyOf(result);
         }
@@ -620,7 +621,16 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
     }
 
     public record GitHubInstallation(long id, long accountId, String accountLogin, String accountType,
-                                     String repositorySelection, String htmlUrl) {}
+                                     String repositorySelection, String htmlUrl, String contentsPermission) {
+        public GitHubInstallation(long id, long accountId, String accountLogin, String accountType,
+                                  String repositorySelection, String htmlUrl) {
+            this(id, accountId, accountLogin, accountType, repositorySelection, htmlUrl, "");
+        }
+
+        public boolean contentsWritable() {
+            return "write".equalsIgnoreCase(contentsPermission == null ? "" : contentsPermission.trim());
+        }
+    }
     public record GitHubRepository(long id, String fullName, boolean privateRepository,
                                    String defaultBranch, String htmlUrl) {}
 }

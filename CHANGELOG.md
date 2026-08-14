@@ -1,3 +1,14 @@
+## 1.0.0-rc.121 - 2026-08-14
+
+Repository revision: `r0169`
+
+- Documents the next UX/progressive-disclosure sequence as steps 9.37-9.42.
+- Implements step 9.37: a repository without an internal project now offers `Ladda upp första ZIP` instead of exposing `Starta arbete`.
+- The existing repository Work provisioning endpoint is reused unchanged; after successful project + Work creation the UI navigates directly to the new-import route.
+- Existing repositories with a project continue to redirect to their project page.
+- No backend Work, bootstrap, authorization or repository safety semantics change.
+- Step 9.38 `Project progressive disclosure` is now NEXT.
+
 ## 1.0.0-rc.120 - 2026-08-14
 
 Repository revision: `r0168`

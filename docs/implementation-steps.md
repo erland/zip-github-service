@@ -998,3 +998,74 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 
 **Kvalitetsgrind för 9.36:** en utgången session ska på alla centrala frontend-API-vägar leda tillbaka till login med bevarad return route, medan initial anonymitet, 403 och vanliga API-fel behåller sina tidigare semantiker.
 
+## Steg 9.37 - New repository flow: directly to first ZIP
+
+- För ett repository utan internt zip-github-projekt ska normalhandlingen uttrycka användarens intention: `Ladda upp första ZIP`, inte den interna mekaniken `Starta arbete`.
+- Befintliga `startRepositoryWork()` ska fortsatt skapa/verifiera projekt + Work med samma backend- och tom-repo-semantik.
+- Efter lyckad provisionering ska användaren navigeras direkt till `/projects/{projectId}/imports/new`, inte via projektsidan.
+- Fel ska beskrivas som att repositoryt inte kunde förberedas för första ZIP-filen; ingen delvis lyckad frontendnavigation får ske.
+- Repository som redan fått `projectId` ska fortsatt omdirigeras till befintligt projekt.
+
+**Status:** DONE (2026-08-14, r0169 / 1.0.0-rc.121). Se `docs/step-9.37-report.md`.
+
+**Kvalitetsgrind för 9.37:** första normala vägen för ett nytt repository ska vara `välj repository -> Ladda upp första ZIP -> ZIP-upload`, medan befintlig project/Work-provisionering och säkerhetskontroller återanvänds oförändrade.
+
+## Steg 9.38 - Project progressive disclosure
+
+- Flytta projektsidans `Nästa steg` så att rekommenderad handling kommer före repositorymetadata.
+- Komprimera repositoryinformation som standard och gör tekniska detaljer expanderbara.
+- Sammanfatta Work/PR/Actions på användarnivå i standardvyn; branch/SHA/historik och annan diagnostik ska finnas kvar bakom `Visa tekniska detaljer`.
+- Lägg återuppta gammal branch, avsluta Work och branchradering i en tydligt separat avancerad/destruktiv del.
+- Blockers, externa konflikter eller annan attention-status får aldrig döljas bakom progressive disclosure.
+
+**Status:** NEXT.
+
+**Kvalitetsgrind för 9.38:** projektsidan ska först svara på vad användaren bör göra, därefter visa relevant status, och först på begäran exponera tekniska detaljer som inte behövs för normalflödet.
+
+## Steg 9.39 - Review completion guidance
+
+- När review fortfarande kräver blocker-/override-/external-change-beslut ska attention-delen fortsatt styra användaren till dessa.
+- När alla nödvändiga beslut är lösta ska reviewn visa en tydlig `Fortsätt till commit`-handling som navigerar/scrollar till commitsektionen utan att automatiskt godkänna något.
+- Visa kompakt hur många förändringar som är valda och om urvalet kan godkännas.
+- Fullständig filgranskning ska fortsatt vara tillgänglig och explicit selection-/approval-semantik oförändrad.
+
+**Status:** PLANNED.
+
+**Kvalitetsgrind för 9.39:** reviewn ska tydligt byta från “lös beslut” till “fortsätt till commit” när säkerhetskraven är uppfyllda, utan att hoppa över ett explicit användargodkännande.
+
+## Steg 9.40 - Simplified upload
+
+- Låt ZIP-valet dominera normalvyn.
+- Visa standardförfattaren kompakt och flytta `Någon annan`/author-redigering bakom en explicit `Ändra`-handling.
+- Tona ned information om automatisk Work-branch till en kort förklaring med möjlighet att läsa mer.
+- `PR_OPEN`-bekräftelsen ska fortsatt vara prominent och explicit.
+- Ingen author-, upload- eller Work-semantik får ändras.
+
+**Status:** PLANNED.
+
+**Kvalitetsgrind för 9.40:** normal första blick på uploadsidan ska handla om att välja ZIP, medan sällan använda author-/Work-detaljer finns tillgängliga utan att konkurrera visuellt.
+
+## Steg 9.41 - Result next action follows Actions and Work state
+
+- Resultatsidans rekommenderade nästa handling ska väga in aktuell GitHub Actions-status tillsammans med Work/PR-status.
+- Ett känt Actions-fel eller unverifiable Actions-status ska få företräde framför den normala `Ladda upp nästa ZIP`-vägen.
+- Pågående Actions ska kommuniceras som pågående arbete utan att felaktigt signalera att leveransen är färdig.
+- Vid lyckad Actions-status ska normal Work-/PR-vägledning åter ta över.
+- Inga workflows ska dispatchas/rerunnas automatiskt; endast vägledningen ändras.
+
+**Status:** PLANNED.
+
+**Kvalitetsgrind för 9.41:** användaren ska inte rekommenderas nästa normala leveranssteg när tjänsten redan vet att aktuell commit kräver Actions-uppmärksamhet.
+
+## Steg 9.42 - Compact successful Actions, prominent failures
+
+- Gör lyckade Actions-resultat kompakta i standardvyn med möjlighet att expandera workflows/checks.
+- Visa pending/in-progress med tydlig progress/status och tillgång till detaljer.
+- Visa failure/cancelled/unavailable prominent med direkt väg till fel, logg eller GitHub.
+- Behåll all befintlig Actions-diagnostik, artifacts, rerun/dispatch-kontroller och säkerhetsregler.
+- Presentationen ska återanvända attention-first-principen och inte skapa en ny dashboard.
+
+**Status:** PLANNED.
+
+**Kvalitetsgrind för 9.42:** Actions-panelen ska använda mest visuell uppmärksamhet när användaren faktiskt behöver agera och minst när allt är grönt.
+

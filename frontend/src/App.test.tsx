@@ -70,27 +70,30 @@ describe('App routing and authentication', () => {
     expect(screen.queryByRole('link', { name: /example-book-project/ })).not.toBeInTheDocument();
   });
 
-  it('creates the internal project lazily when work starts for a new repository', async () => {
+  it('creates project and Work lazily and opens the first ZIP upload directly for a new repository', async () => {
     const user = userEvent.setup();
     let created = false;
     const newRepository = { ...repository, projectId: null };
-    const work = { id: 'work-1', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-1', status: 'ACTIVE', headCommitSha: null, lastImportId: null, pullRequestNumber: null, pullRequestUrl: null, createdAt: '2026-08-08T15:00:00Z', updatedAt: '2026-08-08T15:00:00Z' };
+    const work = { id: 'work-1', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-1', status: 'ACTIVE', headCommitSha: null, remoteHeadCommitSha: null, branchChangedExternally: false, lastImportId: null, pullRequestNumber: null, pullRequestUrl: null, createdAt: '2026-08-08T15:00:00Z', updatedAt: '2026-08-08T15:00:00Z' };
     vi.stubGlobal('fetch', vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url === '/api/auth/me') return json(authenticatedUser);
       if (url === '/api/repositories') return json([created ? { ...newRepository, projectId: 'project-1' } : newRepository]);
       if (url === '/api/repositories/10/20/work' && init?.method === 'POST') { created = true; return json({ project, work }); }
       if (url === '/api/projects/project-1') return json(project);
-      if (url === '/api/projects/project-1/imports') return json([]);
       if (url === '/api/projects/project-1/work') return json(work);
-      if (url === '/api/projects/project-1/work/commits') return json({ githubAvailable: true, commits: [] });
+      if (url === '/api/auth/me') return json(authenticatedUser);
       return Promise.reject(new Error(`Unexpected fetch: ${url}`));
     }));
     renderAt('/projects');
     await user.click(await screen.findByRole('link', { name: 'example-book-project' }));
     expect(await screen.findByRole('heading', { name: 'example-book-project' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Starta arbete' }));
-    expect(await screen.findByText('zip-github/work-1')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ladda upp första ZIP' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Ladda upp första ZIP' }));
+
+    expect(await screen.findByRole('heading', { name: 'Ladda upp projekt-ZIP' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Projektarkiv')).toBeEnabled();
   });
 
   it('routes to the stored import result page', async () => {

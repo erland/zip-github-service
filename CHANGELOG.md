@@ -1,3 +1,13 @@
+## 1.0.0-rc.109 - 2026-08-14
+
+Repository revision: `r0157`
+
+- Adds production-safe diagnostics for the remaining empty-repository `Starta arbete` failure without changing repository/bootstrap semantics.
+- `RepositoryResource` now assigns a per-request diagnostic id, records the failing high-level stage, and logs the original unexpected exception stack trace before returning the safe `REPOSITORY_WORK_START_FAILED` response.
+- Empty-repository preflight and Contents bootstrap now log safe milestones and identifiers only; access tokens, Authorization headers, request payloads, GitHub response bodies, and bootstrap marker SHA values are never logged.
+- The generic UI/API fallback message includes the diagnostic id so a production failure can be correlated directly with backend logs.
+- Step 9.30 maintenance reconciliation/navigation remains unchanged; the latest functional implementation step is still 9.30.
+
 ## 1.0.0-rc.108 - 2026-08-14
 
 Repository revision: `r0156`

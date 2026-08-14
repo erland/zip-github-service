@@ -7,9 +7,11 @@ import info.isaksson.erland.zipgithub.github.GitHubProjectCatalog;
 import info.isaksson.erland.zipgithub.github.GitRepositoryBootstrapService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class GitHubProjectConfigurationService {
+    private static final Logger LOG = Logger.getLogger(GitHubProjectConfigurationService.class);
     @Inject GitHubProjectCatalog catalog;
     @Inject GitRepositoryBootstrapService repositoryBootstrap;
 
@@ -61,7 +63,10 @@ public class GitHubProjectConfigurationService {
 
     /** Verifies a repository for starting Work and initializes a truly empty repository before persistence. */
     public VerifiedRepository verifyForWorkStart(String userAccessToken, Long installationId, Long repositoryId) {
+        LOG.infof("Repository Work preflight started installationId=%s repositoryId=%s", installationId, repositoryId);
         VerifiedRepository verified = verify(userAccessToken, installationId, repositoryId, null);
+        LOG.infof("Repository Work preflight repository verified installationId=%d repositoryId=%d repository=%s defaultBranch=%s",
+                verified.installationId(), verified.repositoryId(), verified.fullName(), verified.defaultBranch());
         boolean branchExists;
         try {
             branchExists = catalog.branchExists(userAccessToken, verified.fullName(), verified.defaultBranch());
@@ -69,7 +74,11 @@ public class GitHubProjectConfigurationService {
             throw ApiException.badGateway("GITHUB_BRANCH_STATE_UNAVAILABLE",
                     "GitHub branch status could not be verified before starting work.");
         }
-        if (branchExists) return verified;
+        if (branchExists) {
+            LOG.infof("Repository Work preflight default branch already exists installationId=%d repositoryId=%d repository=%s branch=%s",
+                    verified.installationId(), verified.repositoryId(), verified.fullName(), verified.defaultBranch());
+            return verified;
+        }
 
         final boolean hasBranches;
         try {
@@ -78,6 +87,8 @@ public class GitHubProjectConfigurationService {
             throw ApiException.badGateway("GITHUB_BRANCH_STATE_UNAVAILABLE",
                     "GitHub repository state could not be verified before starting work.");
         }
+        LOG.infof("Repository Work preflight branch inventory installationId=%d repositoryId=%d repository=%s hasBranches=%s",
+                verified.installationId(), verified.repositoryId(), verified.fullName(), hasBranches);
         if (hasBranches) {
             throw ApiException.conflict("GITHUB_DEFAULT_BRANCH_MISSING",
                     "The repository is initialized but its configured default branch does not exist.");
@@ -88,6 +99,8 @@ public class GitHubProjectConfigurationService {
                 .findFirst()
                 .orElseThrow(() -> ApiException.notFound("GITHUB_INSTALLATION_NOT_FOUND",
                         "The GitHub App installation was not found."));
+        LOG.infof("Repository Work preflight installation permission installationId=%d repositoryId=%d contentsWritable=%s",
+                verified.installationId(), verified.repositoryId(), installation.contentsWritable());
         if (!installation.contentsWritable()) {
             throw ApiException.forbidden("GITHUB_CONTENTS_WRITE_PERMISSION_REQUIRED",
                     "The GitHub App installation needs Contents: Read and write before zip-GitHub can initialize an empty repository. "
@@ -99,7 +112,11 @@ public class GitHubProjectConfigurationService {
                     "The empty repository could not be initialized by zip-GitHub.");
         }
         try {
+            LOG.infof("Empty repository bootstrap starting installationId=%d repositoryId=%d repository=%s branch=%s",
+                    verified.installationId(), verified.repositoryId(), verified.fullName(), verified.defaultBranch());
             repositoryBootstrap.bootstrapEmptyRepository(verified.installationId(), verified.fullName(), verified.defaultBranch());
+            LOG.infof("Empty repository bootstrap completed installationId=%d repositoryId=%d repository=%s branch=%s",
+                    verified.installationId(), verified.repositoryId(), verified.fullName(), verified.defaultBranch());
         } catch (GitRepositoryBootstrapService.GitHubContentsBootstrapException bootstrapFailure) {
             // Accept only the narrow race where another actor initialized exactly our selected branch.
             try {
@@ -135,6 +152,8 @@ public class GitHubProjectConfigurationService {
                     "The repository was initialized but the default branch could not be verified.");
         }
         // Re-read repository metadata after the first commit so only normal initialized state is persisted.
+        LOG.infof("Empty repository bootstrap verified installationId=%d repositoryId=%d repository=%s branch=%s",
+                verified.installationId(), verified.repositoryId(), verified.fullName(), verified.defaultBranch());
         return verify(userAccessToken, installationId, repositoryId, verified.defaultBranch());
     }
 

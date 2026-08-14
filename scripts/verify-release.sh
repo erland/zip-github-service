@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.117"
+expected_version="1.0.0-rc.119"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.117 - 2026-08-14' CHANGELOG.md
+grep -q '## 1.0.0-rc.119 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,13 +25,13 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0165`' docs/implementation-status.md
+grep -q 'Repository revision: `r0167`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'confirmOpenPullRequest' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.34`' docs/implementation-status.md
+grep -q 'Last completed step: `9.35`' docs/implementation-status.md
 test -s docs/rc103-step-9.29-empty-repository-start-correction.md
 grep -q 'verifyForWorkStart' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
 grep -q 'ensureProjectForRepositoryReadyForWork' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
@@ -52,7 +52,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.34 COMPLETE — UX SIMPLIFICATION IN PROGRESS`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.35 COMPLETE — UX SIMPLIFICATION SEQUENCE COMPLETE`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -682,3 +682,15 @@ grep -Fq "**Status:** DONE (2026-08-14, r0164 / 1.0.0-rc.116)." docs/implementat
 printf 'Step 9.34 attention-first review assertions verified for %s.\n' "$actual_version"
 grep -Fq "element?.tagName === 'P' && element.textContent === '2 vanliga filförändringar är valbara enligt ordinarie regler.'" frontend/src/pages/ImportReviewPage.test.tsx
 printf 'rc.117 ImportReviewPage text assertion verified for %s.\n' "$actual_version"
+grep -Fq "Behöver din uppmärksamhet" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "getProjectWorkActions" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "Status kunde inte verifieras" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "Repositoryöversikt" frontend/src/components/RepositoryPicker.tsx
+grep -Fq "groups={groups}" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "groups attention, ongoing and other repositories" frontend/src/pages/ProjectListPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0166 / 1.0.0-rc.118)." docs/implementation-steps.md
+printf 'Step 9.35 repository attention overview assertions verified for %s.\n' "$actual_version"
+
+grep -Fq "findByRole('link', { name: /example-book-project/ })" frontend/src/App.test.tsx
+grep -Fq "queryByRole('link', { name: /example-book-project/ })" frontend/src/App.test.tsx
+printf 'rc.119 repository accessible-name test assertion verified for %s.\n' "$actual_version"

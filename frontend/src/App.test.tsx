@@ -93,7 +93,7 @@ describe('App routing and authentication', () => {
     await user.click(screen.getByRole('button', { name: 'Ladda upp första ZIP' }));
 
     expect(await screen.findByRole('heading', { name: 'Ladda upp projekt-ZIP' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Projektarkiv')).toBeEnabled();
+    expect(await screen.findByLabelText('Projektarkiv')).toBeEnabled();
   });
 
   it('routes to the stored import result page', async () => {

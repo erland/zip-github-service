@@ -1,3 +1,12 @@
+## 1.0.0-rc.122 - 2026-08-14
+
+Repository revision: `r0170`
+
+- Fixes the rc.121 App integration test timing regression for the new-repository first-ZIP flow.
+- The route correctly reached `Ladda upp projekt-ZIP`, but the test synchronously asserted the file input before `NewImportPage` had completed its async project/Work/user loading.
+- The test now waits for the `Projektarkiv` input to become available before asserting it is enabled.
+- No production behavior changes from rc.121.
+
 ## 1.0.0-rc.121 - 2026-08-14
 
 Repository revision: `r0169`

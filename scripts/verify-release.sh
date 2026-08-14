@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.121"
+expected_version="1.0.0-rc.122"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.121 - 2026-08-14' CHANGELOG.md
+grep -q '## 1.0.0-rc.122 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,7 +25,7 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0169`' docs/implementation-status.md
+grep -q 'Repository revision: `r0170`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -712,3 +712,5 @@ grep -Fq "**Status:** DONE (2026-08-14, r0169 / 1.0.0-rc.121)." docs/implementat
 grep -Fq "## Steg 9.38 - Project progressive disclosure" docs/implementation-steps.md
 grep -Fq "**Status:** NEXT." docs/implementation-steps.md
 printf 'Step 9.37 new repository first-ZIP flow assertions verified for %s.\n' "$actual_version"
+grep -Fq "expect(await screen.findByLabelText('Projektarkiv')).toBeEnabled();" frontend/src/App.test.tsx
+printf 'rc.122 first-ZIP App timing assertion verified for %s.\n' "$actual_version"

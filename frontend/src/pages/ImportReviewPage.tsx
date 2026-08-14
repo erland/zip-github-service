@@ -250,6 +250,12 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
   }
 
 
+  function continueToCommit() {
+    const editor = document.getElementById('commit-message');
+    editor?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    if (editor instanceof HTMLTextAreaElement && !editor.disabled) editor.focus();
+  }
+
   function excludeAllOverridableInCategory() {
     if (selectionLocked || overridableBulkPaths.length === 0) return;
     const nextSelected = new Set(selectedPaths);
@@ -307,9 +313,16 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
       <div className={`review-decision ${selectedPaths.size > 0 && unresolvedBlockers.length === 0 ? 'review-decision--ready' : 'review-decision--blocked'}`} role="status">
         <div>
           <strong>{unresolvedBlockers.length > 0 ? `${unresolvedBlockers.length} blockerande förändring${unresolvedBlockers.length === 1 ? '' : 'ar'} kräver beslut` : selectedPaths.size > 0 ? 'Urvalet kan godkännas' : 'Välj minst en förändring'}</strong>
-          <p>{plan.blocked > 0
-            ? `${plan.blocked} blockerande post${plan.blocked === 1 ? '' : 'er'} finns i planen. Överstyrbara poster kan tas med efter ett uttryckligt riskgodkännande; hårt blockerade poster kan aldrig levereras.`
-            : 'Inga blockerande policyträffar hittades.'}</p>
+          <p>{unresolvedBlockers.length > 0
+            ? `${unresolvedBlockers.length} blockerande förändring${unresolvedBlockers.length === 1 ? '' : 'ar'} behöver ett uttryckligt beslut innan du kan fortsätta.`
+            : selectedPaths.size > 0
+              ? `${selectedPaths.size} förändring${selectedPaths.size === 1 ? '' : 'ar'} är valda. Fortsätt till commitmeddelandet när du är nöjd med urvalet.`
+              : plan.blocked > 0
+                ? `${plan.blocked} blockerande post${plan.blocked === 1 ? '' : 'er'} finns i planen. Överstyrbara poster kan tas med efter ett uttryckligt riskgodkännande; hårt blockerade poster kan aldrig levereras.`
+                : 'Inga blockerande policyträffar hittades.'}</p>
+          {selectedPaths.size > 0 && unresolvedBlockers.length === 0 && !approval && <div className="result-primary-action">
+            <button className="button" type="button" onClick={continueToCommit}>Fortsätt till commit</button>
+          </div>}
         </div>
         <span className="status-badge">{plan.status}</span>
       </div>

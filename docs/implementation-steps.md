@@ -1029,7 +1029,7 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Visa kompakt hur många förändringar som är valda och om urvalet kan godkännas.
 - Fullständig filgranskning ska fortsatt vara tillgänglig och explicit selection-/approval-semantik oförändrad.
 
-**Status:** NEXT.
+**Status:** DONE (2026-08-14, r0174 / 1.0.0-rc.126). Se `docs/step-9.39-report.md`.
 
 **Kvalitetsgrind för 9.39:** reviewn ska tydligt byta från “lös beslut” till “fortsätt till commit” när säkerhetskraven är uppfyllda, utan att hoppa över ett explicit användargodkännande.
 
@@ -1041,7 +1041,7 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - `PR_OPEN`-bekräftelsen ska fortsatt vara prominent och explicit.
 - Ingen author-, upload- eller Work-semantik får ändras.
 
-**Status:** PLANNED.
+**Status:** NEXT.
 
 **Kvalitetsgrind för 9.40:** normal första blick på uploadsidan ska handla om att välja ZIP, medan sällan använda author-/Work-detaljer finns tillgängliga utan att konkurrera visuellt.
 

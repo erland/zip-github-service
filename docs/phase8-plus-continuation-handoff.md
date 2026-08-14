@@ -1,4 +1,4 @@
-> **Current handoff r0176 / 1.0.0-rc.128:** Step 9.31 displays the running frontend release on `Om tjänsten` by injecting the authoritative root `VERSION` during the verified CI/Vite build. Import result now loads/reconciles current Work before presenting PR actions: PR_OPEN links to the existing automatically updated PR instead of offering a duplicate, PR_CLOSED offers a new PR, and uncertainty fails closed. Empty-repository support from rc.110 remains intact. No next implementation step is currently defined.
+> **Current handoff r0177 / 1.0.0-rc.129:** Step 9.31 displays the running frontend release on `Om tjänsten` by injecting the authoritative root `VERSION` during the verified CI/Vite build. Import result now loads/reconciles current Work before presenting PR actions: PR_OPEN links to the existing automatically updated PR instead of offering a duplicate, PR_CLOSED offers a new PR, and uncertainty fails closed. Empty-repository support from rc.110 remains intact. No next implementation step is currently defined.
 
 > **Current handoff r0158 / 1.0.0-rc.110:** Empty-repository startup correction after rc.109 diagnostics showed that `branchExists()` missed a nested GitHub HTTP 404. The 404 is now interpreted as “branch does not exist”, allowing the verified empty-repository Contents bootstrap path to run. rc.109 diagnostic logging remains available. Step 9.30 remained the latest completed functional step at that revision.
 
@@ -321,23 +321,26 @@ GitHub Actions showed that rc.85 fixed nullable deletion metadata but TypeScript
 `Starta arbete` now bootstraps a truly empty repository before persisting the internal project, then re-verifies the initialized default branch. Bootstrap failures are surfaced as explicit API problems rather than generic internal errors.
 
 ## Senaste UX-förenkling
-Steg 9.32-9.35 är DONE. r0176/rc.118 slutför den planerade förenklingssekvensen med repository attention overview: repositorylistan grupperar verifierad aktuell status i `Behöver din uppmärksamhet`, `Pågående` och `Övriga repositories`, med direkt navigation till relevant review/result/project. Ingen ny backendstatus lagras; Work hämtas via befintlig reconciliation och osäker status failar till attention i stället för att gissas.
+Steg 9.32-9.35 är DONE. r0177/rc.118 slutför den planerade förenklingssekvensen med repository attention overview: repositorylistan grupperar verifierad aktuell status i `Behöver din uppmärksamhet`, `Pågående` och `Övriga repositories`, med direkt navigation till relevant review/result/project. Ingen ny backendstatus lagras; Work hämtas via befintlig reconciliation och osäker status failar till attention i stället för att gissas.
 
 ## Session expiry
-Steg 9.36 är DONE i r0176/rc.120. Frontend har ett centralt `api/session.ts`-kontrakt: autentiserade API-anrop som får HTTP 401 signalerar session expiry, `AppLayout` visar login med aktuell route som `returnTo`, och ZIP-uploadens XHR använder samma signal. Initial `/api/auth/me`-401 förblir normal anonymous-semantik; 403 och andra API-fel påverkas inte.
+Steg 9.36 är DONE i r0177/rc.120. Frontend har ett centralt `api/session.ts`-kontrakt: autentiserade API-anrop som får HTTP 401 signalerar session expiry, `AppLayout` visar login med aktuell route som `returnTo`, och ZIP-uploadens XHR använder samma signal. Initial `/api/auth/me`-401 förblir normal anonymous-semantik; 403 och andra API-fel påverkas inte.
 
 ## UX revision 9.37-9.42
-Steg 9.37 är DONE i r0176/rc.121: nya repositories visar nu `Ladda upp första ZIP` och går direkt till upload efter oförändrad project/Work-provisionering. Steg 9.38 är NEXT: project progressive disclosure. Därefter följer 9.39 review completion guidance, 9.40 simplified upload, 9.41 Actions-aware result next action och 9.42 attention-first Actions presentation.
+Steg 9.37 är DONE i r0177/rc.121: nya repositories visar nu `Ladda upp första ZIP` och går direkt till upload efter oförändrad project/Work-provisionering. Steg 9.38 är NEXT: project progressive disclosure. Därefter följer 9.39 review completion guidance, 9.40 simplified upload, 9.41 Actions-aware result next action och 9.42 attention-first Actions presentation.
 
 ## Steg 9.38
-DONE i r0176/rc.123. Projektsidan prioriterar nu `Nästa steg`, behåller PR/external-change/active-import/Actions synligt och flyttar repositorymetadata, branch/SHA/commit history samt avancerade/destruktiva Work/repositoryåtgärder bakom progressive disclosure. 9.39 Review completion guidance är NEXT.
+DONE i r0177/rc.123. Projektsidan prioriterar nu `Nästa steg`, behåller PR/external-change/active-import/Actions synligt och flyttar repositorymetadata, branch/SHA/commit history samt avancerade/destruktiva Work/repositoryåtgärder bakom progressive disclosure. 9.39 Review completion guidance är NEXT.
 
 ## Steg 9.39
-DONE i r0176/rc.126. Review decision-blocket visar nu `Fortsätt till commit` först när minst en förändring är vald och blockerbeslut är lösta. Handlingen scrollar/fokuserar commitmeddelandet men låser eller godkänner ingenting. 9.40 Simplified upload är NEXT.
+DONE i r0177/rc.126. Review decision-blocket visar nu `Fortsätt till commit` först när minst en förändring är vald och blockerbeslut är lösta. Handlingen scrollar/fokuserar commitmeddelandet men låser eller godkänner ingenting. 9.40 Simplified upload är NEXT.
 
 ## Steg 9.40
-DONE i r0176/rc.127. Uploadsidan prioriterar nu ZIP-valet. Standardförfattaren visas kompakt, `Någon annan` finns under `Ändra författare`, och Work-branchförklaringen ligger under `Så hanteras arbetsbranchen`. PR_OPEN-bekräftelsen är fortsatt prominent och explicit. 9.41 Result next action follows Actions and Work state är NEXT.
+DONE i r0177/rc.127. Uploadsidan prioriterar nu ZIP-valet. Standardförfattaren visas kompakt, `Någon annan` finns under `Ändra författare`, och Work-branchförklaringen ligger under `Så hanteras arbetsbranchen`. PR_OPEN-bekräftelsen är fortsatt prominent och explicit. 9.41 Result next action follows Actions and Work state är NEXT.
 
 ## Steg 9.41
-DONE i r0176/rc.128. Resultatsidan prioriterar nu ett faktiskt observerat Actions failure/cancelled för exakt aktuell commit, men behåller normal next-ZIP/PR-fortsättning. `not_started` och `unavailable` blockerar aldrig, vilket uttryckligen bevarar enkla flöden för repositories utan Actions och PR-only workflows. Pending/in-progress informerar utan att blockera. 9.42 är NEXT.
+DONE i r0177/rc.128. Resultatsidan prioriterar nu ett faktiskt observerat Actions failure/cancelled för exakt aktuell commit, men behåller normal next-ZIP/PR-fortsättning. `not_started` och `unavailable` blockerar aldrig, vilket uttryckligen bevarar enkla flöden för repositories utan Actions och PR-only workflows. Pending/in-progress informerar utan att blockera. 9.42 är NEXT.
+
+## Steg 9.42
+DONE i r0177/rc.129. Actions-panelen använder nu progressive disclosure: success och pending är kompakta, medan failure/cancelled är direkt expanderade och prominenta. `not_started` och `unavailable` behåller tidigare icke-blockerande/diagnostiska beteende. UX-revisionen 9.37-9.42 är därmed komplett.
 

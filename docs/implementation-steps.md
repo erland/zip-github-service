@@ -1065,7 +1065,7 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Behåll all befintlig Actions-diagnostik, artifacts, rerun/dispatch-kontroller och säkerhetsregler.
 - Presentationen ska återanvända attention-first-principen och inte skapa en ny dashboard.
 
-**Status:** NEXT.
+**Status:** DONE (2026-08-14, r0177 / 1.0.0-rc.129). Se `docs/step-9.42-report.md`.
 
 **Kvalitetsgrind för 9.42:** Actions-panelen ska använda mest visuell uppmärksamhet när användaren faktiskt behöver agera och minst när allt är grönt.
 

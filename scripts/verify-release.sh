@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.128"
+expected_version="1.0.0-rc.129"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.128 - 2026-08-14' CHANGELOG.md
+grep -q '## 1.0.0-rc.129 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,13 +25,13 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0176`' docs/implementation-status.md
+grep -q 'Repository revision: `r0177`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'confirmOpenPullRequest' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.41`' docs/implementation-status.md
+grep -q 'Last completed step: `9.42`' docs/implementation-status.md
 test -s docs/rc103-step-9.29-empty-repository-start-correction.md
 grep -q 'verifyForWorkStart' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
 grep -q 'ensureProjectForRepositoryReadyForWork' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
@@ -52,7 +52,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.41 COMPLETE — PROJECT UX REVISION IN PROGRESS`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.42 COMPLETE — GUIDED UX REVISION COMPLETE`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -710,7 +710,6 @@ grep -Fq 'navigate(`/projects/${result.project.id}/imports/new`' frontend/src/pa
 grep -Fq "creates project and Work lazily and opens the first ZIP upload directly for a new repository" frontend/src/App.test.tsx
 grep -Fq "**Status:** DONE (2026-08-14, r0169 / 1.0.0-rc.121)." docs/implementation-steps.md
 grep -Fq "## Steg 9.38 - Project progressive disclosure" docs/implementation-steps.md
-grep -Fq "**Status:** NEXT." docs/implementation-steps.md
 printf 'Step 9.37 new repository first-ZIP flow assertions verified for %s.\n' "$actual_version"
 grep -Fq "expect(await screen.findByLabelText('Projektarkiv')).toBeEnabled();" frontend/src/App.test.tsx
 printf 'rc.122 first-ZIP App timing assertion verified for %s.\n' "$actual_version"
@@ -754,3 +753,11 @@ grep -Fq "keeps normal next-step actions available while observed Actions are st
 grep -Fq "**Status:** DONE (2026-08-14, r0176 / 1.0.0-rc.128)." docs/implementation-steps.md
 grep -Fq "## Steg 9.42 - Compact successful Actions, prominent failures" docs/implementation-steps.md
 printf 'Step 9.41 Actions-aware result guidance assertions verified for %s.\n' "$actual_version"
+grep -Fq "Alla observerade Actions-kontroller för committen är godkända." frontend/src/components/ActionsPanel.tsx
+grep -Fq "Visa Actions-detaljer" frontend/src/components/ActionsPanel.tsx
+grep -Fq "Visa pågående Actions-detaljer" frontend/src/components/ActionsPanel.tsx
+grep -Fq "En eller flera observerade Actions-kontroller har misslyckats." frontend/src/components/ActionsPanel.tsx
+grep -Fq "keeps successful Actions compact until details are requested" frontend/src/components/ActionsPanel.test.tsx
+grep -Fq "keeps failed Actions prominent without requiring expansion" frontend/src/components/ActionsPanel.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0177 / 1.0.0-rc.129)." docs/implementation-steps.md
+printf 'Step 9.42 compact Actions presentation assertions verified for %s.\n' "$actual_version"

@@ -96,9 +96,12 @@ export default function ActionsPanel({
     !isDuplicateGitHubActionsCheck(check.appName, check.name, representedWorkflowJobNames),
   );
   const workflowGroups = groupWorkflowRuns(actions.workflows ?? [], targetCommitSha);
+  const observedItemCount = workflowGroups.length + additionalChecks.length;
+  const isSuccess = actions.state === 'success';
+  const isPending = ['pending', 'queued', 'in_progress'].includes(actions.state);
+  const isAttention = actions.state === 'failure' || actions.state === 'cancelled';
 
-  return <section className="actions-overview" aria-labelledby="actions-heading">
-    <div className="review-list-heading"><div><Heading id="actions-heading">GitHub Actions</Heading><p>Commit <code>{commitSha.slice(0, 12)}</code>. GitHub är källa för fullständig körningsinformation.</p></div><div className="actions-heading-actions"><StateBadge state={actions.state} />{onRefresh && <button className="button button--secondary" type="button" disabled={refreshing} onClick={onRefresh}>{refreshing ? 'Uppdaterar…' : 'Uppdatera status'}</button>}</div></div>
+  const detailedContent = <>
     {workflowGroups.length > 0 && <ol className="actions-list">{workflowGroups.map(group => {
       const primary = group.runs[0];
       const workflowCommitSha = primary.headSha || actions.commitSha || commitSha;
@@ -113,6 +116,26 @@ export default function ActionsPanel({
     {detailsUnavailable && <p className="status-message">Artifacts och feldiagnostik kunde inte läsas just nu. <a href={fallbackUrl} target="_blank" rel="noreferrer">Öppna Actions på GitHub</a>.</p>}
     {details && <ActionsDetails details={details} copyFailure={copyFailure} copyJobLog={copyJobLog} />}
     {controls}
+  </>;
+
+  return <section className={`actions-overview${isAttention ? ' actions-overview--attention' : ''}`} aria-labelledby="actions-heading">
+    <div className="review-list-heading"><div><Heading id="actions-heading">GitHub Actions</Heading><p>Commit <code>{commitSha.slice(0, 12)}</code>. GitHub är källa för fullständig körningsinformation.</p></div><div className="actions-heading-actions"><StateBadge state={actions.state} />{onRefresh && <button className="button button--secondary" type="button" disabled={refreshing} onClick={onRefresh}>{refreshing ? 'Uppdaterar…' : 'Uppdatera status'}</button>}</div></div>
+    {isSuccess ? <>
+      <p className="status-message status-message--success">Alla observerade Actions-kontroller för committen är godkända.</p>
+      <details className="actions-success-details">
+        <summary>Visa Actions-detaljer{observedItemCount > 0 ? ` (${observedItemCount})` : ''}</summary>
+        {detailedContent}
+      </details>
+    </> : isPending ? <>
+      <p className="status-message">GitHub Actions pågår för committen.</p>
+      <details className="actions-pending-details">
+        <summary>Visa pågående Actions-detaljer{observedItemCount > 0 ? ` (${observedItemCount})` : ''}</summary>
+        {detailedContent}
+      </details>
+    </> : <>
+      {isAttention && <p className="status-message status-message--error">{actions.state === 'cancelled' ? 'En observerad Actions-körning har avbrutits.' : 'En eller flera observerade Actions-kontroller har misslyckats.'}</p>}
+      {detailedContent}
+    </>}
   </section>;
 }
 

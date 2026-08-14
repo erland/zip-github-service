@@ -136,6 +136,7 @@ describe('simplified import flow E2E regression', () => {
     renderFlow();
 
     await screen.findByRole('heading', { name: 'Ladda upp projekt-ZIP' });
+    await user.click(screen.getByText('Ändra författare'));
     await user.click(screen.getByRole('radio', { name: /Någon annan/ }));
     await user.type(screen.getByLabelText('Namn'), 'Anna Andersson');
     await user.type(screen.getByLabelText('E-post'), 'anna@example.com');

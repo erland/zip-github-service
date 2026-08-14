@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0174`
-- Last completed step: `9.39`
-- Next step: `9.40`
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.39 COMPLETE — PROJECT UX REVISION IN PROGRESS`
+- Repository revision: `r0175`
+- Last completed step: `9.40`
+- Next step: `9.41`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.40 COMPLETE — PROJECT UX REVISION IN PROGRESS`
 
 ## Step ledger
 
@@ -124,8 +124,8 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.37` | Fas 9 — guided UX | New repository flow direkt till första ZIP | **DONE** | 2026-08-14 | `docs/step-9.37-report.md`, `frontend/src/pages/RepositoryDetailPage.tsx`, `frontend/src/App.test.tsx` |
 | `9.38` | Fas 9 — progressive disclosure | Project progressive disclosure | **DONE** | 2026-08-14 | `docs/step-9.38-report.md`, `frontend/src/pages/ProjectDetailPage.tsx` |
 | `9.39` | Fas 9 — guided review | Review completion guidance | **DONE** | 2026-08-14 | `docs/step-9.39-report.md`, `frontend/src/pages/ImportReviewPage.tsx` |
-| `9.40` | Fas 9 — upload UX | Simplified upload | **NEXT** | — | `docs/implementation-steps.md` |
-| `9.41` | Fas 9 — result UX | Result next action follows Actions and Work state | **PENDING** | — | `docs/implementation-steps.md` |
+| `9.40` | Fas 9 — upload UX | Simplified upload | **DONE** | 2026-08-14 | `docs/step-9.40-report.md`, `frontend/src/pages/NewImportPage.tsx` |
+| `9.41` | Fas 9 — result UX | Result next action follows Actions and Work state | **NEXT** | — | `docs/implementation-steps.md` |
 | `9.42` | Fas 9 — Actions UX | Compact successful Actions, prominent failures | **PENDING** | — | `docs/implementation-steps.md` |
 
 ## Revision history

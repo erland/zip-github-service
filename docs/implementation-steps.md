@@ -915,3 +915,18 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 
 **Kvalitetsgrind för 9.30:** Underhåll ska ge samma branchbedömning oavsett om projektsidan har besökts först eller inte; stale PR-status ska reconcileras i själva inventeringen, osäkerhet ska stoppa deletion, och användaren ska kunna navigera direkt till eget zip-GitHub-project, GitHub-branch och känd GitHub-PR utan att interna projekt från andra användare exponeras.
 
+## Steg 9.31 - Runtime version and PR-aware import result
+
+- Visa aktuell zip-GitHub-version på `Om tjänsten` utan att införa ännu en manuellt underhållen versionskälla. Repositoryts rotfil `VERSION` är fortsatt auktoritativ; CI ska injicera dess värde i den verifierade frontend-builden som `VITE_ZIP_GITHUB_VERSION`.
+- Lokala source-builds får använda samma `ZIP_GITHUB_VERSION` som build-arg och endast falla tillbaka till `development` när ingen releaseversion har angivits. `package.json`, React-komponenter och andra filer får inte få hårdkodade releaseversioner.
+- Commitresultatsidan ska hämta aktuell Work-status efter leveransen innan den visar PR-åtgärder. Detta använder befintlig `/projects/{id}/work`-reconciliation så GitHub är auktoritativ för aktuell PR-status.
+- Vid `PR_OPEN` ska sidan inte visa `Skapa pull request`. Visa i stället att den befintliga pull requesten har uppdaterats med committen och en länk till den befintliga PR:n.
+- Vid `PR_CLOSED` utan merge ska sidan erbjuda `Skapa ny pull request`. Vid aktiv Work utan PR ska ordinarie `Skapa pull request` finnas kvar.
+- Om aktuell Work-/PR-status inte kan hämtas ska PR-åtgärden faila stängt och inte erbjuda skapande på chans.
+- Den inledande resultatsidetexten ska också spegla `PR_OPEN` och inte säga att användaren kan skapa en ny PR när en befintlig PR redan uppdaterats automatiskt.
+- Lägg frontendregression för versionsvisning, ACTIVE Work, PR_OPEN och PR_CLOSED.
+
+**Status:** DONE (2026-08-14, r0159 / 1.0.0-rc.111). Se `docs/step-9.31-report.md`.
+
+**Kvalitetsgrind för 9.31:** den version som visas i tjänsten ska komma från samma `VERSION` som används för release/image-taggar, och commitresultatsidan får aldrig erbjuda skapande av en andra PR när aktuell Work redan har en öppen PR.
+

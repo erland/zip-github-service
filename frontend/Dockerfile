@@ -5,7 +5,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
-RUN npm run build
+ARG ZIP_GITHUB_VERSION=development
+RUN VITE_ZIP_GITHUB_VERSION="${ZIP_GITHUB_VERSION}" npm run build
 
 FROM nginx:1.27-alpine
 ENV ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M

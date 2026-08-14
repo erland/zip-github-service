@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.110"
+expected_version="1.0.0-rc.112"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.110 - 2026-08-14' CHANGELOG.md
+grep -q '## 1.0.0-rc.112 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,13 +25,13 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0158`' docs/implementation-status.md
+grep -q 'Repository revision: `r0160`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'confirmOpenPullRequest' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.30`' docs/implementation-status.md
+grep -q 'Last completed step: `9.31`' docs/implementation-status.md
 test -s docs/rc103-step-9.29-empty-repository-start-correction.md
 grep -q 'verifyForWorkStart' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
 grep -q 'ensureProjectForRepositoryReadyForWork' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
@@ -52,7 +52,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.30 COMPLETE — EMPTY-REPOSITORY START DIAGNOSTICS ADDED`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.31 COMPLETE — EMPTY-REPOSITORY SUPPORT VERIFIED`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -639,3 +639,16 @@ grep -q 'for (Throwable current = error; current != null; current = current.getC
 grep -q 'nestedGithub404IsRecognizedAsMissingResource' backend/src/test/java/info/isaksson/erland/zipgithub/github/GitHubAppClientContractTest.java
 grep -q 'differentGithubStatusIsNotRecognizedAs404' backend/src/test/java/info/isaksson/erland/zipgithub/github/GitHubAppClientContractTest.java
 printf 'rc.110 empty-repository branch 404 assertions verified for %s.\n' "$actual_version"
+
+grep -Fq 'VITE_ZIP_GITHUB_VERSION=' .github/workflows/ci.yml
+grep -Fq '../VERSION' .github/workflows/ci.yml
+grep -Fq 'import.meta.env.VITE_ZIP_GITHUB_VERSION' frontend/src/pages/AboutPage.tsx
+grep -Fq "work?.status === 'PR_OPEN'" frontend/src/pages/ImportResultPage.tsx
+grep -Fq 'Den befintliga pull requesten har uppdaterats med denna commit.' frontend/src/pages/ImportResultPage.tsx
+grep -Fq "work.status === 'PR_CLOSED' ? 'Skapa ny pull request' : 'Skapa pull request'" frontend/src/pages/ImportResultPage.tsx
+grep -Fq 'does not offer a second pull request when current Work already has an open PR' frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq 'offers a new pull request when the previous PR is closed without merge' frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq 'shows the build-injected zip-GitHub version' frontend/src/pages/AboutPage.test.tsx
+printf 'Step 9.31 runtime version and PR-aware result assertions verified for %s.\n' "$actual_version"
+grep -Fq "await screen.findByRole('button', { name: 'Skapa pull request' })" frontend/src/pages/ImportResultPage.test.tsx
+printf 'rc.112 async ImportResultPage test assertion verified for %s.\n' "$actual_version"

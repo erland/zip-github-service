@@ -1,3 +1,15 @@
+## 1.0.0-rc.128 - 2026-08-14
+
+Repository revision: `r0176`
+
+- Implements step 9.41: result next action follows Actions and Work state.
+- A real observed Actions failure/cancellation for the current commit is elevated as the primary attention item.
+- Normal next-step actions remain available even when Actions needs attention, so users are not trapped.
+- `not_started` and `unavailable` do not block or replace the normal Work/PR flow.
+- Projects with no Actions, or workflows that only trigger after a pull request exists, therefore continue exactly as before.
+- Pending/in-progress Actions is communicated explicitly but does not block upload or PR creation.
+- Step 9.42 `Compact successful Actions, prominent failures` is now NEXT.
+
 ## 1.0.0-rc.127 - 2026-08-14
 
 Repository revision: `r0175`

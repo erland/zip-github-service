@@ -135,8 +135,9 @@ describe('ProjectDetailPage state-based Work actions', () => {
 
     render(<MemoryRouter initialEntries={['/projects/project-1']}><Routes><Route path="/projects/:projectId" element={<ProjectDetailPage />} /></Routes></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'Nästa steg' })).toBeInTheDocument();
-    expect(screen.getByText('Inget arbete pågår ännu. Skapa en verifierad Work-branch för att kunna ladda upp den första ZIP-filen.')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Starta arbete' })).toHaveLength(1);
+    expect(screen.getByText('Inget arbete pågår ännu. Ladda upp den första ZIP-filen så skapar zip-GitHub automatiskt en verifierad Work-branch.')).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Ladda upp första ZIP' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Starta arbete' })).not.toBeInTheDocument();
   });
 
 
@@ -200,7 +201,7 @@ describe('ProjectDetailPage cancellation lifecycle', () => {
 });
 
 describe('ProjectDetailPage step 9.8 lifecycle', () => {
-  it('links the repository, starts a verified new Work, and offers resumable non-default branches', async () => {
+  it('links the repository and keeps explicit resume of a non-default branch available', async () => {
     const user = userEvent.setup();
     let active = false;
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -220,9 +221,10 @@ describe('ProjectDetailPage step 9.8 lifecycle', () => {
     const repo = await screen.findByRole('link', { name: 'owner/repo' });
     expect(repo).toHaveAttribute('href', 'https://github.com/owner/repo/tree/main');
     expect(await screen.findByRole('option', { name: 'old-work' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Starta arbete' }));
+    await user.selectOptions(screen.getByLabelText('Eller fortsätt på befintlig branch'), 'old-work');
+    await user.click(screen.getByRole('button', { name: 'Fortsätt på vald branch' }));
     expect(await screen.findByText('zip-github/work-2')).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith('/api/projects/project-1/work', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/project-1/work', expect.objectContaining({ method: 'POST', body: JSON.stringify({ existingBranch: 'old-work' }) }));
   });
   it('keeps an open pull request as active work and surfaces remote branch changes', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {

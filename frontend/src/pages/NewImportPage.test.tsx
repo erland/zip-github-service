@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   cancelImport: vi.fn(),
   getProject: vi.fn(),
   getProjectWork: vi.fn(),
+  startProjectWork: vi.fn(),
   getCurrentUser: vi.fn(),
 }));
 
@@ -20,7 +21,7 @@ vi.mock('../api/imports', () => ({
   prepareImportReview: mocks.prepareImportReview,
   cancelImport: mocks.cancelImport,
 }));
-vi.mock('../api/projects', () => ({ getProject: mocks.getProject, getProjectWork: mocks.getProjectWork }));
+vi.mock('../api/projects', () => ({ getProject: mocks.getProject, getProjectWork: mocks.getProjectWork, startProjectWork: mocks.startProjectWork }));
 vi.mock('../api/auth', () => ({ getCurrentUser: mocks.getCurrentUser }));
 
 const project = {
@@ -30,6 +31,9 @@ const project = {
 };
 const currentUser = { id: 'user-1', githubUserId: 1, login: 'erland', avatarUrl: null,
   gitName: 'Erland', gitEmail: '1+erland@users.noreply.github.com' };
+const activeWork = { id: 'work-1', projectId: 'project-1', baseBranch: 'main', branchName: 'zip-github/work-1', status: 'ACTIVE',
+  headCommitSha: null, remoteHeadCommitSha: null, branchChangedExternally: false, lastImportId: null,
+  pullRequestNumber: null, pullRequestUrl: null, createdAt: '2026-08-07T10:00:00Z', updatedAt: '2026-08-07T10:00:00Z' };
 const upload = { id: 'upload-1', importId: 'import-1', originalFilename: 'project.zip', sizeBytes: 42,
   sha256: 'a'.repeat(64), status: 'STORED', createdAt: '2026-08-07T10:00:00Z', retentionDeadline: '2026-08-08T10:00:00Z' };
 
@@ -55,6 +59,7 @@ beforeEach(() => {
   mocks.cancelImport.mockReset().mockResolvedValue({ id: 'import-1', projectId: 'project-1', baseBranch: 'main', status: 'CANCELLED', createdAt: '2026-08-07T10:00:00Z' });
   mocks.getProject.mockReset().mockResolvedValue(project);
   mocks.getProjectWork.mockReset().mockResolvedValue(null);
+  mocks.startProjectWork.mockReset().mockResolvedValue(activeWork);
   mocks.getCurrentUser.mockReset().mockResolvedValue(currentUser);
 });
 
@@ -87,6 +92,53 @@ describe('NewImportPage open PR confirmation', () => {
     renderPage();
     expect(await screen.findByLabelText('Projektarkiv')).toBeEnabled();
     expect(screen.queryByRole('alert', { name: 'Öppen pull request' })).not.toBeInTheDocument();
+  });
+});
+
+
+describe('NewImportPage automatic Work start', () => {
+  it('starts Work before creating the first import when the repository has no active Work', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const input = await screen.findByLabelText('Projektarkiv');
+    await user.upload(input, new File(['zip'], 'first.zip', { type: 'application/zip' }));
+    await user.click(screen.getByRole('button', { name: 'Ladda upp ZIP' }));
+
+    expect(await screen.findByRole('heading', { name: 'Granskningen öppnades' })).toBeInTheDocument();
+    expect(mocks.startProjectWork).toHaveBeenCalledWith('project-1');
+    expect(mocks.createImport).toHaveBeenCalledWith('project-1', undefined, false);
+    expect(mocks.startProjectWork.mock.invocationCallOrder[0]).toBeLessThan(mocks.createImport.mock.invocationCallOrder[0]);
+    expect(mocks.createImport.mock.invocationCallOrder[0]).toBeLessThan(mocks.uploadZip.mock.invocationCallOrder[0]);
+  });
+
+  it('reuses an existing Work without starting another one', async () => {
+    const user = userEvent.setup();
+    mocks.getProjectWork.mockResolvedValue(activeWork);
+    renderPage();
+
+    const input = await screen.findByLabelText('Projektarkiv');
+    await user.upload(input, new File(['zip'], 'next.zip', { type: 'application/zip' }));
+    await user.click(screen.getByRole('button', { name: 'Ladda upp ZIP' }));
+
+    expect(await screen.findByRole('heading', { name: 'Granskningen öppnades' })).toBeInTheDocument();
+    expect(mocks.startProjectWork).not.toHaveBeenCalled();
+    expect(mocks.createImport).toHaveBeenCalledWith('project-1', undefined, false);
+  });
+
+  it('stops before import creation and upload when automatic Work start fails', async () => {
+    const user = userEvent.setup();
+    mocks.startProjectWork.mockRejectedValueOnce(new Error('Work-branchen kunde inte skapas.'));
+    renderPage();
+
+    const input = await screen.findByLabelText('Projektarkiv');
+    await user.upload(input, new File(['zip'], 'first.zip', { type: 'application/zip' }));
+    await user.click(screen.getByRole('button', { name: 'Ladda upp ZIP' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Work-branchen kunde inte skapas.');
+    expect(mocks.createImport).not.toHaveBeenCalled();
+    expect(mocks.uploadZip).not.toHaveBeenCalled();
+    expect(mocks.prepareImportReview).not.toHaveBeenCalled();
   });
 });
 

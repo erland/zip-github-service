@@ -102,8 +102,8 @@ export default function ProjectDetailPage() {
         <p>En ZIP-import väntar på att slutföras. Fortsätt den innan du startar nästa import.</p>
         <div className="result-primary-action"><Link className="button" to={activeImportRoute}>{activeImportLabel}</Link></div>
       </> : !work ? <>
-        <p>Inget arbete pågår ännu. Skapa en verifierad Work-branch för att kunna ladda upp den första ZIP-filen.</p>
-        <div className="result-primary-action"><button className="button" type="button" disabled={workBusy} onClick={()=>void startWork(false)}>{workBusy?'Startar…':'Starta arbete'}</button></div>
+        <p>Inget arbete pågår ännu. Ladda upp den första ZIP-filen så skapar zip-GitHub automatiskt en verifierad Work-branch.</p>
+        <div className="result-primary-action"><Link className="button" to={`/projects/${project.id}/imports/new`}>Ladda upp första ZIP</Link></div>
       </> : work.status === 'PR_OPEN' ? <>
         <p>Pull requesten är öppen. Nästa ZIP läggs på samma Work-branch och uppdaterar PR:n automatiskt.</p>
         <div className="result-primary-action"><Link className="button" to={`/projects/${project.id}/imports/new`}>Ladda upp nästa ZIP</Link>{work.pullRequestUrl && <a className="button button--secondary" href={work.pullRequestUrl} target="_blank" rel="noreferrer">Öppna pull request</a>}</div>
@@ -119,7 +119,7 @@ export default function ProjectDetailPage() {
     <section aria-labelledby="work-heading"><h2 id="work-heading">Pågående arbete</h2>
       {!work ? <div className="empty-state"><p>Inget arbete är startat.</p>
         {branches.length > 0 && <div className="identity-fields"><label htmlFor="existing-work-branch">Eller fortsätt på befintlig branch</label><select id="existing-work-branch" value={existingBranch} onChange={e=>setExistingBranch(e.target.value)}><option value="">Välj branch…</option>{branches.map(branch=><option key={branch.name} value={branch.name}>{branch.name}</option>)}</select><button className="button button--secondary" type="button" disabled={!existingBranch || workBusy} onClick={()=>void startWork(true)}>Fortsätt på vald branch</button></div>}
-        <p>När arbetet är startat kan du ladda upp en ZIP. Shortcut-flödet skapar automatiskt en ny verifierad Work-branch om ingen finns.</p>
+        <p>Normalflödet startar Work automatiskt när du laddar upp den första ZIP-filen. Välj bara en befintlig branch ovan om du uttryckligen vill återuppta ett tidigare arbete.</p>
       </div> : <div className="work-card">
         <p><strong>Arbetsbranch:</strong> <code>{work.branchName}</code>{branchUrl && <> · <a href={branchUrl} target="_blank" rel="noreferrer">Öppna på GitHub</a></>}</p><p><strong>Bas:</strong> {work.baseBranch}</p>
         {work.pullRequestUrl && <aside className="status-message" aria-label="Pull request-status"><strong>Pull request #{work.pullRequestNumber}</strong> · <span className="status-badge">{work.status === 'PR_OPEN' ? 'Öppen' : work.status === 'PR_CLOSED' ? 'Stängd' : work.status}</span> · <a href={work.pullRequestUrl} target="_blank" rel="noreferrer">Öppna på GitHub</a><p>{work.status === 'PR_OPEN' ? 'Du kan fortsätta ladda upp ZIP-filer. Nya commits pushas till samma Work-branch och uppdaterar automatiskt denna PR.' : 'PR:n är stängd utan merge. Du kan fortsätta arbetet och skapa en ny PR, eller avsluta Work.'}</p></aside>}

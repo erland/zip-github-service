@@ -43,7 +43,7 @@ it('shows both next-ZIP and direct finish-work actions after commit', async () =
   render(<MemoryRouter initialEntries={['/projects/p1/imports/import-1/result']}><Routes><Route path="projects/:projectId/imports/:importId/result" element={<ImportResultPage />} /></Routes></MemoryRouter>);
   expect(await screen.findByRole('heading', { name: 'Commit skapad' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Ladda upp nästa ZIP' })).toHaveAttribute('href', '/projects/p1/imports/new');
-  expect(screen.getByRole('button', { name: 'Skapa pull request' })).toBeEnabled();
+  expect(await screen.findByRole('button', { name: 'Skapa pull request' })).toBeEnabled();
   expect(screen.getByRole('link', { name: result.branchName })).toHaveAttribute('href', expect.stringContaining('/tree/'));
   expect(await screen.findByText('CI')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'backend' })).toHaveAttribute('href', expect.stringContaining('/job/11'));

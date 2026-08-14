@@ -1,3 +1,12 @@
+## 1.0.0-rc.112 - 2026-08-14
+
+Repository revision: `r0160`
+
+- Fixes the rc.111 frontend test regression reported by GitHub Actions job 94689443392.
+- The failing `ImportResultPage` test already mocked an `ACTIVE` Work correctly, but asserted the Pull Request button synchronously before the separate asynchronous Work-status request had completed.
+- The test now waits for the PR action to appear with `findByRole`, matching the intentional rc.111 fail-closed UI behavior.
+- No production application behavior changes from rc.111.
+
 ## 1.0.0-rc.111 - 2026-08-14
 
 Repository revision: `r0159`

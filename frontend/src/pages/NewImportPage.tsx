@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { cancelImport, createImport, prepareImportReview, SourceUploadResponse, uploadZip } from '../api/imports';
-import { getProject, getProjectWork, ProjectResponse, WorkSessionResponse } from '../api/projects';
+import { getProject, getProjectWork, startProjectWork, ProjectResponse, WorkSessionResponse } from '../api/projects';
 import { getCurrentUser, type AuthenticatedUser } from '../api/auth';
 
 type UploadState = 'idle' | 'creating' | 'uploading' | 'preparing' | 'error' | 'cancelled';
@@ -90,7 +90,15 @@ export default function NewImportPage() {
         setMessage('Bekräfta först att nästa ZIP ska uppdatera den befintliga pull requesten.');
         return;
       }
-      const importId = existingImportId || (await createImport(project.id, customAuthor, work?.status === 'PR_OPEN' && openPrConfirmed)).id;
+
+      let targetWork = work;
+      if (!existingImportId && !targetWork) {
+        setMessage('Startar ett verifierat arbete för den första ZIP-filen…');
+        targetWork = await startProjectWork(project.id);
+        setWork(targetWork);
+      }
+
+      const importId = existingImportId || (await createImport(project.id, customAuthor, targetWork?.status === 'PR_OPEN' && openPrConfirmed)).id;
       setCurrentImportId(importId);
       setState('uploading');
       const uploaded = await uploadZip(importId, file, setProgress, abortController.signal);
@@ -182,7 +190,7 @@ export default function NewImportPage() {
 
         {(state === 'creating' || state === 'uploading') && (
           <div className="upload-progress" aria-live="polite">
-            <div className="upload-progress__row"><strong>{state === 'creating' ? 'Skapar import…' : 'Laddar upp…'}</strong><span>{progress}%</span></div>
+            <div className="upload-progress__row"><strong>{state === 'creating' ? (work ? 'Skapar import…' : 'Startar arbete…') : 'Laddar upp…'}</strong><span>{progress}%</span></div>
             <progress value={progress} max="100" aria-label="Uppladdningsförlopp">{progress}%</progress>
             <button className="button button--secondary" type="button" onClick={() => controller.current?.abort()}>Avbryt</button>
           </div>

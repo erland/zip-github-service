@@ -1,3 +1,14 @@
+## 1.0.0-rc.114 - 2026-08-14
+
+Repository revision: `r0162`
+
+- Implements step 9.33: the first normal ZIP upload automatically starts a verified Work when the repository has no active Work.
+- Reuses the existing `POST /api/projects/{projectId}/work` path, preserving existing provisioning, empty-repository bootstrap and branch verification semantics.
+- Existing active Work is reused; an open PR still requires the existing explicit confirmation before a new ZIP may update it.
+- A failed automatic Work start stops before import creation, ZIP upload and review preparation.
+- The project page now guides repositories without Work directly to `Ladda upp första ZIP`; explicit resume of a selected existing branch remains available as an advanced action.
+- No automatic selection of old Work branches is introduced.
+
 ## 1.0.0-rc.113 - 2026-08-14
 
 Repository revision: `r0161`

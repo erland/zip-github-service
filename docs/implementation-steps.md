@@ -946,6 +946,8 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 
 **Kvalitetsgrind för 9.32:** projektsidan ska för varje normalt livscykeltillstånd visa en entydig rekommenderad primär handling, utan att duplicera samma primära handling på flera ställen eller erbjuda en handling som strider mot aktuell Work-/PR-status.
 
+**Efterföljande förenkling:** steg 9.33 ersätter `Starta arbete` som normal primär handling för repository utan Work med `Ladda upp första ZIP`; den guidade state-principen från 9.32 är oförändrad.
+
 ## Steg 9.33 - Upload starts Work automatically
 
 - Ta bort `Starta arbete` som separat steg i det normala första-ZIP-flödet. När användaren väljer att ladda upp första ZIP-filen ska zip-GitHub skapa en verifierad Work automatiskt om ingen finns.
@@ -954,7 +956,7 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Återupptagning av en specifik befintlig branch ska fortsatt vara en explicit avancerad handling; automatiken får inte godtyckligt välja en gammal branch.
 - Fel i Work-start ska visas som ett tydligt upload-/startproblem och aldrig leda till att ZIP-granskningen fortsätter mot okänd branch.
 
-**Status:** PLANNED.
+**Status:** DONE (2026-08-14, r0162 / 1.0.0-rc.114). Se `docs/step-9.33-report.md`.
 
 **Kvalitetsgrind för 9.33:** första normala vägen ska vara `repository -> ladda upp ZIP`, men exakt samma Work-, bootstrap- och safety-invarianter ska gälla som vid dagens explicita start.
 

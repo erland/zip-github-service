@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   cleanupWorkBranches,
   getWorkBranchCleanupPreview,
@@ -81,12 +82,25 @@ export default function MaintenancePage() {
           ) : (
             <div className="table-scroll">
               <table>
-                <thead><tr><th>Repository</th><th>Branch</th><th>Status</th><th>Bedömning</th></tr></thead>
+                <thead><tr><th>Repository</th><th>Branch</th><th>PR</th><th>Status</th><th>Bedömning</th></tr></thead>
                 <tbody>
                   {preview.candidates.map((candidate) => (
                     <tr key={`${candidate.githubInstallationId}:${candidate.githubRepositoryId}:${candidate.branchName}`}>
-                      <td>{candidate.repositoryFullName}</td>
-                      <td><code>{candidate.branchName}</code></td>
+                      <td>
+                        {candidate.projectId ? (
+                          <Link to={`/projects/${candidate.projectId}`}>{candidate.repositoryFullName}</Link>
+                        ) : candidate.repositoryFullName}
+                      </td>
+                      <td>
+                        {candidate.branchUrl ? (
+                          <a href={candidate.branchUrl} target="_blank" rel="noreferrer"><code>{candidate.branchName}</code></a>
+                        ) : <code>{candidate.branchName}</code>}
+                      </td>
+                      <td>
+                        {candidate.pullRequestNumber && candidate.pullRequestUrl ? (
+                          <a href={candidate.pullRequestUrl} target="_blank" rel="noreferrer">#{candidate.pullRequestNumber}</a>
+                        ) : '–'}
+                      </td>
                       <td>{candidate.deletable ? 'Säker att radera' : candidate.classification === 'UNVERIFIED' ? 'Kan inte verifieras säkert' : 'Behåll'}</td>
                       <td>{candidate.reason}</td>
                     </tr>

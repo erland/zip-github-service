@@ -2,9 +2,14 @@ export type WorkBranchCleanupCandidate = {
   githubInstallationId: number;
   githubRepositoryId: number;
   repositoryFullName: string;
+  repositoryUrl: string | null;
+  projectId: string | null;
   defaultBranch: string;
   branchName: string;
+  branchUrl: string | null;
   commitSha: string;
+  pullRequestNumber: number | null;
+  pullRequestUrl: string | null;
   classification: string;
   reason: string;
   deletable: boolean;

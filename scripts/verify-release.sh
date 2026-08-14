@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.107"
+expected_version="1.0.0-rc.108"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.107 - 2026-08-13' CHANGELOG.md
+grep -q '## 1.0.0-rc.108 - 2026-08-14' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,13 +25,13 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0155`' docs/implementation-status.md
+grep -q 'Repository revision: `r0156`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'confirmOpenPullRequest' frontend/src/api/staging.ts
-grep -q 'Last completed step: `9.29`' docs/implementation-status.md
+grep -q 'Last completed step: `9.30`' docs/implementation-status.md
 test -s docs/rc103-step-9.29-empty-repository-start-correction.md
 grep -q 'verifyForWorkStart' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
 grep -q 'ensureProjectForRepositoryReadyForWork' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
@@ -52,7 +52,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.29 COMPLETE — EMPTY REPOSITORY STARTUP CONTENTS-API CORRECTED — RC.104 PACKAGING CORRECTED`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.30 COMPLETE — MAINTENANCE RECONCILIATION AND NAVIGATION`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -608,6 +608,16 @@ grep -Fq 'bootstrapEmptyRepository(project.githubInstallationId()' backend/src/m
 grep -Fq '"PUT", createPayload.toString()' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
 grep -Fq '| `9.29` | Fas 9 — repository bootstrap | Stöd första ZIP i helt tomt GitHub-repository | **DONE**' docs/implementation-status.md
 printf 'Phase 9.29 empty repository support assertions verified for %s.\n' "$actual_version"
+
+# Phase 9 step 9.30 (maintenance reconciliation and navigation).
+test -s docs/step-9.30-report.md
+grep -Fq '| `9.30` | Fas 9 — underhåll | Reconcila Work/PR-status och lägg navigationslänkar i Underhåll | **DONE**' docs/implementation-status.md
+grep -Fq 'reconcileWorkPullRequestStateStrict' backend/src/main/java/info/isaksson/erland/zipgithub/application/WorkBranchMaintenanceService.java
+grep -Fq 'findNonTerminalByRepositoryBranch' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/WorkPersistenceStore.java
+grep -Fq '<th>PR</th>' frontend/src/pages/MaintenancePage.tsx
+grep -Fq 'candidate.branchUrl' frontend/src/pages/MaintenancePage.tsx
+grep -Fq 'candidate.pullRequestUrl' frontend/src/pages/MaintenancePage.tsx
+printf 'Phase 9.30 maintenance reconciliation/navigation assertions verified for %s.\n' "$actual_version"
 
 grep -Fq '.zip-github-bootstrap' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
 grep -Fq '"REPOSITORY_WORK_START_FAILED"' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java

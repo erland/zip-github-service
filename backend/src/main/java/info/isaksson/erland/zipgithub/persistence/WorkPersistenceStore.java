@@ -6,6 +6,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.*;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -61,6 +63,25 @@ public class WorkPersistenceStore {
             s.setObject(1,ownerUserId); s.setObject(2,projectId); s.setString(3,branchName);
             try (ResultSet r=s.executeQuery()) { return r.next(); }
         } catch (SQLException e) { throw new IllegalStateException("Could not validate active work branch.", e); }
+    }
+
+    public List<WorkSession> findNonTerminalByRepositoryBranch(long installationId, long repositoryId, String branchName) {
+        try (Connection c=dataSource.getConnection(); PreparedStatement s=c.prepareStatement("""
+                SELECT w.*
+                FROM work_session w
+                JOIN project p ON p.id=w.project_id AND p.owner_user_id=w.owner_user_id
+                WHERE p.github_installation_id=? AND p.github_repository_id=?
+                  AND w.status IN ('PROVISIONING','ACTIVE','PR_OPEN','PR_CLOSED')
+                  AND w.branch_name=?
+                ORDER BY w.updated_at DESC
+                """)) {
+            s.setLong(1,installationId); s.setLong(2,repositoryId); s.setString(3,branchName);
+            try (ResultSet r=s.executeQuery()) {
+                List<WorkSession> result = new ArrayList<>();
+                while (r.next()) result.add(map(r));
+                return List.copyOf(result);
+            }
+        } catch (SQLException e) { throw new IllegalStateException("Could not load repository Work branch usage.", e); }
     }
 
     public boolean nonTerminalBranchInUse(long installationId, long repositoryId, String branchName) {

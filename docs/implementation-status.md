@@ -1,7 +1,7 @@
 # Implementation status — zip-github
 
 Version 1.0  
-Updated: 13 August 2026
+Updated: 14 August 2026
 
 ## Purpose
 
@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0155`
-- Last completed step: `9.29`
+- Repository revision: `r0156`
+- Last completed step: `9.30`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.29 COMPLETE — EMPTY REPOSITORY STARTUP CONTENTS-API CORRECTED — RC.104 PACKAGING CORRECTED`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.30 COMPLETE — MAINTENANCE RECONCILIATION AND NAVIGATION`
 
 ## Step ledger
 
@@ -114,6 +114,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.27` | Fas 9 — PR/Work safety UX | Bekräftelse innan ett Work med öppen PR utökas | **DONE** | 2026-08-13 | `docs/step-9.27-report.md`, `frontend/src/pages/NewImportPage.tsx` |
 | `9.28` | Fas 9 — CI efficiency | Undvik dubbla fulla CI-körningar för samma Work-commit med öppen PR | **DONE** | 2026-08-13 | `docs/step-9.28-report.md`, `.github/workflows/ci.yml` |
 | `9.29` | Fas 9 — repository bootstrap | Stöd första ZIP i helt tomt GitHub-repository | **DONE** | 2026-08-13 | `docs/step-9.29-report.md`, `backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java` |
+| `9.30` | Fas 9 — underhåll | Reconcila Work/PR-status och lägg navigationslänkar i Underhåll | **DONE** | 2026-08-14 | `docs/step-9.30-report.md`, `backend/src/main/java/info/isaksson/erland/zipgithub/application/WorkBranchMaintenanceService.java`, `frontend/src/pages/MaintenancePage.tsx` |
 
 ## Revision history
 
@@ -128,6 +129,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0150` | 2026-08-13 | `9.29` runtime correction | Empty repositories with absent/blank GitHub default-branch metadata resolve to `main` before persistence; initialized repositories still fail closed | `none` |
 | `r0151` | 2026-08-13 | `9.29` startup correction | Bootstrap moved before project persistence and bootstrap failures mapped explicitly | `none` |
 | `r0152` | 2026-08-13 | `9.29` GitHub Contents API correction | Empty repositories initialize through the GitHub-supported Contents API create/delete sequence before normal Work provisioning; repository-start runtime errors are explicitly mapped | `none` |
+| `r0156` | 2026-08-14 | `9.30` maintenance reconciliation and navigation | Underhåll reconciles stale PR-backed Work before classification and adds user-safe project, branch and PR navigation links | `none` |
 | `r0144` | 2026-08-13 | `9.25` frontend CI correction | Explicit Vitest lifecycle/assertion imports for the new maintenance page regression; no product behavior change | `none — define next step before further product work` |
 | `r0141` | 2026-08-13 | Backend CI correction after `9.24` | Added the missing `ImmutableImportPlanEntry` import required by the Step 9.24 blocker-decision delivery guard; no production behavior changed | `9.25` |
 | `r0142` | 2026-08-13 | Backend test CI correction after `9.24` | Updated the remaining `AlternativeZipIngestionRegressionTest` factory calls to the `selection-2` blocker-decision signature; no production behavior changed | `9.25` |

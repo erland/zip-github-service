@@ -120,16 +120,27 @@ public class GitHubAppClient implements GitHubProjectCatalog, GitHubInstallation
 
 
     @Override
-    public boolean hasOpenPullRequestForHead(String accessToken, String repositoryFullName, String headBranch) {
+    public Optional<GitHubPullRequest> findOpenPullRequestForHead(String accessToken, String repositoryFullName, String headBranch) {
         try {
             String owner = repositoryFullName.split("/", 2)[0];
             String head = java.net.URLEncoder.encode(owner + ":" + headBranch, StandardCharsets.UTF_8);
             JsonNode root = getJson("https://api.github.com/repos/" + repositoryFullName
                     + "/pulls?state=open&head=" + head + "&per_page=1", accessToken);
-            return root.isArray() && root.size() > 0;
+            if (root.isArray() && root.size() > 0) {
+                JsonNode json = root.get(0);
+                return Optional.of(new GitHubPullRequest(json.path("number").asLong(), json.path("html_url").asText(),
+                        json.path("state").asText(), json.path("draft").asBoolean(), json.path("merged").asBoolean(false),
+                        json.path("head").path("sha").asText(null)));
+            }
+            return Optional.empty();
         } catch (Exception e) {
             throw new IllegalStateException("Could not inspect open pull requests for branch", e);
         }
+    }
+
+    @Override
+    public boolean hasOpenPullRequestForHead(String accessToken, String repositoryFullName, String headBranch) {
+        return findOpenPullRequestForHead(accessToken, repositoryFullName, headBranch).isPresent();
     }
 
     @Override

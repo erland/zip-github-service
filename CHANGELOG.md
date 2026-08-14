@@ -1,3 +1,14 @@
+## 1.0.0-rc.108 - 2026-08-14
+
+Repository revision: `r0156`
+
+- Completes step 9.30: Underhåll reconciles PR-backed non-terminal Work sessions against GitHub before deciding whether a `zip-github/work-*` branch must be kept or is safe to delete.
+- Reuses the same strict Work/PR lifecycle reconciliation as new-import safety checks; GitHub uncertainty remains fail-closed and classifies the branch as unverifiable.
+- Adds a separate PR column in Underhåll. PR numbers are no longer repeated in status/reason text.
+- Repository names link to the current user's own zip-GitHub project when one exists; no other user's internal project id is exposed.
+- Work-branch names link directly to the GitHub branch, and known pull requests link directly to GitHub.
+- Adds regression coverage for stale `PR_OPEN` -> merged reconciliation, fail-closed reconciliation errors, current-user project-link isolation, GitHub branch/PR links and the existing revalidated-delete invariant.
+
 ## 1.0.0-rc.107 - 2026-08-13
 
 Repository revision: `r0155`

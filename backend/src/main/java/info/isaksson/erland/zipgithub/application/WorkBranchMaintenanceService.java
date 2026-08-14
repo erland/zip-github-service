@@ -3,6 +3,7 @@ package info.isaksson.erland.zipgithub.application;
 import info.isaksson.erland.zipgithub.api.dto.*;
 import info.isaksson.erland.zipgithub.api.error.ApiException;
 import info.isaksson.erland.zipgithub.github.*;
+import info.isaksson.erland.zipgithub.persistence.ProjectPersistenceStore;
 import info.isaksson.erland.zipgithub.persistence.WorkPersistenceStore;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -19,6 +20,8 @@ public class WorkBranchMaintenanceService {
     @Inject GitHubBranchClient branches;
     @Inject GitHubPullRequestClient pullRequests;
     @Inject WorkPersistenceStore workStore;
+    @Inject ProjectPersistenceStore projectStore;
+    @Inject ProjectApplicationService projects;
 
     public WorkBranchCleanupPreviewResponse preview(UUID userId, String userAccessToken) {
         List<WorkBranchCleanupCandidateResponse> candidates = new ArrayList<>();
@@ -54,7 +57,7 @@ public class WorkBranchMaintenanceService {
                 }
                 for (var branch : repositoryBranches) {
                     if (!WORK_BRANCH.matcher(branch.name()).matches()) continue;
-                    candidates.add(classify(installation.id(), repository, branch, token));
+                    candidates.add(classify(userId, installation.id(), repository, branch, token));
                 }
             }
         }
@@ -100,7 +103,7 @@ public class WorkBranchMaintenanceService {
                     results.add(new WorkBranchCleanupResultResponse.Result(repoName, branchName, "SKIPPED", "Branchen finns inte längre."));
                     continue;
                 }
-                var classification = classify(target.githubInstallationId(), repository, branch, token);
+                var classification = classify(userId, target.githubInstallationId(), repository, branch, token);
                 if (!classification.deletable()) {
                     results.add(new WorkBranchCleanupResultResponse.Result(repoName, branchName, "SKIPPED", classification.reason()));
                     continue;
@@ -114,25 +117,75 @@ public class WorkBranchMaintenanceService {
         return new WorkBranchCleanupResultResponse(List.copyOf(results));
     }
 
-    private WorkBranchCleanupCandidateResponse classify(long installationId, GitHubAppClient.GitHubRepository repository,
+    private WorkBranchCleanupCandidateResponse classify(UUID currentUserId, long installationId, GitHubAppClient.GitHubRepository repository,
                                                          GitHubBranchClient.Branch branch, String installationToken) {
-        if (branch.name().equals(repository.defaultBranch())) return candidate(installationId, repository, branch, "DEFAULT_BRANCH", "Repositoryts default branch får aldrig raderas här.", false);
-        if (branch.protectedBranch()) return candidate(installationId, repository, branch, "PROTECTED", "Branchen är protected på GitHub.", false);
+        CandidateLinks links = links(currentUserId, installationId, repository, branch);
+        if (branch.name().equals(repository.defaultBranch())) return candidate(installationId, repository, branch, links, (WorkSession) null, "DEFAULT_BRANCH", "Repositoryts default branch får aldrig raderas här.", false);
+        if (branch.protectedBranch()) return candidate(installationId, repository, branch, links, (WorkSession) null, "PROTECTED", "Branchen är protected på GitHub.", false);
+
+        List<WorkSession> before;
+        WorkSession prContext = null;
         try {
-            if (workStore.nonTerminalBranchInUse(installationId, repository.id(), branch.name()))
-                return candidate(installationId, repository, branch, "ACTIVE_WORK", "Branchen används av en icke-terminal Work-session.", false);
-            if (pullRequests.hasOpenPullRequestForHead(installationToken, repository.fullName(), branch.name()))
-                return candidate(installationId, repository, branch, "OPEN_PULL_REQUEST", "Branchen används som head för en öppen pull request.", false);
+            before = workStore.findNonTerminalByRepositoryBranch(installationId, repository.id(), branch.name());
+            for (WorkSession work : before) {
+                if (work.pullRequestNumber() != null) {
+                    if (prContext == null) prContext = work;
+                    projects.reconcileWorkPullRequestStateStrict(work.ownerUserId(), work.projectId());
+                }
+            }
+
+            List<WorkSession> active = workStore.findNonTerminalByRepositoryBranch(installationId, repository.id(), branch.name());
+            if (!active.isEmpty()) {
+                WorkSession display = active.stream().filter(w -> w.pullRequestNumber() != null).findFirst().orElse(active.getFirst());
+                return candidate(installationId, repository, branch, links, display, "ACTIVE_WORK", reasonForActiveWork(display), false);
+            }
+
+            Optional<GitHubPullRequestClient.GitHubPullRequest> openPr = pullRequests.findOpenPullRequestForHead(installationToken, repository.fullName(), branch.name());
+            if (openPr.isPresent()) {
+                return candidate(installationId, repository, branch, links, openPr.get(), "OPEN_PULL_REQUEST", "Branchen används som head för en öppen pull request.", false);
+            }
         } catch (RuntimeException e) {
-            return candidate(installationId, repository, branch, "UNVERIFIED", "Status kunde inte verifieras säkert; ingen radering tillåts.", false);
+            return candidate(installationId, repository, branch, links, prContext, "UNVERIFIED", "Status kunde inte verifieras säkert; ingen radering tillåts.", false);
         }
-        return candidate(installationId, repository, branch, "SAFE_TO_DELETE", "Ingen icke-terminal Work eller öppen pull request hittades.", true);
+        return candidate(installationId, repository, branch, links, prContext, "SAFE_TO_DELETE", "Ingen icke-terminal Work eller öppen pull request hittades.", true);
+    }
+
+    private CandidateLinks links(UUID currentUserId, long installationId, GitHubAppClient.GitHubRepository repository, GitHubBranchClient.Branch branch) {
+        UUID projectId = null;
+        if (projectStore != null && projectStore.enabled()) {
+            try { projectId = projectStore.findProjectByRepository(currentUserId, installationId, repository.id()).map(ProjectResponse::id).orElse(null); }
+            catch (RuntimeException ignored) { projectId = null; }
+        }
+        String repositoryUrl = repository.htmlUrl();
+        String branchUrl = repositoryUrl == null || repositoryUrl.isBlank() ? null : repositoryUrl + "/tree/" + branch.name();
+        return new CandidateLinks(projectId, repositoryUrl, branchUrl);
+    }
+
+    private static String reasonForActiveWork(WorkSession work) {
+        return switch (work.status()) {
+            case "PROVISIONING" -> "Work-sessionen håller på att provisioneras.";
+            case "PR_OPEN" -> "Work-sessionens pull request är öppen.";
+            case "PR_CLOSED" -> "Work-sessionens pull request är stängd men inte mergad.";
+            default -> "Branchen används av en aktiv Work-session.";
+        };
     }
 
     private static WorkBranchCleanupCandidateResponse candidate(long installationId, GitHubAppClient.GitHubRepository repository,
-                                                                 GitHubBranchClient.Branch branch, String classification,
-                                                                 String reason, boolean deletable) {
-        return new WorkBranchCleanupCandidateResponse(installationId, repository.id(), repository.fullName(), repository.defaultBranch(),
-                branch.name(), branch.commitSha(), classification, reason, deletable);
+                                                                 GitHubBranchClient.Branch branch, CandidateLinks links, WorkSession work,
+                                                                 String classification, String reason, boolean deletable) {
+        return new WorkBranchCleanupCandidateResponse(installationId, repository.id(), repository.fullName(), links.repositoryUrl(),
+                links.projectId(), repository.defaultBranch(), branch.name(), links.branchUrl(), branch.commitSha(),
+                work == null ? null : work.pullRequestNumber(), work == null ? null : work.pullRequestUrl(), classification, reason, deletable);
     }
+
+    private static WorkBranchCleanupCandidateResponse candidate(long installationId, GitHubAppClient.GitHubRepository repository,
+                                                                 GitHubBranchClient.Branch branch, CandidateLinks links,
+                                                                 GitHubPullRequestClient.GitHubPullRequest pr,
+                                                                 String classification, String reason, boolean deletable) {
+        return new WorkBranchCleanupCandidateResponse(installationId, repository.id(), repository.fullName(), links.repositoryUrl(),
+                links.projectId(), repository.defaultBranch(), branch.name(), links.branchUrl(), branch.commitSha(),
+                pr == null ? null : pr.number(), pr == null ? null : pr.htmlUrl(), classification, reason, deletable);
+    }
+
+    private record CandidateLinks(UUID projectId, String repositoryUrl, String branchUrl) {}
 }

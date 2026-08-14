@@ -1,3 +1,4 @@
+import { assertSessionActive, SessionExpiredError, signalSessionExpired } from './session';
 export type ImportResponse = {
   id: string;
   projectId: string;
@@ -182,6 +183,11 @@ export function uploadZip(
       if (event.lengthComputable && event.total > 0) onProgress(Math.round((event.loaded / event.total) * 100));
     };
     request.onload = () => {
+      if (request.status === 401) {
+        signalSessionExpired();
+        reject(new SessionExpiredError());
+        return;
+      }
       if (request.status >= 200 && request.status < 300) {
         onProgress(100);
         resolve(JSON.parse(request.responseText) as SourceUploadResponse);
@@ -200,12 +206,14 @@ async function requestJson<T>(url: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   if (init.method && !['GET', 'HEAD'].includes(init.method.toUpperCase())) headers.set('X-Zip-GitHub-Request', '1');
   const response = await fetch(url, { ...init, headers, credentials: 'include' });
+  assertSessionActive(response);
   if (!response.ok) throw await apiError(response);
   return response.json() as Promise<T>;
 }
 
 async function requestOptionalJson<T>(url: string): Promise<T | null> {
   const response = await fetch(url, { credentials: 'include' });
+  assertSessionActive(response);
   if (response.status === 404) return null;
   if (!response.ok) throw await apiError(response);
   return response.json() as Promise<T>;

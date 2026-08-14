@@ -1,3 +1,4 @@
+import { assertSessionActive } from './session';
 export type WorkBranchCleanupCandidate = {
   githubInstallationId: number;
   githubRepositoryId: number;
@@ -48,6 +49,7 @@ export async function cleanupWorkBranches(candidates: WorkBranchCleanupCandidate
 
 async function requestJson<T>(url: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(url, { credentials: 'include', ...init });
+  assertSessionActive(response);
   if (!response.ok) {
     try {
       const problem = await response.json() as { detail?: string; title?: string };

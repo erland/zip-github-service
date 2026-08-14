@@ -1,3 +1,15 @@
+## 1.0.0-rc.120 - 2026-08-14
+
+Repository revision: `r0168`
+
+- Implements step 9.36: central session-expiry handling.
+- Authenticated frontend API clients now detect HTTP 401 through a shared `api/session.ts` helper instead of surfacing generic page-level API errors.
+- `AppLayout` reacts to session expiry by returning to the existing login UI with a clear timeout message while preserving the current route as OAuth `returnTo`.
+- ZIP upload via `XMLHttpRequest` participates in the same session-expiry signal.
+- Initial `/api/auth/me` keeps its existing 401-as-anonymous semantics, and 403/other API errors are not reclassified as session timeout.
+- Logout treats an already-expired 401 session as effectively logged out.
+- No backend authentication/session semantics change.
+
 ## 1.0.0-rc.119 - 2026-08-14
 
 Repository revision: `r0167`

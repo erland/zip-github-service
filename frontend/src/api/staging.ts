@@ -1,3 +1,4 @@
+import { assertSessionActive } from './session';
 export type ClaimedStagingImport = {
   stagingId: string;
   originalFilename: string;
@@ -47,6 +48,7 @@ export async function promoteStagingImport(stagingId: string, target: StagingPro
 
 async function requestJson<T>(url: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(url, { credentials: 'include', ...init });
+  assertSessionActive(response);
   if (!response.ok) throw await apiError(response);
   return response.json() as Promise<T>;
 }

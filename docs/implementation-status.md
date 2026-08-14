@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0167`
-- Last completed step: `9.35`
+- Repository revision: `r0168`
+- Last completed step: `9.36`
 - Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.35 COMPLETE — UX SIMPLIFICATION SEQUENCE COMPLETE`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.36 COMPLETE — CENTRAL SESSION EXPIRY HANDLING`
 
 ## Step ledger
 
@@ -120,6 +120,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.33` | Fas 9 — guided UX | Starta Work automatiskt vid första normala ZIP-upload | **DONE** | 2026-08-14 | `docs/step-9.33-report.md`, `frontend/src/pages/NewImportPage.tsx` |
 | `9.34` | Fas 9 — review UX | Prioritera blockers, externa konflikter och varningar före vanlig filinformation | **DONE** | 2026-08-14 | `docs/step-9.34-report.md`, `frontend/src/pages/ImportReviewPage.tsx` |
 | `9.35` | Fas 9 — repository UX | Repository attention overview | **DONE** | 2026-08-14 | `docs/step-9.35-report.md`, `frontend/src/pages/ProjectListPage.tsx`, `frontend/src/components/RepositoryPicker.tsx` |
+| `9.36` | Fas 9 — auth UX | Central session-expiry handling | **DONE** | 2026-08-14 | `docs/step-9.36-report.md`, `frontend/src/api/session.ts`, `frontend/src/components/AppLayout.tsx` |
 
 ## Revision history
 

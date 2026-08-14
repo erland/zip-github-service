@@ -145,6 +145,72 @@ it('retries direct finish-work after a transient failure without creating a seco
 });
 
 
+
+it('prioritizes a real Actions failure without blocking the existing next-step actions', async () => {
+  const actions = { importId: 'import-1', repositoryFullName: 'erland/example', commitSha: result.commitSha, state: 'failure', terminal: true,
+    detailsUrl: 'https://github.com/erland/example/commit/x/checks', checkedAt: '2026-08-14T18:00:00Z',
+    workflows: [{ id: 10, workflowId: 77, workflowPath: '.github/workflows/ci.yml', headBranch: result.branchName, headSha: result.commitSha,
+      name: 'CI', state: 'failure', terminal: true, event: 'push', htmlUrl: 'https://github.com/erland/example/actions/runs/10', createdAt: null, updatedAt: null, jobs: [] }], checks: [] };
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.endsWith('/api/imports/import-1/delivery')) return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/projects/p1/work')) return new Response(JSON.stringify(activeWork), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/imports/import-1/actions/control')) return new Response('{}', { status: 404 });
+    if (url.endsWith('/api/imports/import-1/actions/details')) return new Response(JSON.stringify({ importId: 'import-1', repositoryFullName: 'erland/example', commitSha: result.commitSha, detailsUrl: actions.detailsUrl, artifacts: [], failures: [], checkedAt: actions.checkedAt }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/imports/import-1/actions')) return new Response(JSON.stringify(actions), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    throw new Error(`Unexpected fetch: ${url}`);
+  }));
+
+  render(<MemoryRouter initialEntries={['/projects/p1/imports/import-1/result']}><Routes><Route path="projects/:projectId/imports/:importId/result" element={<ImportResultPage />} /></Routes></MemoryRouter>);
+
+  const attention = await screen.findByRole('alert', { name: 'GitHub Actions behöver uppmärksamhet' });
+  expect(attention).toHaveTextContent('misslyckat');
+  expect(screen.getByRole('link', { name: 'Granska Actions-felet' })).toHaveAttribute('href', '#actions-result');
+  expect(screen.getByRole('link', { name: 'Ladda upp nästa ZIP' })).toHaveAttribute('href', '/projects/p1/imports/new');
+  expect(await screen.findByRole('button', { name: 'Skapa pull request' })).toBeEnabled();
+});
+
+it('does not block projects with no Actions run for the commit, including PR-only workflows before a PR exists', async () => {
+  const notStartedActions = { importId: 'import-1', repositoryFullName: 'erland/example', commitSha: result.commitSha, state: 'not_started', terminal: false,
+    detailsUrl: 'https://github.com/erland/example/actions', checkedAt: '2026-08-14T18:00:00Z', workflows: [], checks: [], diagnosticCode: null, diagnosticMessage: null };
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.endsWith('/api/imports/import-1/delivery')) return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/projects/p1/work')) return new Response(JSON.stringify(activeWork), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/imports/import-1/actions/control')) return new Response('{}', { status: 404 });
+    if (url.endsWith('/api/imports/import-1/actions')) return new Response(JSON.stringify(notStartedActions), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    throw new Error(`Unexpected fetch: ${url}`);
+  }));
+
+  render(<MemoryRouter initialEntries={['/projects/p1/imports/import-1/result']}><Routes><Route path="projects/:projectId/imports/:importId/result" element={<ImportResultPage />} /></Routes></MemoryRouter>);
+
+  expect(await screen.findByText(/Ingen workflow-körning eller check har registrerats/)).toBeInTheDocument();
+  expect(screen.queryByRole('alert', { name: 'GitHub Actions behöver uppmärksamhet' })).not.toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Ladda upp nästa ZIP' })).toHaveAttribute('href', '/projects/p1/imports/new');
+  expect(await screen.findByRole('button', { name: 'Skapa pull request' })).toBeEnabled();
+});
+
+it('keeps normal next-step actions available while observed Actions are still running', async () => {
+  const pendingActions = { importId: 'import-1', repositoryFullName: 'erland/example', commitSha: result.commitSha, state: 'in_progress', terminal: false,
+    detailsUrl: 'https://github.com/erland/example/actions', checkedAt: '2026-08-14T18:00:00Z',
+    workflows: [{ id: 10, workflowId: 77, workflowPath: '.github/workflows/ci.yml', headBranch: result.branchName, headSha: result.commitSha,
+      name: 'CI', state: 'in_progress', terminal: false, event: 'push', htmlUrl: 'https://github.com/erland/example/actions/runs/10', createdAt: null, updatedAt: null, jobs: [] }], checks: [] };
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.endsWith('/api/imports/import-1/delivery')) return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/projects/p1/work')) return new Response(JSON.stringify(activeWork), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/imports/import-1/actions/control')) return new Response('{}', { status: 404 });
+    if (url.endsWith('/api/imports/import-1/actions')) return new Response(JSON.stringify(pendingActions), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    throw new Error(`Unexpected fetch: ${url}`);
+  }));
+
+  render(<MemoryRouter initialEntries={['/projects/p1/imports/import-1/result']}><Routes><Route path="projects/:projectId/imports/:importId/result" element={<ImportResultPage />} /></Routes></MemoryRouter>);
+
+  expect(await screen.findByText(/GitHub Actions körs för den här committen/)).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Ladda upp nästa ZIP' })).toHaveAttribute('href', '/projects/p1/imports/new');
+  expect(await screen.findByRole('button', { name: 'Skapa pull request' })).toBeEnabled();
+});
+
 it('shows a bounded condensed failure with workflow job step and GitHub source', async () => {
   const actions = { importId: 'import-1', repositoryFullName: 'erland/example', commitSha: 'a'.repeat(40), state: 'failure', terminal: true,
     detailsUrl: 'https://github.com/erland/example/commit/x/checks', checkedAt: '2026-08-06T20:01:00Z',

@@ -152,6 +152,11 @@ export default function ImportResultPage() {
   }
 
   const links = useMemo(() => result ? githubLinks(result) : null, [result]);
+  const actionsRepresentCurrentCommit = Boolean(result && actions && actions.commitSha === result.commitSha);
+  const hasObservedActions = Boolean(actionsRepresentCurrentCommit && actions && ((actions.workflows?.length ?? 0) > 0 || (actions.checks?.length ?? 0) > 0));
+  const actionsNeedAttention = Boolean(hasObservedActions && actions && (actions.state === 'failure' || actions.state === 'cancelled'));
+  const actionsInProgress = Boolean(hasObservedActions && actions && ['pending', 'queued', 'in_progress'].includes(actions.state));
+
   return <section className="page-card result-page" aria-labelledby="result-heading">
     <p><Link className="back-link" to={projectId ? `/projects/${projectId}` : '/projects'}>← Till projektet</Link></p>
     <p className="eyebrow">Importresultat</p>
@@ -168,8 +173,14 @@ export default function ImportResultPage() {
       {projectId && showPullRequestComposer && !pullRequestUrl && work?.status !== 'PR_OPEN' && <PullRequestComposer projectId={projectId}
         onCreated={created => { setPullRequestUrl(created.pullRequestUrl); setShowPullRequestComposer(false); }}
         onCancel={() => setShowPullRequestComposer(false)} />}
+      {actionsNeedAttention && <aside className="status-message status-message--warning" role="alert" aria-label="GitHub Actions behöver uppmärksamhet">
+        <strong>GitHub Actions behöver din uppmärksamhet</strong>
+        <p>Det finns ett registrerat {actions?.state === 'cancelled' ? 'avbrutet' : 'misslyckat'} Actions-resultat för den här committen. Granska det innan du betraktar ändringen som färdig.</p>
+        <div className="result-primary-action"><a className="button" href="#actions-result">Granska Actions-felet</a></div>
+      </aside>}
+      {actionsInProgress && <p className="status-message" role="status">GitHub Actions körs för den här committen. Du kan fortsätta arbeta eller öppna en pull request medan körningen pågår.</p>}
       <div className="result-primary-action">
-        {projectId && <Link className="button" to={`/projects/${projectId}/imports/new`}>Ladda upp nästa ZIP</Link>}
+        {projectId && <Link className={actionsNeedAttention ? 'button button--secondary' : 'button'} to={`/projects/${projectId}/imports/new`}>Ladda upp nästa ZIP</Link>}
         {projectId && !workStatusLoading && !workStatusError && !pullRequestUrl && !showPullRequestComposer && work && work.status !== 'PR_OPEN' && <button className="button button--secondary" type="button" onClick={()=>setShowPullRequestComposer(true)}>{work.status === 'PR_CLOSED' ? 'Skapa ny pull request' : 'Skapa pull request'}</button>}
         {projectId && pullRequestUrl && <button className="button button--secondary" type="button" disabled>Pull request skapad</button>}
       </div>
@@ -179,9 +190,11 @@ export default function ImportResultPage() {
         <ResultLink label="Commit" value={result.commitSha.slice(0,12)} href={links.commit} />
         <ResultLink label="GitHub Actions" value="Öppna Actions" href={links.actions} />
       </dl>
-      <ActionsPanel actions={actions} details={actionDetails} detailsUnavailable={actionDetailsUnavailable} fallbackUrl={links.actions}
-        repositoryFullName={result.repositoryFullName} branchName={result.branchName} commitSha={result.commitSha} onRefresh={() => void refreshActions()}
-        controls={<ActionsControls options={controlOptions} workflows={actions?.workflows ?? []} busy={controlBusy} message={controlMessage} error={controlError} onDispatch={dispatchWorkflow} onRerun={rerunWorkflow} />} />
+      <div id="actions-result">
+        <ActionsPanel actions={actions} details={actionDetails} detailsUnavailable={actionDetailsUnavailable} fallbackUrl={links.actions}
+          repositoryFullName={result.repositoryFullName} branchName={result.branchName} commitSha={result.commitSha} onRefresh={() => void refreshActions()}
+          controls={<ActionsControls options={controlOptions} workflows={actions?.workflows ?? []} busy={controlBusy} message={controlMessage} error={controlError} onDispatch={dispatchWorkflow} onRerun={rerunWorkflow} />} />
+      </div>
     </>}
   </section>;
 }

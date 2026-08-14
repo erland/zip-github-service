@@ -1053,9 +1053,9 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Vid lyckad Actions-status ska normal Work-/PR-vägledning åter ta över.
 - Inga workflows ska dispatchas/rerunnas automatiskt; endast vägledningen ändras.
 
-**Status:** NEXT.
+**Status:** DONE (2026-08-14, r0176 / 1.0.0-rc.128). Se `docs/step-9.41-report.md`.
 
-**Kvalitetsgrind för 9.41:** användaren ska inte rekommenderas nästa normala leveranssteg när tjänsten redan vet att aktuell commit kräver Actions-uppmärksamhet.
+**Kvalitetsgrind för 9.41:** ett faktiskt observerat misslyckat/avbrutet Actions-resultat för aktuell commit ska prioriteras visuellt, men `not_started`, `unavailable` och pågående Actions får inte blockera eller komplicera normal Work-/PR-fortsättning.
 
 ## Steg 9.42 - Compact successful Actions, prominent failures
 
@@ -1065,7 +1065,7 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 - Behåll all befintlig Actions-diagnostik, artifacts, rerun/dispatch-kontroller och säkerhetsregler.
 - Presentationen ska återanvända attention-first-principen och inte skapa en ny dashboard.
 
-**Status:** PLANNED.
+**Status:** NEXT.
 
 **Kvalitetsgrind för 9.42:** Actions-panelen ska använda mest visuell uppmärksamhet när användaren faktiskt behöver agera och minst när allt är grönt.
 

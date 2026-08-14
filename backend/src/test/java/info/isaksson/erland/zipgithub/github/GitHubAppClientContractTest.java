@@ -33,5 +33,23 @@ class GitHubAppClientContractTest {
         IllegalStateException error = assertThrows(IllegalStateException.class, client::createAppJwt);
         assertTrue(error.getMessage().contains("GITHUB_APP_ID"));
     }
-}
 
+    @Test
+    void nestedGithub404IsRecognizedAsMissingResource() {
+        IllegalStateException error = new IllegalStateException(
+                "GitHub API request failed",
+                new IllegalStateException("GitHub API returned HTTP 404"));
+
+        assertTrue(GitHubAppClient.hasHttpStatus(error, 404));
+    }
+
+    @Test
+    void differentGithubStatusIsNotRecognizedAs404() {
+        IllegalStateException error = new IllegalStateException(
+                "GitHub API request failed",
+                new IllegalStateException("GitHub API returned HTTP 403"));
+
+        assertTrue(!GitHubAppClient.hasHttpStatus(error, 404));
+    }
+
+}

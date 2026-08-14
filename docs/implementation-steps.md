@@ -930,3 +930,55 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 
 **Kvalitetsgrind för 9.31:** den version som visas i tjänsten ska komma från samma `VERSION` som används för release/image-taggar, och commitresultatsidan får aldrig erbjuda skapande av en andra PR när aktuell Work redan har en öppen PR.
 
+## Steg 9.32 - Guided project actions
+
+- Projektsidan ska ha en tydlig `Nästa steg`-yta som översätter aktuell Work-/PR-/importstatus till en rekommenderad primär åtgärd. Användaren ska inte behöva tolka rå status för att förstå vad som bör göras härnäst.
+- Om en import är aktiv ska dess fortsättning vara primär (`Fortsätt granska` eller `Fortsätt import`). Nästa ZIP och PR-skapande ska inte konkurrera med den pågående importen.
+- Om ingen Work finns ska `Starta arbete` vara den enda primära åtgärden. Återupptagning av en befintlig branch får fortsatt finnas som avancerat alternativ i Work-sektionen.
+- Vid `ACTIVE` Work utan aktiv import ska `Ladda upp nästa ZIP` vara primär. `Skapa pull request` får finnas som sekundär åtgärd när Work har en commit.
+- Vid `PR_OPEN` ska `Ladda upp nästa ZIP` vara primär och `Öppna pull request` sekundär. Ingen ny PR får erbjudas.
+- Vid `PR_CLOSED` utan merge ska `Skapa ny pull request` vara primär när Work har en commit; `Ladda upp nästa ZIP` ska fortfarande vara tillgänglig som sekundär fortsättning.
+- Ta bort duplicerade primära handlingar från sidhuvud, aktiv-importkort och Work-kort när samma handling redan finns i `Nästa steg`.
+- Behåll destruktiva handlingar som `Avsluta Work`, import-cancel och repository-arkivering utanför den guidade primära åtgärden.
+- Lägg frontendregression för aktiv import, ingen Work, ACTIVE Work, PR_OPEN och PR_CLOSED.
+
+**Status:** DONE (2026-08-14, r0161 / 1.0.0-rc.113). Se `docs/step-9.32-report.md`.
+
+**Kvalitetsgrind för 9.32:** projektsidan ska för varje normalt livscykeltillstånd visa en entydig rekommenderad primär handling, utan att duplicera samma primära handling på flera ställen eller erbjuda en handling som strider mot aktuell Work-/PR-status.
+
+## Steg 9.33 - Upload starts Work automatically
+
+- Ta bort `Starta arbete` som separat steg i det normala första-ZIP-flödet. När användaren väljer att ladda upp första ZIP-filen ska zip-GitHub skapa en verifierad Work automatiskt om ingen finns.
+- Om en aktiv Work redan finns ska samma Work återanvändas.
+- Innan automatisk Work-start ska repository-/PR-status reconcileras med GitHub och samma säkerhetskontroller som dagens explicita Work-start användas, inklusive stöd för helt tomma repositories.
+- Återupptagning av en specifik befintlig branch ska fortsatt vara en explicit avancerad handling; automatiken får inte godtyckligt välja en gammal branch.
+- Fel i Work-start ska visas som ett tydligt upload-/startproblem och aldrig leda till att ZIP-granskningen fortsätter mot okänd branch.
+
+**Status:** PLANNED.
+
+**Kvalitetsgrind för 9.33:** första normala vägen ska vara `repository -> ladda upp ZIP`, men exakt samma Work-, bootstrap- och safety-invarianter ska gälla som vid dagens explicita start.
+
+## Steg 9.34 - Attention-first review
+
+- Granskningssidan ska prioritera sådant som kräver användarens beslut: hard blockers, overridable blockers, externa Work-konflikter och andra avvikelser.
+- Normala additions/modifications/deletions ska sammanfattas först och kunna expanderas för filnivådetaljer.
+- Ignorerade/informativa filer ska ligga på lägre visuell nivå och vara expanderbara på begäran.
+- Ett normalt importfall utan blockers eller konflikter ska kunna presenteras kompakt med totalsiffror och en tydlig commitåtgärd, utan att säkerhetsmodellen eller den explicita selection-modellen ändras.
+- Komplicerade importer ska automatiskt visa mer detaljer; förenklingen får endast påverka presentation, inte klassificering eller beslutsregler.
+
+**Status:** PLANNED.
+
+**Kvalitetsgrind för 9.34:** användarens uppmärksamhet ska först riktas mot verkliga beslut och risker, medan fullständig filinformation fortfarande finns tillgänglig och alla existerande blocker-/override-invarianter bevaras.
+
+## Steg 9.35 - Repository attention overview
+
+- Repositorylistan ska gruppera eller tydligt prioritera repositories som behöver användarens uppmärksamhet, exempelvis väntande import/granskning, misslyckade Actions eller relevant PR-/Work-status.
+- Skilj minst mellan `Behöver din uppmärksamhet`, `Pågående` och övriga repositories när data stöder det.
+- Undvik KPI-/statistikdashboard som inte hjälper användaren vidare i arbetsflödet.
+- Varje attention-status ska ha en direkt relevant nästa handling eller navigationsmål.
+- Reconciliation ska ske där statusen används så att listan inte kräver att användaren först öppnar ett projekt för att bli korrekt.
+
+**Status:** PLANNED.
+
+**Kvalitetsgrind för 9.35:** repositoryöversikten ska hjälpa användaren hitta nästa konkreta uppgift snabbare utan att bli en generell statistikdashboard eller visa stale livscykelstatus som auktoritativ.
+

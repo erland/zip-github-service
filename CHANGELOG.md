@@ -1,3 +1,14 @@
+## 1.0.0-rc.126 - 2026-08-14
+
+Repository revision: `r0174`
+
+- Implements step 9.39: review completion guidance.
+- The review decision block now stays focused on unresolved blocker decisions until they are resolved.
+- Once at least one change is selected and no blocker decision remains unresolved, the review shows the selected count and a clear `Fortsätt till commit` action.
+- `Fortsätt till commit` only scrolls/focuses the existing commit message editor; it does not lock selection, approve overrides, create workspace, commit or push.
+- Existing external-change acknowledgement and final approval requirements remain unchanged.
+- Step 9.40 `Simplified upload` is now NEXT.
+
 ## 1.0.0-rc.125 - 2026-08-14
 
 Repository revision: `r0173`

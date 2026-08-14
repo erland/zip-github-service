@@ -102,9 +102,25 @@ describe('ImportReviewPage', () => {
     expect(screen.getByTitle('docs/new.md')).toBeInTheDocument();
     expect(screen.queryByTitle('.github/workflows/ci.yml')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Fortsätt till commit' })).not.toBeInTheDocument();
   });
 
+  it('switches from blocker guidance to continue-to-commit when required decisions are resolved', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole('heading', { name: 'Behöver din uppmärksamhet' });
 
+    expect(screen.queryByRole('button', { name: 'Fortsätt till commit' })).not.toBeInTheDocument();
+    await excludeBaseBlocker(user);
+
+    const continueButton = screen.getByRole('button', { name: 'Fortsätt till commit' });
+    expect(continueButton).toBeInTheDocument();
+    expect(screen.getByText(/2 förändringar är valda/)).toBeInTheDocument();
+
+    await user.click(continueButton);
+    expect(screen.getByRole('textbox', { name: 'Meddelande' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Godkänn valda förändringar' })).toBeDisabled();
+  });
 
   it('lets the attention panel jump directly to blocked decisions', async () => {
     const user = userEvent.setup();

@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0164`
+- Repository revision: `r0165`
 - Last completed step: `9.34`
 - Next step: `9.35`
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.34 COMPLETE — UX SIMPLIFICATION IN PROGRESS`
@@ -141,7 +141,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0161` | 2026-08-14 | `9.32` guided project actions | Project page presents one state-driven recommended next action for import/Work/PR lifecycle states | `9.33` |
 | `r0162` | 2026-08-14 | `9.33` automatic Work start | First normal ZIP upload starts verified Work automatically; explicit old-branch resume remains advanced | `9.34` |
 | `r0163` | 2026-08-14 | Frontend E2E fixture correction after `9.33` | SimplifiedImportFlow mock includes automatic Work start; no production behavior changed | `9.34` |
-| `r0164` | 2026-08-14 | `9.34` attention-first review | Review prioritizes blockers, external conflicts and warnings while preserving exact selection/override safety | `9.35` |
+| `r0165` | 2026-08-14 | `9.34` attention-first review | Review prioritizes blockers, external conflicts and warnings while preserving exact selection/override safety | `9.35` |
 | `r0144` | 2026-08-13 | `9.25` frontend CI correction | Explicit Vitest lifecycle/assertion imports for the new maintenance page regression; no product behavior change | `none — define next step before further product work` |
 | `r0141` | 2026-08-13 | Backend CI correction after `9.24` | Added the missing `ImmutableImportPlanEntry` import required by the Step 9.24 blocker-decision delivery guard; no production behavior changed | `9.25` |
 | `r0142` | 2026-08-13 | Backend test CI correction after `9.24` | Updated the remaining `AlternativeZipIngestionRegressionTest` factory calls to the `selection-2` blocker-decision signature; no production behavior changed | `9.25` |

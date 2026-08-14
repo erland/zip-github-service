@@ -1,3 +1,12 @@
+## 1.0.0-rc.117 - 2026-08-14
+
+Repository revision: `r0165`
+
+- Fixes the rc.116 frontend test regression in `ImportReviewPage.test.tsx`.
+- The attention-first UI rendered the expected sentence correctly, but the test used `getByText` against content split by a `<strong>` count and adjacent text nodes.
+- The test now scopes to the `Vanliga ändringar` section and asserts the paragraph's combined `textContent`.
+- No production application behavior changes from rc.116.
+
 ## 1.0.0-rc.116 - 2026-08-14
 
 Repository revision: `r0164`

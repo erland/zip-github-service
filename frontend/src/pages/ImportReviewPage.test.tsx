@@ -93,8 +93,11 @@ describe('ImportReviewPage', () => {
     expect(await screen.findByText('1 blockerande förändring kräver beslut')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Behöver din uppmärksamhet' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Granska blockerade (1)' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Vanliga ändringar' })).toBeInTheDocument();
-    expect(screen.getByText('2 vanliga filförändringar är valbara enligt ordinarie regler.')).toBeInTheDocument();
+    const ordinarySection = screen.getByRole('heading', { name: 'Vanliga ändringar' }).closest('section');
+    expect(ordinarySection).not.toBeNull();
+    expect(within(ordinarySection as HTMLElement).getByText((_, element) =>
+      element?.tagName === 'P' && element.textContent === '2 vanliga filförändringar är valbara enligt ordinarie regler.',
+    )).toBeInTheDocument();
     expect(screen.getByText('README.md')).toBeInTheDocument();
     expect(screen.getByTitle('docs/new.md')).toBeInTheDocument();
     expect(screen.queryByTitle('.github/workflows/ci.yml')).not.toBeInTheDocument();

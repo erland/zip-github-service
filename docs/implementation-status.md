@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0163`
-- Last completed step: `9.31`
-- Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.31 COMPLETE — EMPTY-REPOSITORY SUPPORT VERIFIED`
+- Repository revision: `r0164`
+- Last completed step: `9.34`
+- Next step: `9.35`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.34 COMPLETE — UX SIMPLIFICATION IN PROGRESS`
 
 ## Step ledger
 
@@ -116,6 +116,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.29` | Fas 9 — repository bootstrap | Stöd första ZIP i helt tomt GitHub-repository | **DONE** | 2026-08-13 | `docs/step-9.29-report.md`, `backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java` |
 | `9.30` | Fas 9 — underhåll | Reconcila Work/PR-status och lägg navigationslänkar i Underhåll | **DONE** | 2026-08-14 | `docs/step-9.30-report.md`, `backend/src/main/java/info/isaksson/erland/zipgithub/application/WorkBranchMaintenanceService.java`, `frontend/src/pages/MaintenancePage.tsx` |
 | `9.31` | Fas 9 — transparens/PR UX | Visa runtimeversion och gör importresultatet PR-medvetet | **DONE** | 2026-08-14 | `docs/step-9.31-report.md`, `frontend/src/pages/AboutPage.tsx`, `frontend/src/pages/ImportResultPage.tsx`, `.github/workflows/ci.yml` |
+| `9.32` | Fas 9 — guided UX | Visa en state-driven rekommenderad nästa handling på projektsidan | **DONE** | 2026-08-14 | `docs/step-9.32-report.md`, `frontend/src/pages/ProjectDetailPage.tsx` |
+| `9.33` | Fas 9 — guided UX | Starta Work automatiskt vid första normala ZIP-upload | **DONE** | 2026-08-14 | `docs/step-9.33-report.md`, `frontend/src/pages/NewImportPage.tsx` |
+| `9.34` | Fas 9 — review UX | Prioritera blockers, externa konflikter och varningar före vanlig filinformation | **DONE** | 2026-08-14 | `docs/step-9.34-report.md`, `frontend/src/pages/ImportReviewPage.tsx` |
+| `9.35` | Fas 9 — repository UX | Repository attention overview | **NEXT** | — | `docs/implementation-steps.md` |
 
 ## Revision history
 
@@ -132,7 +136,12 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `r0152` | 2026-08-13 | `9.29` GitHub Contents API correction | Empty repositories initialize through the GitHub-supported Contents API create/delete sequence before normal Work provisioning; repository-start runtime errors are explicitly mapped | `none` |
 | `r0156` | 2026-08-14 | `9.30` maintenance reconciliation and navigation | Underhåll reconciles stale PR-backed Work before classification and adds user-safe project, branch and PR navigation links | `none` |
 | `r0158` | 2026-08-14 | Empty-repository Work-start diagnostics | Adds correlation id, stage logging and safe stack-trace diagnostics around repository preparation/bootstrap without functional workflow changes | `none` |
-| `r0163` | 2026-08-14 | `9.31` runtime version and PR-aware import result | About shows the CI-injected root VERSION; import result reconciles current Work and suppresses duplicate PR creation when PR_OPEN | `none` |
+| `r0159` | 2026-08-14 | `9.31` runtime version and PR-aware import result | About shows the CI-injected root VERSION; import result reconciles current Work and suppresses duplicate PR creation when PR_OPEN | `none` |
+| `r0160` | 2026-08-14 | Frontend async test correction after `9.31` | ImportResultPage test waits for reconciled Work status before asserting PR action; no production behavior changed | `9.32` |
+| `r0161` | 2026-08-14 | `9.32` guided project actions | Project page presents one state-driven recommended next action for import/Work/PR lifecycle states | `9.33` |
+| `r0162` | 2026-08-14 | `9.33` automatic Work start | First normal ZIP upload starts verified Work automatically; explicit old-branch resume remains advanced | `9.34` |
+| `r0163` | 2026-08-14 | Frontend E2E fixture correction after `9.33` | SimplifiedImportFlow mock includes automatic Work start; no production behavior changed | `9.34` |
+| `r0164` | 2026-08-14 | `9.34` attention-first review | Review prioritizes blockers, external conflicts and warnings while preserving exact selection/override safety | `9.35` |
 | `r0144` | 2026-08-13 | `9.25` frontend CI correction | Explicit Vitest lifecycle/assertion imports for the new maintenance page regression; no product behavior change | `none — define next step before further product work` |
 | `r0141` | 2026-08-13 | Backend CI correction after `9.24` | Added the missing `ImmutableImportPlanEntry` import required by the Step 9.24 blocker-decision delivery guard; no production behavior changed | `9.25` |
 | `r0142` | 2026-08-13 | Backend test CI correction after `9.24` | Updated the remaining `AlternativeZipIngestionRegressionTest` factory calls to the `selection-2` blocker-decision signature; no production behavior changed | `9.25` |
@@ -328,4 +337,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ### Steg 9.33 - Upload starts Work automatically
 **DONE** i r0162 / 1.0.0-rc.114. Första normala ZIP-uploaden startar nu Work automatiskt via samma verifierade Work-start som tidigare. Befintlig Work återanvänds, PR_OPEN kräver fortsatt explicit bekräftelse, och misslyckad Work-start stoppar innan import/upload.
+
+### Steg 9.34 - Attention-first review
+**DONE** i r0164 / 1.0.0-rc.116. Granskningssidan prioriterar nu blockerade poster, externa konflikter och varningar i ett separat attention-lager, medan vanliga ändringar sammanfattas kompakt och full filgranskning finns kvar oförändrad.
 

@@ -220,6 +220,10 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
   const allOrdinaryBulkSelected = ordinaryBulkPaths.length > 0 && ordinaryBulkPaths.every((path) => selectedPaths.has(path));
   const allOverridableBulkSelected = overridableBulkPaths.length > 0
     && overridableBulkPaths.every((path) => overridePaths.has(path) && selectedPaths.has(path));
+  const attentionBlockers = plan.entries.filter((entry) => entry.blockerType !== 'NONE');
+  const attentionExternal = plan.entries.filter((entry) => externalChangedPaths.has(entry.path) && entry.status !== 'UNCHANGED' && entry.status !== 'IGNORED');
+  const ordinaryChanges = plan.entries.filter((entry) => entry.blockerType === 'NONE' && (entry.status === 'ADDED' || entry.status === 'MODIFIED'));
+  const hasAttentionItems = attentionBlockers.length > 0 || attentionExternal.length > 0 || plan.warnings > 0;
 
   function toggleOrdinaryBulkSelection() {
     if (selectionLocked || ordinaryBulkPaths.length === 0) return;
@@ -263,6 +267,35 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
 
   return (
     <>
+      <section className={hasAttentionItems ? 'status-message status-message--warning' : 'status-message'} aria-labelledby="review-attention-heading">
+        <p className="eyebrow">Fokuserad granskning</p>
+        <h2 id="review-attention-heading">{hasAttentionItems ? 'Behöver din uppmärksamhet' : 'Inga särskilda risker hittades'}</h2>
+        {hasAttentionItems ? <>
+          <p>Granska avvikelserna först. Vanliga ändringar och fullständig filinformation finns kvar längre ner.</p>
+          <div className="review-summary" aria-label="Poster som behöver uppmärksamhet">
+            <span><strong>{attentionBlockers.length}</strong> blockerade</span>
+            <span><strong>{attentionExternal.length}</strong> externa konflikter</span>
+            <span><strong>{plan.warnings}</strong> varningar</span>
+          </div>
+          <div className="result-primary-action">
+            {attentionBlockers.length > 0 && <button className="button" type="button" onClick={() => setFilter('BLOCKED')}>Granska blockerade ({attentionBlockers.length})</button>}
+            {attentionExternal.length > 0 && <button className="button button--secondary" type="button" onClick={() => setFilter('EXTERNAL')}>Granska externa konflikter ({attentionExternal.length})</button>}
+            {plan.warnings > 0 && <button className="button button--secondary" type="button" onClick={() => setFilter('WARNINGS')}>Granska varningar ({plan.warnings})</button>}
+          </div>
+        </> : <p>ZIP-filen innehåller inga blockerade poster, externa konflikter eller varningar. Du kan fokusera på de vanliga ändringarna och commitmeddelandet.</p>}
+      </section>
+
+      <section className="status-message" aria-labelledby="ordinary-changes-heading">
+        <h2 id="ordinary-changes-heading">Vanliga ändringar</h2>
+        <p><strong>{ordinaryChanges.length}</strong> vanliga filförändring{ordinaryChanges.length === 1 ? '' : 'ar'} är valbara enligt ordinarie regler.</p>
+        <div className="review-summary" aria-label="Vanliga ändringar">
+          <span><strong>{plan.added}</strong> tillagda</span>
+          <span><strong>{plan.modified}</strong> ändrade</span>
+          <span><strong>{plan.ignored}</strong> ignorerade</span>
+        </div>
+        <button className="button button--secondary" type="button" onClick={() => setFilter('CHANGES')}>Visa vanliga förändringar ({filterCount(plan, 'CHANGES', externalChangedPaths)})</button>
+      </section>
+
       {externalChanges?.branchChanged && <aside className="status-message status-message--warning" aria-label="GitHub-branchen har ändrats">
         <strong>Work-branchen har ändrats på GitHub sedan zip-githubs senast kända commit.</strong>
         <p>{externalChangedPaths.size > 0
@@ -281,15 +314,18 @@ function ReviewContent({ plan, filter, setFilter, entries, approving, approval, 
         <span className="status-badge">{plan.status}</span>
       </div>
 
-      <div className="review-summary" aria-label="Sammanfattning av importplanen">
-        <span><strong>{plan.added}</strong> tillagda</span>
-        <span><strong>{plan.modified}</strong> ändrade</span>
-        <span><strong>{plan.hardBlocked}</strong> hårt blockerade</span>
-        <span><strong>{plan.overridableBlocked}</strong> överstyrbara</span>
-        <span><strong>{plan.warnings}</strong> varningar</span>
-        <span><strong>{plan.unchanged}</strong> oförändrade</span>
-        <span><strong>{plan.ignored}</strong> ignorerade</span>
-      </div>
+      <details>
+        <summary>Fullständig plansammanfattning</summary>
+        <div className="review-summary" aria-label="Sammanfattning av importplanen">
+          <span><strong>{plan.added}</strong> tillagda</span>
+          <span><strong>{plan.modified}</strong> ändrade</span>
+          <span><strong>{plan.hardBlocked}</strong> hårt blockerade</span>
+          <span><strong>{plan.overridableBlocked}</strong> överstyrbara</span>
+          <span><strong>{plan.warnings}</strong> varningar</span>
+          <span><strong>{plan.unchanged}</strong> oförändrade</span>
+          <span><strong>{plan.ignored}</strong> ignorerade</span>
+        </div>
+      </details>
 
       <details className="plan-identity">
         <summary>Planidentitet och låst GitHub-version</summary>

@@ -1,3 +1,14 @@
+## 1.0.0-rc.116 - 2026-08-14
+
+Repository revision: `r0164`
+
+- Implements step 9.34: attention-first review presentation.
+- Adds a top-level `Behöver din uppmärksamhet` section when blockers, external overlaps or warnings exist, with direct actions to the relevant existing review filters.
+- Clean plans instead show `Inga särskilda risker hittades`, keeping the normal path visually lightweight.
+- Adds a separate compact `Vanliga ändringar` summary and keeps full file-level review available through the existing filters and ReviewFileTree.
+- Moves the full plan summary behind an expandable disclosure so unchanged/ignored informational counts no longer dominate the first view.
+- Does not change plan classification, default selection, blocker decisions, override acknowledgements, external-change acknowledgement or delivery safety rules.
+
 ## 1.0.0-rc.115 - 2026-08-14
 
 Repository revision: `r0163`

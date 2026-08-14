@@ -1,3 +1,15 @@
+## 1.0.0-rc.111 - 2026-08-14
+
+Repository revision: `r0159`
+
+- Completes Step 9.31 — Runtime version and PR-aware import result.
+- Shows the running frontend build version on `Om tjänsten`, injected from the repository-root `VERSION` file during CI/Vite build; no additional manually maintained application-version constant is introduced.
+- Source-build Docker supports the same value through `ZIP_GITHUB_VERSION`, with `development` only as a local fallback.
+- Import result now reconciles/loads current Work before exposing PR actions. An existing `PR_OPEN` Work shows that the existing pull request was updated and links to it instead of offering a second PR.
+- `PR_CLOSED` without merge offers `Skapa ny pull request`; an ACTIVE Work without PR continues to offer `Skapa pull request`.
+- If Work/PR status cannot be loaded, the result page fails closed and does not offer a potentially duplicate PR action.
+- Adds frontend regression coverage for version presentation and ACTIVE/PR_OPEN/PR_CLOSED result-page behavior.
+
 ## 1.0.0-rc.110 - 2026-08-14
 
 Repository revision: `r0158`

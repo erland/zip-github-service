@@ -6,6 +6,11 @@ import ImportResultPage from './ImportResultPage';
 
 const result = { importId: 'import-1', repositoryFullName: 'erland/example', baseBranch: 'main', branchName: 'zip-github/work-w1',
   baseCommitSha: 'c'.repeat(40), commitSha: 'a'.repeat(40), planDigestSha256: 'b'.repeat(64), status: 'PUSHED', pushedAt: '2026-08-06T20:00:00Z' };
+const activeWork = { id: 'work-1', projectId: 'p1', baseBranch: 'main', branchName: result.branchName, status: 'ACTIVE',
+  headCommitSha: result.commitSha, remoteHeadCommitSha: result.commitSha, branchChangedExternally: false, lastImportId: 'import-1',
+  pullRequestNumber: null, pullRequestUrl: null, createdAt: '2026-08-06T19:00:00Z', updatedAt: '2026-08-06T20:00:00Z' };
+const openPrWork = { ...activeWork, status: 'PR_OPEN', pullRequestNumber: 42, pullRequestUrl: 'https://github.com/erland/example/pull/42' };
+const closedPrWork = { ...activeWork, status: 'PR_CLOSED', pullRequestNumber: 41, pullRequestUrl: 'https://github.com/erland/example/pull/41' };
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 it('shows both next-ZIP and direct finish-work actions after commit', async () => {
   const user = userEvent.setup();
@@ -23,6 +28,7 @@ it('shows both next-ZIP and direct finish-work actions after commit', async () =
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     if (url.endsWith('/api/imports/import-1/delivery')) return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/projects/p1/work') && !init?.method) return new Response(JSON.stringify(activeWork), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/checks')) return new Response(JSON.stringify(checks), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions')) return new Response(JSON.stringify(actions), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions/details')) return new Response(JSON.stringify(actionDetails), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -61,6 +67,40 @@ it('shows both next-ZIP and direct finish-work actions after commit', async () =
 
 
 
+it('does not offer a second pull request when current Work already has an open PR', async () => {
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.endsWith('/api/imports/import-1/delivery')) return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/projects/p1/work')) return new Response(JSON.stringify(openPrWork), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/imports/import-1/actions/control')) return new Response('{}', { status: 404 });
+    if (url.endsWith('/api/imports/import-1/actions')) return new Response('{}', { status: 404 });
+    throw new Error(`Unexpected fetch: ${url}`);
+  }));
+
+  render(<MemoryRouter initialEntries={['/projects/p1/imports/import-1/result']}><Routes><Route path="projects/:projectId/imports/:importId/result" element={<ImportResultPage />} /></Routes></MemoryRouter>);
+
+  expect(await screen.findByText('Den befintliga pull requesten har uppdaterats med denna commit.')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Öppna pull request' })).toHaveAttribute('href', openPrWork.pullRequestUrl);
+  expect(screen.queryByRole('button', { name: 'Skapa pull request' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Skapa ny pull request' })).not.toBeInTheDocument();
+});
+
+it('offers a new pull request when the previous PR is closed without merge', async () => {
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.endsWith('/api/imports/import-1/delivery')) return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/projects/p1/work')) return new Response(JSON.stringify(closedPrWork), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/imports/import-1/actions/control')) return new Response('{}', { status: 404 });
+    if (url.endsWith('/api/imports/import-1/actions')) return new Response('{}', { status: 404 });
+    throw new Error(`Unexpected fetch: ${url}`);
+  }));
+
+  render(<MemoryRouter initialEntries={['/projects/p1/imports/import-1/result']}><Routes><Route path="projects/:projectId/imports/:importId/result" element={<ImportResultPage />} /></Routes></MemoryRouter>);
+
+  expect(await screen.findByRole('button', { name: 'Skapa ny pull request' })).toBeEnabled();
+  expect(screen.queryByRole('button', { name: 'Skapa pull request' })).not.toBeInTheDocument();
+});
+
 it('retries direct finish-work after a transient failure without creating a second UI action', async () => {
   const user = userEvent.setup();
   const checks = { importId: 'import-1', repositoryFullName: 'erland/example', commitSha: 'a'.repeat(40), state: 'success', terminal: true,
@@ -76,6 +116,7 @@ it('retries direct finish-work after a transient failure without creating a seco
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     if (url.endsWith('/api/imports/import-1/delivery')) return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/projects/p1/work') && !init?.method) return new Response(JSON.stringify(activeWork), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/checks')) return new Response(JSON.stringify(checks), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions')) return new Response(JSON.stringify(actions), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions/details')) return new Response(JSON.stringify({ importId: 'import-1', repositoryFullName: 'erland/example', commitSha: 'a'.repeat(40), detailsUrl: actions.detailsUrl, checkedAt: '2026-08-06T20:01:01Z', artifacts: [], failures: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -114,6 +155,7 @@ it('shows a bounded condensed failure with workflow job step and GitHub source',
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     if (url.endsWith('/api/imports/import-1/delivery')) return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/projects/p1/work')) return new Response(JSON.stringify(activeWork), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions')) return new Response(JSON.stringify(actions), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions/details')) return new Response(JSON.stringify(details), { status: 200, headers: { 'Content-Type': 'application/json' } });
     throw new Error(`Unexpected fetch: ${url}`);
@@ -145,6 +187,7 @@ it('dispatches and reruns only server-allowed workflows for the displayed Work h
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     if (url.endsWith('/api/imports/import-1/delivery')) return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/projects/p1/work') && !init?.method) return new Response(JSON.stringify(activeWork), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions/control')) return new Response(JSON.stringify(options), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions/details')) return new Response(JSON.stringify(details), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions') && !init?.method) return new Response(JSON.stringify(actions), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -190,6 +233,7 @@ it('keeps the same idempotency key after an ambiguous GitHub dispatch error', as
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     if (url.endsWith('/api/imports/import-1/delivery')) return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (url.endsWith('/api/projects/p1/work') && !init?.method) return new Response(JSON.stringify(activeWork), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions/control')) return new Response(JSON.stringify(options), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions') && !init?.method) return new Response(JSON.stringify(actions), { status: 200, headers: { 'Content-Type': 'application/json' } });
     if (url.endsWith('/api/imports/import-1/actions/dispatch') && init?.method === 'POST') {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { dispatchImportWorkflow, getDelivery, getImportActions, getImportActionDetails, getImportActionsControlOptions, rerunImportWorkflowFailedJobs, GitDeliveryResponse, ImportActionsControlOptionsResponse, ImportActionsDetailsResponse, ImportActionsStatusResponse } from '../api/imports';
+import { getProjectWork, WorkSessionResponse } from '../api/projects';
 import ActionsPanel from '../components/ActionsPanel';
 import ActionsControls from '../components/ActionsControls';
 import PullRequestComposer from '../components/PullRequestComposer';
@@ -17,6 +18,9 @@ export default function ImportResultPage() {
   const [actionDetailsUnavailable, setActionDetailsUnavailable] = useState(false);
   const [showPullRequestComposer, setShowPullRequestComposer] = useState(false);
   const [pullRequestUrl, setPullRequestUrl] = useState('');
+  const [work, setWork] = useState<WorkSessionResponse | null>(null);
+  const [workStatusLoading, setWorkStatusLoading] = useState(false);
+  const [workStatusError, setWorkStatusError] = useState('');
   const [controlOptions, setControlOptions] = useState<ImportActionsControlOptionsResponse | null>(null);
   const [controlBusy, setControlBusy] = useState('');
   const [controlMessage, setControlMessage] = useState('');
@@ -27,6 +31,18 @@ export default function ImportResultPage() {
     if (!importId) { setError('Import-ID saknas.'); setLoading(false); return; }
     getDelivery(importId).then(setResult).catch((reason) => setError(reason instanceof Error ? reason.message : 'Commitresultatet kunde inte hämtas.')).finally(() => setLoading(false));
   }, [importId]);
+
+  useEffect(() => {
+    if (!projectId || !result) return;
+    let cancelled = false;
+    setWorkStatusLoading(true);
+    setWorkStatusError('');
+    getProjectWork(projectId)
+      .then((currentWork) => { if (!cancelled) setWork(currentWork); })
+      .catch(() => { if (!cancelled) { setWork(null); setWorkStatusError('Aktuell Work-/PR-status kunde inte hämtas. Öppna projektet och försök igen.'); } })
+      .finally(() => { if (!cancelled) setWorkStatusLoading(false); });
+    return () => { cancelled = true; };
+  }, [projectId, result]);
 
   useEffect(() => {
     if (!importId || !result) return;
@@ -140,18 +156,21 @@ export default function ImportResultPage() {
     <p><Link className="back-link" to={projectId ? `/projects/${projectId}` : '/projects'}>← Till projektet</Link></p>
     <p className="eyebrow">Importresultat</p>
     <h1 id="result-heading">Commit skapad</h1>
-    <p className="lead">ZIP-importen är committad på projektets arbetsbranch. Du kan fortsätta med nästa ZIP eller skapa en pull request med en egen titel och beskrivning.</p>
+    <p className="lead">ZIP-importen är committad på projektets arbetsbranch. {work?.status === 'PR_OPEN' ? 'Den befintliga pull requesten uppdateras automatiskt med committen.' : 'Du kan fortsätta med nästa ZIP eller skapa en pull request med en egen titel och beskrivning.'}</p>
     {loading && <p role="status">Hämtar resultat…</p>}
     {error && <p role="alert" className="status-message status-message--error">{error}</p>}
     {result && links && <>
       <div className="result-success" role="status"><div><strong>Importen är committad</strong><p>Arbetsbranchen är uppdaterad med den godkända ZIP-filen.</p></div><span className="status-badge">PUSHED</span></div>
+      {workStatusLoading && <p className="status-message" role="status">Kontrollerar aktuell Work- och pull request-status…</p>}
+      {workStatusError && <p className="status-message status-message--error" role="alert">{workStatusError}</p>}
+      {work?.status === 'PR_OPEN' && work.pullRequestUrl && <p className="status-message" role="status">Den befintliga pull requesten har uppdaterats med denna commit. <a href={work.pullRequestUrl} target="_blank" rel="noreferrer">Öppna pull request</a></p>}
       {pullRequestUrl && <p className="status-message" role="status">Arbetets pull request är skapad. <a href={pullRequestUrl} target="_blank" rel="noreferrer">Öppna pull request</a></p>}
-      {projectId && showPullRequestComposer && !pullRequestUrl && <PullRequestComposer projectId={projectId}
+      {projectId && showPullRequestComposer && !pullRequestUrl && work?.status !== 'PR_OPEN' && <PullRequestComposer projectId={projectId}
         onCreated={created => { setPullRequestUrl(created.pullRequestUrl); setShowPullRequestComposer(false); }}
         onCancel={() => setShowPullRequestComposer(false)} />}
       <div className="result-primary-action">
         {projectId && <Link className="button" to={`/projects/${projectId}/imports/new`}>Ladda upp nästa ZIP</Link>}
-        {projectId && !pullRequestUrl && !showPullRequestComposer && <button className="button button--secondary" type="button" onClick={()=>setShowPullRequestComposer(true)}>Skapa pull request</button>}
+        {projectId && !workStatusLoading && !workStatusError && !pullRequestUrl && !showPullRequestComposer && work && work.status !== 'PR_OPEN' && <button className="button button--secondary" type="button" onClick={()=>setShowPullRequestComposer(true)}>{work.status === 'PR_CLOSED' ? 'Skapa ny pull request' : 'Skapa pull request'}</button>}
         {projectId && pullRequestUrl && <button className="button button--secondary" type="button" disabled>Pull request skapad</button>}
       </div>
       <dl className="result-link-grid">

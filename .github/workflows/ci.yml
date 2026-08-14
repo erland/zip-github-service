@@ -89,7 +89,7 @@ jobs:
         run: npm test
       - name: Build frontend
         working-directory: frontend
-        run: npm run build
+        run: VITE_ZIP_GITHUB_VERSION="$(tr -d '[:space:]' < ../VERSION)" npm run build
       - name: Upload frontend build
         uses: actions/upload-artifact@v4
         with:

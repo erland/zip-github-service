@@ -1,9 +1,14 @@
+const runtimeVersion = import.meta.env.VITE_ZIP_GITHUB_VERSION?.trim() || 'development';
+
 export default function AboutPage() {
   return (
     <section className="page-card">
       <p className="eyebrow">Om tjänsten</p>
       <h1>ZIP till GitHub med granskning</h1>
       <p className="lead">zip-github ska jämföra ett projektarkiv med en vald GitHub-branch och skapa en pull request först efter uttryckligt godkännande.</p>
+      <dl className="result-link-grid" aria-label="Tjänsteinformation">
+        <div><dt>Version</dt><dd>{runtimeVersion}</dd></div>
+      </dl>
       <h2>Produktprinciper</h2>
       <ul>
         <li>GitHub är den beständiga projektkällan.</li>

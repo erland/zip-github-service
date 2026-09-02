@@ -1,0 +1,30 @@
+application: zip-github-service
+
+deployment:
+  type: coolify-compose
+  compose: ops/coolify/compose.yaml
+
+domain:
+  frontend: zip-github.apps.isaksson.info
+
+database:
+  required: true
+  external: true
+  name: zip_github
+  user: zip_github
+
+images:
+  backend: ghcr.io/erland/zip-github-service-backend
+  frontend: ghcr.io/erland/zip-github-service-frontend
+
+services:
+  public:
+    - frontend
+  internal:
+    - backend
+    - storage-init
+
+storage:
+  persistent_volumes:
+    - upload-data
+    - delivery-data

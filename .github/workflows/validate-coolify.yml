@@ -1,0 +1,34 @@
+name: Validate Coolify deployment
+
+on:
+  push:
+    paths:
+      - 'ops/coolify/**'
+      - '.github/workflows/validate-coolify.yml'
+  pull_request:
+    paths:
+      - 'ops/coolify/**'
+      - '.github/workflows/validate-coolify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Coolify Compose configuration
+        run: |
+          docker compose \
+            --env-file ops/coolify/env.example \
+            -f ops/coolify/compose.yaml \
+            config --quiet
+      - name: Ensure Coolify profile has no embedded PostgreSQL or public host ports
+        run: |
+          set -euo pipefail
+          rendered=$(docker compose --env-file ops/coolify/env.example -f ops/coolify/compose.yaml config)
+          ! grep -Eq '^  postgres:' <<<"$rendered"
+          ! grep -Eq '^    ports:' <<<"$rendered"
+          grep -q 'jdbc:postgresql://replace-with-coolify-postgres-host:5432/zip_github' <<<"$rendered"

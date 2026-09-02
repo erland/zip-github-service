@@ -1,0 +1,101 @@
+name: zip-github-service
+
+services:
+  storage-init:
+    image: alpine:3.20
+    restart: "no"
+    user: "0:0"
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        mkdir -p /var/lib/zip-github/uploads /var/lib/zip-github/delivery
+        chown -R 10001:10001 /var/lib/zip-github/uploads /var/lib/zip-github/delivery
+        chmod 0700 /var/lib/zip-github/uploads /var/lib/zip-github/delivery
+    volumes:
+      - upload-data:/var/lib/zip-github/uploads
+      - delivery-data:/var/lib/zip-github/delivery
+
+  backend:
+    image: ${ZIP_GITHUB_BACKEND_IMAGE:-ghcr.io/erland/zip-github-service-backend}:${ZIP_GITHUB_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      storage-init:
+        condition: service_completed_successfully
+    environment:
+      QUARKUS_HTTP_HOST: 0.0.0.0
+      QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE: ${QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE:-200M}
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://${DB_HOST:?Set DB_HOST in Coolify}:5432/${POSTGRES_DB:-zip_github}
+      QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-zip_github}
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in Coolify}
+      GITHUB_APP_CLIENT_ID: ${GITHUB_APP_CLIENT_ID:?Set GITHUB_APP_CLIENT_ID in Coolify}
+      GITHUB_APP_CLIENT_SECRET: ${GITHUB_APP_CLIENT_SECRET:?Set GITHUB_APP_CLIENT_SECRET in Coolify}
+      GITHUB_APP_CALLBACK_URL: ${GITHUB_APP_CALLBACK_URL:-https://zip-github.apps.isaksson.info/api/auth/github/callback}
+      GITHUB_APP_ID: ${GITHUB_APP_ID:?Set GITHUB_APP_ID in Coolify}
+      GITHUB_APP_PRIVATE_KEY: ${GITHUB_APP_PRIVATE_KEY:?Set GITHUB_APP_PRIVATE_KEY in Coolify}
+      ZIP_GITHUB_FRONTEND_URL: ${ZIP_GITHUB_FRONTEND_URL:-https://zip-github.apps.isaksson.info}
+      ZIP_GITHUB_SECURE_COOKIES: ${ZIP_GITHUB_SECURE_COOKIES:-true}
+      ZIP_GITHUB_CSRF_ENABLED: ${ZIP_GITHUB_CSRF_ENABLED:-true}
+      ZIP_GITHUB_PROJECT_PERSISTENCE_ENABLED: ${ZIP_GITHUB_PROJECT_PERSISTENCE_ENABLED:-true}
+      ZIP_GITHUB_UPLOAD_STORAGE_ROOT: /var/lib/zip-github/uploads
+      ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES: ${ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES:-209715200}
+      ZIP_GITHUB_UPLOAD_RETENTION_HOURS: ${ZIP_GITHUB_UPLOAD_RETENTION_HOURS:-24}
+      ZIP_GITHUB_UPLOAD_CLEANUP_INTERVAL: ${ZIP_GITHUB_UPLOAD_CLEANUP_INTERVAL:-1h}
+      ZIP_GITHUB_STAGING_UPLOAD_CREDENTIAL: ${ZIP_GITHUB_STAGING_UPLOAD_CREDENTIAL:-}
+      ZIP_GITHUB_STAGING_AVAILABLE_TTL_MINUTES: ${ZIP_GITHUB_STAGING_AVAILABLE_TTL_MINUTES:-60}
+      ZIP_GITHUB_STAGING_CLAIMED_TTL_MINUTES: ${ZIP_GITHUB_STAGING_CLAIMED_TTL_MINUTES:-240}
+      ZIP_GITHUB_STAGING_CLEANUP_INTERVAL: ${ZIP_GITHUB_STAGING_CLEANUP_INTERVAL:-5m}
+      ZIP_GITHUB_STAGING_CLEANUP_BATCH_SIZE: ${ZIP_GITHUB_STAGING_CLEANUP_BATCH_SIZE:-100}
+      ZIP_GITHUB_STAGING_MAX_LIVE_OBJECTS: ${ZIP_GITHUB_STAGING_MAX_LIVE_OBJECTS:-100}
+      ZIP_GITHUB_STAGING_MAX_LIVE_BYTES: ${ZIP_GITHUB_STAGING_MAX_LIVE_BYTES:-1073741824}
+      ZIP_GITHUB_SHORTCUT_RELEASE_PATH: ${ZIP_GITHUB_SHORTCUT_RELEASE_PATH:-}
+      ZIP_GITHUB_SHORTCUT_VERSION: ${ZIP_GITHUB_SHORTCUT_VERSION:-1}
+      ZIP_GITHUB_SHORTCUT_GENERATION: ${ZIP_GITHUB_SHORTCUT_GENERATION:-g1}
+      ZIP_GITHUB_TRUST_FORWARDED_FOR: ${ZIP_GITHUB_TRUST_FORWARDED_FOR:-false}
+      ZIP_GITHUB_RATE_LIMIT_ENABLED: ${ZIP_GITHUB_RATE_LIMIT_ENABLED:-true}
+      ZIP_GITHUB_ARCHIVE_MAX_UNCOMPRESSED_BYTES: ${ZIP_GITHUB_ARCHIVE_MAX_UNCOMPRESSED_BYTES:-524288000}
+      ZIP_GITHUB_ARCHIVE_MAX_ENTRIES: ${ZIP_GITHUB_ARCHIVE_MAX_ENTRIES:-20000}
+      ZIP_GITHUB_ARCHIVE_MAX_SINGLE_FILE_BYTES: ${ZIP_GITHUB_ARCHIVE_MAX_SINGLE_FILE_BYTES:-52428800}
+      ZIP_GITHUB_ARCHIVE_MAX_PATH_LENGTH: ${ZIP_GITHUB_ARCHIVE_MAX_PATH_LENGTH:-1024}
+      ZIP_GITHUB_ARCHIVE_MAX_COMPRESSION_RATIO: ${ZIP_GITHUB_ARCHIVE_MAX_COMPRESSION_RATIO:-100.0}
+      ZIP_GITHUB_ACTIONS_ALLOWED_DISPATCH_WORKFLOWS: ${ZIP_GITHUB_ACTIONS_ALLOWED_DISPATCH_WORKFLOWS:-}
+      ZIP_GITHUB_ACTIONS_ALLOWED_RERUN_WORKFLOWS: ${ZIP_GITHUB_ACTIONS_ALLOWED_RERUN_WORKFLOWS:-}
+      ZIP_GITHUB_SNAPSHOT_WORKSPACE_ROOT: /tmp/zip-github/snapshots
+      ZIP_GITHUB_DELIVERY_WORKSPACE_ROOT: /var/lib/zip-github/delivery
+    volumes:
+      - upload-data:/var/lib/zip-github/uploads
+      - delivery-data:/var/lib/zip-github/delivery
+    tmpfs:
+      - /tmp:size=1g,mode=1770,uid=10001,gid=10001
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/q/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  frontend:
+    image: ${ZIP_GITHUB_FRONTEND_IMAGE:-ghcr.io/erland/zip-github-service-frontend}:${ZIP_GITHUB_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  upload-data:
+  delivery-data:
+
+networks:
+  app:

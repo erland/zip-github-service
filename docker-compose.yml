@@ -30,7 +30,6 @@ services:
       - upload-data:/var/lib/zip-github/uploads
       - delivery-data:/var/lib/zip-github/delivery
 
-
   backend:
     image: ${ZIP_GITHUB_BACKEND_IMAGE:-ghcr.io/erland/zip-github-service-backend}:${ZIP_GITHUB_VERSION:-1.0.0-rc.15}
     restart: unless-stopped
@@ -95,6 +94,7 @@ services:
     image: ${ZIP_GITHUB_FRONTEND_IMAGE:-ghcr.io/erland/zip-github-service-frontend}:${ZIP_GITHUB_VERSION:-1.0.0-rc.15}
     environment:
       ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}
+      ZIP_GITHUB_BACKEND_HOST: backend
     restart: unless-stopped
     depends_on:
       backend:
@@ -102,7 +102,7 @@ services:
     ports:
       - "${FRONTEND_PORT:-5173}:80"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/"]
       interval: 15s
       timeout: 5s
       retries: 5

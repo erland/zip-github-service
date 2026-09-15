@@ -16,7 +16,7 @@ services:
       - upload-data:/var/lib/zip-github/uploads
       - delivery-data:/var/lib/zip-github/delivery
 
-  backend:
+  zip-github-backend:
     image: ${ZIP_GITHUB_BACKEND_IMAGE:-ghcr.io/erland/zip-github-service-backend}:${ZIP_GITHUB_VERSION:-latest}
     restart: unless-stopped
     depends_on:
@@ -81,8 +81,9 @@ services:
     restart: unless-stopped
     environment:
       ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}
+      ZIP_GITHUB_BACKEND_HOST: zip-github-backend
     depends_on:
-      backend:
+      zip-github-backend:
         condition: service_healthy
     networks:
       - app

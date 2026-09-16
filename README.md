@@ -4,26 +4,28 @@
 
 ## Current state
 
-- Product version: `1.0.0-rc.8`
-- Repository revision: `r0048`
-- Completed implementation step: `7.5 — MVP-release och Definition of Done`
-- Next implementation step: `8.1 — Workflow runs och jobs` (post-MVP)
-- Overall state: **MVP RELEASE CANDIDATE**
+- Product version: `1.0.0-rc.129`
+- Repository revision: `r0177`
+- Completed implementation step: `9.42 — Compact successful Actions, prominent failures`
+- Next implementation step: `none` — the current implementation plan is complete
+- Overall state: **MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — GUIDED UX REVISION COMPLETE**
 - Status register: [`docs/implementation-status.md`](docs/implementation-status.md)
 - Release decision: [`docs/mvp-release.md`](docs/mvp-release.md)
 - Production acceptance checklist: [`docs/release-checklist.md`](docs/release-checklist.md)
 
 The end-to-end MVP flow is implemented: GitHub login, repository selection, safe ZIP upload, frozen repository snapshot, immutable review and approval, isolated delivery, draft pull request, result links, check status and import history.
 
-The release candidate is intended for controlled deployment and live acceptance testing. It is not yet production-ready because several application stores remain in memory and the external checks in `docs/release-checklist.md` still require evidence.
+The release candidate is intended for controlled deployment and live acceptance testing. Refer to [`docs/implementation-status.md`](docs/implementation-status.md), [`CHANGELOG.md`](CHANGELOG.md) and [`docs/release-checklist.md`](docs/release-checklist.md) for the current implementation and release status.
 
 ## Continue implementation
 
-Attach the latest ZIP and write:
+The current implementation plan is complete. Before using the step-by-step workflow again, define and record a new implementation step in the status ledger.
+
+Once a new step is marked `NEXT`, the normal workflow is:
 
 > Kör nästa steg.
 
-`AGENTS.md` and the status ledger require exactly one step to be implemented, verified, documented and repackaged per prompt.
+`AGENTS.md` and the status ledger require exactly one `NEXT` step to be implemented, verified, documented and repackaged per prompt.
 
 ## Architecture and user flow
 

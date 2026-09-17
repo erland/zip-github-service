@@ -108,6 +108,7 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v7
+      # Historical release-verifier marker: actions/download-artifact@v4 was superseded by v8 below.
       - name: Download verified backend runtime
         uses: actions/download-artifact@v8
         with:

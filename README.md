@@ -58,3 +58,7 @@ The runtime never mounts the Docker socket. GitHub Actions remains responsible f
 ## Production deployment
 
 Production can be deployed manually from GitHub Actions using the restricted deployment path documented in [`docs/production-deployment.md`](docs/production-deployment.md). The server-side reference scripts live under `ops/production/`.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

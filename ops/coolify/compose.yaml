@@ -69,6 +69,9 @@ services:
       - /tmp:size=1g,mode=1770,uid=10001,gid=10001
     networks:
       - app
+      - coolify
+    labels:
+      - "traefik.docker.network=coolify"
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/q/health/ready"]
       interval: 15s
@@ -100,3 +103,5 @@ volumes:
 
 networks:
   app:
+  coolify:
+    external: true

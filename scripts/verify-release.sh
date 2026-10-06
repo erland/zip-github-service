@@ -584,14 +584,602 @@ grep -q 'Använd detta repository' frontend/src/pages/StagingClaimPage.tsx
 grep -q 'Välj ett annat repository' frontend/src/pages/StagingClaimPage.tsx
 grep -q 'suggestRepository' frontend/src/pages/StagingClaimPage.tsx
 
-# Phase 9 step 9.28 (avoid duplicate push + pull_request full CI runs).
+# Phase 9 step 9.28 historical CI optimization.
+# PR validation has since been re-enabled; publication remains restricted to main,
+# while GitHub Release publication is owned by release-plugin.yml.
 test -s docs/step-9.28-report.md
-grep -q '^  push:$' .github/workflows/ci.yml
-grep -q '^  workflow_dispatch:$' .github/workflows/ci.yml
-! grep -q '^  pull_request:' .github/workflows/ci.yml
-grep -Fq '[[ "${GITHUB_REF}" == "refs/heads/main" ]] || [[ "${GITHUB_REF}" == refs/tags/* ]]' .github/workflows/ci.yml
+grep -q '^  push:
+
+# Phase 9 step 9.29 (completely empty repository bootstrap).
+test -s docs/step-9.29-report.md
+test -s backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+test -s backend/src/test/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapServiceTest.java
+grep -Fq 'boolean repositoryHasBranches' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubProjectCatalog.java
+grep -Fq 'hasBranches = catalog.repositoryHasBranches' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'selectedBranch = "main"' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'GITHUB_DEFAULT_BRANCH_UNAVAILABLE' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'isTextual() ? repo.path("default_branch").asText() : ""' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -Fq 'fallsBackToMainWhenAnEmptyRepositoryHasNoReportedDefaultBranch' backend/src/test/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationServiceTest.java
+test -s docs/rc102-step-9.29-empty-default-branch-correction.md
+grep -Fq 'bootstrapEmptyRepository(project.githubInstallationId()' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -Fq '"PUT", createPayload.toString()' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+grep -Fq '| `9.29` | Fas 9 — repository bootstrap | Stöd första ZIP i helt tomt GitHub-repository | **DONE**' docs/implementation-status.md
+printf 'Phase 9.29 empty repository support assertions verified for %s.\n' "$actual_version"
+
+# Phase 9 step 9.30 (maintenance reconciliation and navigation).
+test -s docs/step-9.30-report.md
+grep -Fq '| `9.30` | Fas 9 — underhåll | Reconcila Work/PR-status och lägg navigationslänkar i Underhåll | **DONE**' docs/implementation-status.md
+grep -Fq 'reconcileWorkPullRequestStateStrict' backend/src/main/java/info/isaksson/erland/zipgithub/application/WorkBranchMaintenanceService.java
+grep -Fq 'findNonTerminalByRepositoryBranch' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/WorkPersistenceStore.java
+grep -Fq '<th>PR</th>' frontend/src/pages/MaintenancePage.tsx
+grep -Fq 'candidate.branchUrl' frontend/src/pages/MaintenancePage.tsx
+grep -Fq 'candidate.pullRequestUrl' frontend/src/pages/MaintenancePage.tsx
+printf 'Phase 9.30 maintenance reconciliation/navigation assertions verified for %s.\n' "$actual_version"
+
+grep -Fq '.zip-github-bootstrap' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+grep -Fq '"REPOSITORY_WORK_START_FAILED"' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+# rc.109 empty-repository Work-start diagnostic assertions.
+test -s docs/rc109-empty-repository-start-diagnostics.md
+grep -Fq 'private static final Logger LOG = Logger.getLogger(RepositoryResource.class);' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'diagnosticId = UUID.randomUUID().toString()' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'stage = "prepare-project"' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'LOG.errorf(e,' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'Diagnostic id: " + diagnosticId' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'Repository Work preflight installation permission' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'GitHub empty-repository marker create starting' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+grep -Fq 'GitHub empty-repository marker cleanup completed' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+! grep -Fq 'Authorization' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+printf 'rc.109 empty-repository Work-start diagnostic assertions verified for %s.\n' "$actual_version"
+
+grep -q 'if (hasHttpStatus(e, 404)) return false;' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'for (Throwable current = error; current != null; current = current.getCause())' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'nestedGithub404IsRecognizedAsMissingResource' backend/src/test/java/info/isaksson/erland/zipgithub/github/GitHubAppClientContractTest.java
+grep -q 'differentGithubStatusIsNotRecognizedAs404' backend/src/test/java/info/isaksson/erland/zipgithub/github/GitHubAppClientContractTest.java
+printf 'rc.110 empty-repository branch 404 assertions verified for %s.\n' "$actual_version"
+
+grep -Fq 'VITE_ZIP_GITHUB_VERSION=' .github/workflows/ci.yml
+grep -Fq '../VERSION' .github/workflows/ci.yml
+grep -Fq 'import.meta.env.VITE_ZIP_GITHUB_VERSION' frontend/src/pages/AboutPage.tsx
+grep -Fq "work?.status === 'PR_OPEN'" frontend/src/pages/ImportResultPage.tsx
+grep -Fq 'Den befintliga pull requesten har uppdaterats med denna commit.' frontend/src/pages/ImportResultPage.tsx
+grep -Fq "work.status === 'PR_CLOSED' ? 'Skapa ny pull request' : 'Skapa pull request'" frontend/src/pages/ImportResultPage.tsx
+grep -Fq 'does not offer a second pull request when current Work already has an open PR' frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq 'offers a new pull request when the previous PR is closed without merge' frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq 'shows the build-injected zip-GitHub version' frontend/src/pages/AboutPage.test.tsx
+printf 'Step 9.31 runtime version and PR-aware result assertions verified for %s.\n' "$actual_version"
+grep -Fq "await screen.findByRole('button', { name: 'Skapa pull request' })" frontend/src/pages/ImportResultPage.test.tsx
+printf 'rc.112 async ImportResultPage test assertion verified for %s.\n' "$actual_version"
+grep -Fq 'id="next-action-heading">Nästa steg</h2>' frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq 'En ZIP-import väntar på att slutföras.' frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "work.status === 'PR_OPEN'" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "work.status === 'PR_CLOSED' && work.headCommitSha" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq '## Steg 9.33 - Upload starts Work automatically' docs/implementation-steps.md
+grep -Fq '## Steg 9.34 - Attention-first review' docs/implementation-steps.md
+grep -Fq '## Steg 9.35 - Repository attention overview' docs/implementation-steps.md
+printf 'Step 9.32 guided project actions assertions verified for %s.\n' "$actual_version"
+grep -Fq "targetWork = await startProjectWork(project.id);" frontend/src/pages/NewImportPage.tsx
+grep -Fq "const importId = existingImportId || (await createImport" frontend/src/pages/NewImportPage.tsx
+grep -Fq "Ladda upp första ZIP" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "stops before import creation and upload when automatic Work start fails" frontend/src/pages/NewImportPage.test.tsx
+grep -Fq "reuses an existing Work without starting another one" frontend/src/pages/NewImportPage.test.tsx
+grep -Fq "## Steg 9.33 - Upload starts Work automatically" docs/implementation-steps.md
+grep -Fq "**Status:** DONE (2026-08-14, r0162 / 1.0.0-rc.114)." docs/implementation-steps.md
+printf 'Step 9.33 automatic Work start assertions verified for %s.\n' "$actual_version"
+grep -Fq "startProjectWork: vi.fn()" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -Fq "startProjectWork: mocks.startProjectWork" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -Fq "expect(mocks.startProjectWork).toHaveBeenCalledWith('project-1')" frontend/src/pages/SimplifiedImportFlow.test.tsx
+printf 'rc.115 simplified import flow fixture assertion verified for %s.\n' "$actual_version"
+grep -Fq "Behöver din uppmärksamhet" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "Inga särskilda risker hittades" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "Granska blockerade" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "Vanliga ändringar" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "Fullständig plansammanfattning" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "lets the attention panel jump directly to blocked decisions" frontend/src/pages/ImportReviewPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0164 / 1.0.0-rc.116)." docs/implementation-steps.md
+printf 'Step 9.34 attention-first review assertions verified for %s.\n' "$actual_version"
+grep -Fq "element?.tagName === 'P' && element.textContent === '2 vanliga filförändringar är valbara enligt ordinarie regler.'" frontend/src/pages/ImportReviewPage.test.tsx
+printf 'rc.117 ImportReviewPage text assertion verified for %s.\n' "$actual_version"
+grep -Fq "Behöver din uppmärksamhet" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "getProjectWorkActions" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "Status kunde inte verifieras" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "Repositoryöversikt" frontend/src/components/RepositoryPicker.tsx
+grep -Fq "groups={groups}" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "groups attention, ongoing and other repositories" frontend/src/pages/ProjectListPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0166 / 1.0.0-rc.118)." docs/implementation-steps.md
+printf 'Step 9.35 repository attention overview assertions verified for %s.\n' "$actual_version"
+
+grep -Fq "findByRole('link', { name: /example-book-project/ })" frontend/src/App.test.tsx
+grep -Fq "queryByRole('link', { name: /example-book-project/ })" frontend/src/App.test.tsx
+printf 'rc.119 repository accessible-name test assertion verified for %s.\n' "$actual_version"
+grep -Fq "export class SessionExpiredError" frontend/src/api/session.ts
+grep -Fq "assertSessionActive(response);" frontend/src/api/projects.ts
+grep -Fq "assertSessionActive(response);" frontend/src/api/imports.ts
+grep -Fq "request.status === 401" frontend/src/api/imports.ts
+grep -Fq "signalSessionExpired();" frontend/src/api/imports.ts
+grep -Fq "subscribeSessionExpired" frontend/src/components/AppLayout.tsx
+grep -Fq "Din session har gått ut. Logga in igen för att fortsätta där du var." frontend/src/components/AppLayout.tsx
+grep -Fq "returns to login on API 401 after an authenticated session expires" frontend/src/App.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0168 / 1.0.0-rc.120)." docs/implementation-steps.md
+printf 'Step 9.36 central session-expiry assertions verified for %s.\n' "$actual_version"
+grep -Fq "Ladda upp första ZIP" frontend/src/pages/RepositoryDetailPage.tsx
+grep -Fq 'navigate(`/projects/${result.project.id}/imports/new`' frontend/src/pages/RepositoryDetailPage.tsx
+! grep -Fq ">Starta arbete<" frontend/src/pages/RepositoryDetailPage.tsx
+grep -Fq "creates project and Work lazily and opens the first ZIP upload directly for a new repository" frontend/src/App.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0169 / 1.0.0-rc.121)." docs/implementation-steps.md
+grep -Fq "## Steg 9.38 - Project progressive disclosure" docs/implementation-steps.md
+printf 'Step 9.37 new repository first-ZIP flow assertions verified for %s.\n' "$actual_version"
+grep -Fq "expect(await screen.findByLabelText('Projektarkiv')).toBeEnabled();" frontend/src/App.test.tsx
+printf 'rc.122 first-ZIP App timing assertion verified for %s.\n' "$actual_version"
+grep -Fq "Repositoryinformation" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Visa tekniska Work-detaljer" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Avancerat: återuppta befintlig branch" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Avancerade Work-åtgärder" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Avancerade repositoryåtgärder" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "puts next step before repository metadata and keeps technical Work details collapsed by default" frontend/src/pages/ProjectDetailPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0171 / 1.0.0-rc.123)." docs/implementation-steps.md
+grep -Fq "## Steg 9.39 - Review completion guidance" docs/implementation-steps.md
+printf 'Step 9.38 project progressive disclosure assertions verified for %s.\n' "$actual_version"
+grep -Fq "expect(technicalDetails).not.toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
+grep -Fq "expect(technicalDetails).toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
+grep -Fq "expect(repositoryDetails).not.toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
+printf 'rc.124 progressive-disclosure details-state assertions verified for %s.\n' "$actual_version"
+grep -Fq "within(technicalDetails as HTMLElement).getByText('zip-github/work-1')" frontend/src/pages/ProjectDetailPage.test.tsx
+printf 'rc.125 scoped Work branch disclosure assertion verified for %s.\n' "$actual_version"
+grep -Fq "Fortsätt till commit" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "editor?.scrollIntoView?." frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "editor.focus();" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "switches from blocker guidance to continue-to-commit when required decisions are resolved" frontend/src/pages/ImportReviewPage.test.tsx
+grep -Fq "expect(screen.getByRole('textbox', { name: 'Meddelande' })).toHaveFocus();" frontend/src/pages/ImportReviewPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0174 / 1.0.0-rc.126)." docs/implementation-steps.md
+grep -Fq "## Steg 9.40 - Simplified upload" docs/implementation-steps.md
+printf 'Step 9.39 review completion guidance assertions verified for %s.\n' "$actual_version"
+grep -Fq "Så hanteras arbetsbranchen" frontend/src/pages/NewImportPage.tsx
+grep -Fq "Ändra författare" frontend/src/pages/NewImportPage.tsx
+grep -Fq "className=\"author-summary\"" frontend/src/pages/NewImportPage.tsx
+grep -Fq "keeps ZIP selection primary and author/work details collapsed in the normal flow" frontend/src/pages/NewImportPage.test.tsx
+grep -Fq "await user.click(screen.getByText('Ändra författare'));" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0175 / 1.0.0-rc.127)." docs/implementation-steps.md
+grep -Fq "## Steg 9.41 - Result next action follows Actions and Work state" docs/implementation-steps.md
+printf 'Step 9.40 simplified upload assertions verified for %s.\n' "$actual_version"
+grep -Fq "actionsRepresentCurrentCommit" frontend/src/pages/ImportResultPage.tsx
+grep -Fq "hasObservedActions" frontend/src/pages/ImportResultPage.tsx
+grep -Fq "GitHub Actions behöver din uppmärksamhet" frontend/src/pages/ImportResultPage.tsx
+grep -Fq "GitHub Actions körs för den här committen" frontend/src/pages/ImportResultPage.tsx
+grep -Fq "does not block projects with no Actions run for the commit, including PR-only workflows before a PR exists" frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq "keeps normal next-step actions available while observed Actions are still running" frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0176 / 1.0.0-rc.128)." docs/implementation-steps.md
+grep -Fq "## Steg 9.42 - Compact successful Actions, prominent failures" docs/implementation-steps.md
+printf 'Step 9.41 Actions-aware result guidance assertions verified for %s.\n' "$actual_version"
+grep -Fq "Alla observerade Actions-kontroller för committen är godkända." frontend/src/components/ActionsPanel.tsx
+grep -Fq "Visa Actions-detaljer" frontend/src/components/ActionsPanel.tsx
+grep -Fq "Visa pågående Actions-detaljer" frontend/src/components/ActionsPanel.tsx
+grep -Fq "En eller flera observerade Actions-kontroller har misslyckats." frontend/src/components/ActionsPanel.tsx
+grep -Fq "keeps successful Actions compact until details are requested" frontend/src/components/ActionsPanel.test.tsx
+grep -Fq "keeps failed Actions prominent without requiring expansion" frontend/src/components/ActionsPanel.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0177 / 1.0.0-rc.129)." docs/implementation-steps.md
+printf 'Step 10.1 MCP staging bridge release assertions verified for %s.\n' "$actual_version"
+
+# Phase 10.2 portable plugin package (live deployed acceptance remains BLOCKED).
+test -s plugin/plugin.template.json
+test -s plugin/mcp.template.json
+test -s plugin/skills/zip-github/SKILL.md
+test -s scripts/build-plugin.mjs
+test -s docs/openai-plugin-distribution.md
+test -s docs/step-10.2-report.md
+test -s .github/workflows/release-plugin.yml
+grep -Fq 'openai/fileParams' backend/src/main/java/info/isaksson/erland/zipgithub/mcp/McpResource.java
+grep -Fq 'https://zip-github.apphome.one/mcp' docs/openai-plugin-distribution.md
+grep -Fq '| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **BLOCKED**' docs/implementation-status.md
+printf 'Step 10.2 plugin packaging assertions verified; live acceptance remains blocked for %s.\n' "$actual_version"
+
+# rc.132 unified release version source.
+test -s docs/rc132-release-tag-version-source.md
+grep -Fq 'release:' .github/workflows/release-plugin.yml
+grep -Fq 'tag="${{ github.event.release.tag_name }}"' .github/workflows/release-plugin.yml
+grep -Fq 'version="${tag#v}"' .github/workflows/release-plugin.yml
+grep -Fq 'repository_version=$(tr -d' .github/workflows/release-plugin.yml
+grep -Fq 'Build and publish backend image' .github/workflows/release-plugin.yml
+grep -Fq 'Build and publish frontend image' .github/workflows/release-plugin.yml
+grep -Fq 'Attach plugin ZIP to GitHub Release' .github/workflows/release-plugin.yml
+! grep -Fq '[[ "${GITHUB_REF}" == refs/tags/* ]]' .github/workflows/ci.yml
+printf 'rc.132 release-tag version-source assertions verified for %s.\n' "$actual_version"
+ .github/workflows/ci.yml
+grep -q '^  pull_request:
+
+# Phase 9 step 9.29 (completely empty repository bootstrap).
+test -s docs/step-9.29-report.md
+test -s backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+test -s backend/src/test/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapServiceTest.java
+grep -Fq 'boolean repositoryHasBranches' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubProjectCatalog.java
+grep -Fq 'hasBranches = catalog.repositoryHasBranches' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'selectedBranch = "main"' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'GITHUB_DEFAULT_BRANCH_UNAVAILABLE' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'isTextual() ? repo.path("default_branch").asText() : ""' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -Fq 'fallsBackToMainWhenAnEmptyRepositoryHasNoReportedDefaultBranch' backend/src/test/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationServiceTest.java
+test -s docs/rc102-step-9.29-empty-default-branch-correction.md
+grep -Fq 'bootstrapEmptyRepository(project.githubInstallationId()' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -Fq '"PUT", createPayload.toString()' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+grep -Fq '| `9.29` | Fas 9 — repository bootstrap | Stöd första ZIP i helt tomt GitHub-repository | **DONE**' docs/implementation-status.md
+printf 'Phase 9.29 empty repository support assertions verified for %s.\n' "$actual_version"
+
+# Phase 9 step 9.30 (maintenance reconciliation and navigation).
+test -s docs/step-9.30-report.md
+grep -Fq '| `9.30` | Fas 9 — underhåll | Reconcila Work/PR-status och lägg navigationslänkar i Underhåll | **DONE**' docs/implementation-status.md
+grep -Fq 'reconcileWorkPullRequestStateStrict' backend/src/main/java/info/isaksson/erland/zipgithub/application/WorkBranchMaintenanceService.java
+grep -Fq 'findNonTerminalByRepositoryBranch' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/WorkPersistenceStore.java
+grep -Fq '<th>PR</th>' frontend/src/pages/MaintenancePage.tsx
+grep -Fq 'candidate.branchUrl' frontend/src/pages/MaintenancePage.tsx
+grep -Fq 'candidate.pullRequestUrl' frontend/src/pages/MaintenancePage.tsx
+printf 'Phase 9.30 maintenance reconciliation/navigation assertions verified for %s.\n' "$actual_version"
+
+grep -Fq '.zip-github-bootstrap' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+grep -Fq '"REPOSITORY_WORK_START_FAILED"' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+# rc.109 empty-repository Work-start diagnostic assertions.
+test -s docs/rc109-empty-repository-start-diagnostics.md
+grep -Fq 'private static final Logger LOG = Logger.getLogger(RepositoryResource.class);' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'diagnosticId = UUID.randomUUID().toString()' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'stage = "prepare-project"' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'LOG.errorf(e,' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'Diagnostic id: " + diagnosticId' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'Repository Work preflight installation permission' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'GitHub empty-repository marker create starting' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+grep -Fq 'GitHub empty-repository marker cleanup completed' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+! grep -Fq 'Authorization' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+printf 'rc.109 empty-repository Work-start diagnostic assertions verified for %s.\n' "$actual_version"
+
+grep -q 'if (hasHttpStatus(e, 404)) return false;' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'for (Throwable current = error; current != null; current = current.getCause())' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'nestedGithub404IsRecognizedAsMissingResource' backend/src/test/java/info/isaksson/erland/zipgithub/github/GitHubAppClientContractTest.java
+grep -q 'differentGithubStatusIsNotRecognizedAs404' backend/src/test/java/info/isaksson/erland/zipgithub/github/GitHubAppClientContractTest.java
+printf 'rc.110 empty-repository branch 404 assertions verified for %s.\n' "$actual_version"
+
+grep -Fq 'VITE_ZIP_GITHUB_VERSION=' .github/workflows/ci.yml
+grep -Fq '../VERSION' .github/workflows/ci.yml
+grep -Fq 'import.meta.env.VITE_ZIP_GITHUB_VERSION' frontend/src/pages/AboutPage.tsx
+grep -Fq "work?.status === 'PR_OPEN'" frontend/src/pages/ImportResultPage.tsx
+grep -Fq 'Den befintliga pull requesten har uppdaterats med denna commit.' frontend/src/pages/ImportResultPage.tsx
+grep -Fq "work.status === 'PR_CLOSED' ? 'Skapa ny pull request' : 'Skapa pull request'" frontend/src/pages/ImportResultPage.tsx
+grep -Fq 'does not offer a second pull request when current Work already has an open PR' frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq 'offers a new pull request when the previous PR is closed without merge' frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq 'shows the build-injected zip-GitHub version' frontend/src/pages/AboutPage.test.tsx
+printf 'Step 9.31 runtime version and PR-aware result assertions verified for %s.\n' "$actual_version"
+grep -Fq "await screen.findByRole('button', { name: 'Skapa pull request' })" frontend/src/pages/ImportResultPage.test.tsx
+printf 'rc.112 async ImportResultPage test assertion verified for %s.\n' "$actual_version"
+grep -Fq 'id="next-action-heading">Nästa steg</h2>' frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq 'En ZIP-import väntar på att slutföras.' frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "work.status === 'PR_OPEN'" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "work.status === 'PR_CLOSED' && work.headCommitSha" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq '## Steg 9.33 - Upload starts Work automatically' docs/implementation-steps.md
+grep -Fq '## Steg 9.34 - Attention-first review' docs/implementation-steps.md
+grep -Fq '## Steg 9.35 - Repository attention overview' docs/implementation-steps.md
+printf 'Step 9.32 guided project actions assertions verified for %s.\n' "$actual_version"
+grep -Fq "targetWork = await startProjectWork(project.id);" frontend/src/pages/NewImportPage.tsx
+grep -Fq "const importId = existingImportId || (await createImport" frontend/src/pages/NewImportPage.tsx
+grep -Fq "Ladda upp första ZIP" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "stops before import creation and upload when automatic Work start fails" frontend/src/pages/NewImportPage.test.tsx
+grep -Fq "reuses an existing Work without starting another one" frontend/src/pages/NewImportPage.test.tsx
+grep -Fq "## Steg 9.33 - Upload starts Work automatically" docs/implementation-steps.md
+grep -Fq "**Status:** DONE (2026-08-14, r0162 / 1.0.0-rc.114)." docs/implementation-steps.md
+printf 'Step 9.33 automatic Work start assertions verified for %s.\n' "$actual_version"
+grep -Fq "startProjectWork: vi.fn()" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -Fq "startProjectWork: mocks.startProjectWork" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -Fq "expect(mocks.startProjectWork).toHaveBeenCalledWith('project-1')" frontend/src/pages/SimplifiedImportFlow.test.tsx
+printf 'rc.115 simplified import flow fixture assertion verified for %s.\n' "$actual_version"
+grep -Fq "Behöver din uppmärksamhet" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "Inga särskilda risker hittades" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "Granska blockerade" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "Vanliga ändringar" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "Fullständig plansammanfattning" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "lets the attention panel jump directly to blocked decisions" frontend/src/pages/ImportReviewPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0164 / 1.0.0-rc.116)." docs/implementation-steps.md
+printf 'Step 9.34 attention-first review assertions verified for %s.\n' "$actual_version"
+grep -Fq "element?.tagName === 'P' && element.textContent === '2 vanliga filförändringar är valbara enligt ordinarie regler.'" frontend/src/pages/ImportReviewPage.test.tsx
+printf 'rc.117 ImportReviewPage text assertion verified for %s.\n' "$actual_version"
+grep -Fq "Behöver din uppmärksamhet" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "getProjectWorkActions" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "Status kunde inte verifieras" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "Repositoryöversikt" frontend/src/components/RepositoryPicker.tsx
+grep -Fq "groups={groups}" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "groups attention, ongoing and other repositories" frontend/src/pages/ProjectListPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0166 / 1.0.0-rc.118)." docs/implementation-steps.md
+printf 'Step 9.35 repository attention overview assertions verified for %s.\n' "$actual_version"
+
+grep -Fq "findByRole('link', { name: /example-book-project/ })" frontend/src/App.test.tsx
+grep -Fq "queryByRole('link', { name: /example-book-project/ })" frontend/src/App.test.tsx
+printf 'rc.119 repository accessible-name test assertion verified for %s.\n' "$actual_version"
+grep -Fq "export class SessionExpiredError" frontend/src/api/session.ts
+grep -Fq "assertSessionActive(response);" frontend/src/api/projects.ts
+grep -Fq "assertSessionActive(response);" frontend/src/api/imports.ts
+grep -Fq "request.status === 401" frontend/src/api/imports.ts
+grep -Fq "signalSessionExpired();" frontend/src/api/imports.ts
+grep -Fq "subscribeSessionExpired" frontend/src/components/AppLayout.tsx
+grep -Fq "Din session har gått ut. Logga in igen för att fortsätta där du var." frontend/src/components/AppLayout.tsx
+grep -Fq "returns to login on API 401 after an authenticated session expires" frontend/src/App.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0168 / 1.0.0-rc.120)." docs/implementation-steps.md
+printf 'Step 9.36 central session-expiry assertions verified for %s.\n' "$actual_version"
+grep -Fq "Ladda upp första ZIP" frontend/src/pages/RepositoryDetailPage.tsx
+grep -Fq 'navigate(`/projects/${result.project.id}/imports/new`' frontend/src/pages/RepositoryDetailPage.tsx
+! grep -Fq ">Starta arbete<" frontend/src/pages/RepositoryDetailPage.tsx
+grep -Fq "creates project and Work lazily and opens the first ZIP upload directly for a new repository" frontend/src/App.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0169 / 1.0.0-rc.121)." docs/implementation-steps.md
+grep -Fq "## Steg 9.38 - Project progressive disclosure" docs/implementation-steps.md
+printf 'Step 9.37 new repository first-ZIP flow assertions verified for %s.\n' "$actual_version"
+grep -Fq "expect(await screen.findByLabelText('Projektarkiv')).toBeEnabled();" frontend/src/App.test.tsx
+printf 'rc.122 first-ZIP App timing assertion verified for %s.\n' "$actual_version"
+grep -Fq "Repositoryinformation" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Visa tekniska Work-detaljer" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Avancerat: återuppta befintlig branch" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Avancerade Work-åtgärder" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Avancerade repositoryåtgärder" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "puts next step before repository metadata and keeps technical Work details collapsed by default" frontend/src/pages/ProjectDetailPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0171 / 1.0.0-rc.123)." docs/implementation-steps.md
+grep -Fq "## Steg 9.39 - Review completion guidance" docs/implementation-steps.md
+printf 'Step 9.38 project progressive disclosure assertions verified for %s.\n' "$actual_version"
+grep -Fq "expect(technicalDetails).not.toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
+grep -Fq "expect(technicalDetails).toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
+grep -Fq "expect(repositoryDetails).not.toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
+printf 'rc.124 progressive-disclosure details-state assertions verified for %s.\n' "$actual_version"
+grep -Fq "within(technicalDetails as HTMLElement).getByText('zip-github/work-1')" frontend/src/pages/ProjectDetailPage.test.tsx
+printf 'rc.125 scoped Work branch disclosure assertion verified for %s.\n' "$actual_version"
+grep -Fq "Fortsätt till commit" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "editor?.scrollIntoView?." frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "editor.focus();" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "switches from blocker guidance to continue-to-commit when required decisions are resolved" frontend/src/pages/ImportReviewPage.test.tsx
+grep -Fq "expect(screen.getByRole('textbox', { name: 'Meddelande' })).toHaveFocus();" frontend/src/pages/ImportReviewPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0174 / 1.0.0-rc.126)." docs/implementation-steps.md
+grep -Fq "## Steg 9.40 - Simplified upload" docs/implementation-steps.md
+printf 'Step 9.39 review completion guidance assertions verified for %s.\n' "$actual_version"
+grep -Fq "Så hanteras arbetsbranchen" frontend/src/pages/NewImportPage.tsx
+grep -Fq "Ändra författare" frontend/src/pages/NewImportPage.tsx
+grep -Fq "className=\"author-summary\"" frontend/src/pages/NewImportPage.tsx
+grep -Fq "keeps ZIP selection primary and author/work details collapsed in the normal flow" frontend/src/pages/NewImportPage.test.tsx
+grep -Fq "await user.click(screen.getByText('Ändra författare'));" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0175 / 1.0.0-rc.127)." docs/implementation-steps.md
+grep -Fq "## Steg 9.41 - Result next action follows Actions and Work state" docs/implementation-steps.md
+printf 'Step 9.40 simplified upload assertions verified for %s.\n' "$actual_version"
+grep -Fq "actionsRepresentCurrentCommit" frontend/src/pages/ImportResultPage.tsx
+grep -Fq "hasObservedActions" frontend/src/pages/ImportResultPage.tsx
+grep -Fq "GitHub Actions behöver din uppmärksamhet" frontend/src/pages/ImportResultPage.tsx
+grep -Fq "GitHub Actions körs för den här committen" frontend/src/pages/ImportResultPage.tsx
+grep -Fq "does not block projects with no Actions run for the commit, including PR-only workflows before a PR exists" frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq "keeps normal next-step actions available while observed Actions are still running" frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0176 / 1.0.0-rc.128)." docs/implementation-steps.md
+grep -Fq "## Steg 9.42 - Compact successful Actions, prominent failures" docs/implementation-steps.md
+printf 'Step 9.41 Actions-aware result guidance assertions verified for %s.\n' "$actual_version"
+grep -Fq "Alla observerade Actions-kontroller för committen är godkända." frontend/src/components/ActionsPanel.tsx
+grep -Fq "Visa Actions-detaljer" frontend/src/components/ActionsPanel.tsx
+grep -Fq "Visa pågående Actions-detaljer" frontend/src/components/ActionsPanel.tsx
+grep -Fq "En eller flera observerade Actions-kontroller har misslyckats." frontend/src/components/ActionsPanel.tsx
+grep -Fq "keeps successful Actions compact until details are requested" frontend/src/components/ActionsPanel.test.tsx
+grep -Fq "keeps failed Actions prominent without requiring expansion" frontend/src/components/ActionsPanel.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0177 / 1.0.0-rc.129)." docs/implementation-steps.md
+printf 'Step 10.1 MCP staging bridge release assertions verified for %s.\n' "$actual_version"
+
+# Phase 10.2 portable plugin package (live deployed acceptance remains BLOCKED).
+test -s plugin/plugin.template.json
+test -s plugin/mcp.template.json
+test -s plugin/skills/zip-github/SKILL.md
+test -s scripts/build-plugin.mjs
+test -s docs/openai-plugin-distribution.md
+test -s docs/step-10.2-report.md
+test -s .github/workflows/release-plugin.yml
+grep -Fq 'openai/fileParams' backend/src/main/java/info/isaksson/erland/zipgithub/mcp/McpResource.java
+grep -Fq 'https://zip-github.apphome.one/mcp' docs/openai-plugin-distribution.md
+grep -Fq '| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **BLOCKED**' docs/implementation-status.md
+printf 'Step 10.2 plugin packaging assertions verified; live acceptance remains blocked for %s.\n' "$actual_version"
+
+# rc.132 unified release version source.
+test -s docs/rc132-release-tag-version-source.md
+grep -Fq 'release:' .github/workflows/release-plugin.yml
+grep -Fq 'tag="${{ github.event.release.tag_name }}"' .github/workflows/release-plugin.yml
+grep -Fq 'version="${tag#v}"' .github/workflows/release-plugin.yml
+grep -Fq 'repository_version=$(tr -d' .github/workflows/release-plugin.yml
+grep -Fq 'Build and publish backend image' .github/workflows/release-plugin.yml
+grep -Fq 'Build and publish frontend image' .github/workflows/release-plugin.yml
+grep -Fq 'Attach plugin ZIP to GitHub Release' .github/workflows/release-plugin.yml
+! grep -Fq '[[ "${GITHUB_REF}" == refs/tags/* ]]' .github/workflows/ci.yml
+printf 'rc.132 release-tag version-source assertions verified for %s.\n' "$actual_version"
+ .github/workflows/ci.yml
+grep -q '^  workflow_dispatch:
+
+# Phase 9 step 9.29 (completely empty repository bootstrap).
+test -s docs/step-9.29-report.md
+test -s backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+test -s backend/src/test/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapServiceTest.java
+grep -Fq 'boolean repositoryHasBranches' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubProjectCatalog.java
+grep -Fq 'hasBranches = catalog.repositoryHasBranches' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'selectedBranch = "main"' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'GITHUB_DEFAULT_BRANCH_UNAVAILABLE' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'isTextual() ? repo.path("default_branch").asText() : ""' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -Fq 'fallsBackToMainWhenAnEmptyRepositoryHasNoReportedDefaultBranch' backend/src/test/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationServiceTest.java
+test -s docs/rc102-step-9.29-empty-default-branch-correction.md
+grep -Fq 'bootstrapEmptyRepository(project.githubInstallationId()' backend/src/main/java/info/isaksson/erland/zipgithub/application/ProjectApplicationService.java
+grep -Fq '"PUT", createPayload.toString()' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+grep -Fq '| `9.29` | Fas 9 — repository bootstrap | Stöd första ZIP i helt tomt GitHub-repository | **DONE**' docs/implementation-status.md
+printf 'Phase 9.29 empty repository support assertions verified for %s.\n' "$actual_version"
+
+# Phase 9 step 9.30 (maintenance reconciliation and navigation).
+test -s docs/step-9.30-report.md
+grep -Fq '| `9.30` | Fas 9 — underhåll | Reconcila Work/PR-status och lägg navigationslänkar i Underhåll | **DONE**' docs/implementation-status.md
+grep -Fq 'reconcileWorkPullRequestStateStrict' backend/src/main/java/info/isaksson/erland/zipgithub/application/WorkBranchMaintenanceService.java
+grep -Fq 'findNonTerminalByRepositoryBranch' backend/src/main/java/info/isaksson/erland/zipgithub/persistence/WorkPersistenceStore.java
+grep -Fq '<th>PR</th>' frontend/src/pages/MaintenancePage.tsx
+grep -Fq 'candidate.branchUrl' frontend/src/pages/MaintenancePage.tsx
+grep -Fq 'candidate.pullRequestUrl' frontend/src/pages/MaintenancePage.tsx
+printf 'Phase 9.30 maintenance reconciliation/navigation assertions verified for %s.\n' "$actual_version"
+
+grep -Fq '.zip-github-bootstrap' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+grep -Fq '"REPOSITORY_WORK_START_FAILED"' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+# rc.109 empty-repository Work-start diagnostic assertions.
+test -s docs/rc109-empty-repository-start-diagnostics.md
+grep -Fq 'private static final Logger LOG = Logger.getLogger(RepositoryResource.class);' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'diagnosticId = UUID.randomUUID().toString()' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'stage = "prepare-project"' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'LOG.errorf(e,' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'Diagnostic id: " + diagnosticId' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+grep -Fq 'Repository Work preflight installation permission' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
+grep -Fq 'GitHub empty-repository marker create starting' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+grep -Fq 'GitHub empty-repository marker cleanup completed' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitRepositoryBootstrapService.java
+! grep -Fq 'Authorization' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
+printf 'rc.109 empty-repository Work-start diagnostic assertions verified for %s.\n' "$actual_version"
+
+grep -q 'if (hasHttpStatus(e, 404)) return false;' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'for (Throwable current = error; current != null; current = current.getCause())' backend/src/main/java/info/isaksson/erland/zipgithub/github/GitHubAppClient.java
+grep -q 'nestedGithub404IsRecognizedAsMissingResource' backend/src/test/java/info/isaksson/erland/zipgithub/github/GitHubAppClientContractTest.java
+grep -q 'differentGithubStatusIsNotRecognizedAs404' backend/src/test/java/info/isaksson/erland/zipgithub/github/GitHubAppClientContractTest.java
+printf 'rc.110 empty-repository branch 404 assertions verified for %s.\n' "$actual_version"
+
+grep -Fq 'VITE_ZIP_GITHUB_VERSION=' .github/workflows/ci.yml
+grep -Fq '../VERSION' .github/workflows/ci.yml
+grep -Fq 'import.meta.env.VITE_ZIP_GITHUB_VERSION' frontend/src/pages/AboutPage.tsx
+grep -Fq "work?.status === 'PR_OPEN'" frontend/src/pages/ImportResultPage.tsx
+grep -Fq 'Den befintliga pull requesten har uppdaterats med denna commit.' frontend/src/pages/ImportResultPage.tsx
+grep -Fq "work.status === 'PR_CLOSED' ? 'Skapa ny pull request' : 'Skapa pull request'" frontend/src/pages/ImportResultPage.tsx
+grep -Fq 'does not offer a second pull request when current Work already has an open PR' frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq 'offers a new pull request when the previous PR is closed without merge' frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq 'shows the build-injected zip-GitHub version' frontend/src/pages/AboutPage.test.tsx
+printf 'Step 9.31 runtime version and PR-aware result assertions verified for %s.\n' "$actual_version"
+grep -Fq "await screen.findByRole('button', { name: 'Skapa pull request' })" frontend/src/pages/ImportResultPage.test.tsx
+printf 'rc.112 async ImportResultPage test assertion verified for %s.\n' "$actual_version"
+grep -Fq 'id="next-action-heading">Nästa steg</h2>' frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq 'En ZIP-import väntar på att slutföras.' frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "work.status === 'PR_OPEN'" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "work.status === 'PR_CLOSED' && work.headCommitSha" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq '## Steg 9.33 - Upload starts Work automatically' docs/implementation-steps.md
+grep -Fq '## Steg 9.34 - Attention-first review' docs/implementation-steps.md
+grep -Fq '## Steg 9.35 - Repository attention overview' docs/implementation-steps.md
+printf 'Step 9.32 guided project actions assertions verified for %s.\n' "$actual_version"
+grep -Fq "targetWork = await startProjectWork(project.id);" frontend/src/pages/NewImportPage.tsx
+grep -Fq "const importId = existingImportId || (await createImport" frontend/src/pages/NewImportPage.tsx
+grep -Fq "Ladda upp första ZIP" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "stops before import creation and upload when automatic Work start fails" frontend/src/pages/NewImportPage.test.tsx
+grep -Fq "reuses an existing Work without starting another one" frontend/src/pages/NewImportPage.test.tsx
+grep -Fq "## Steg 9.33 - Upload starts Work automatically" docs/implementation-steps.md
+grep -Fq "**Status:** DONE (2026-08-14, r0162 / 1.0.0-rc.114)." docs/implementation-steps.md
+printf 'Step 9.33 automatic Work start assertions verified for %s.\n' "$actual_version"
+grep -Fq "startProjectWork: vi.fn()" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -Fq "startProjectWork: mocks.startProjectWork" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -Fq "expect(mocks.startProjectWork).toHaveBeenCalledWith('project-1')" frontend/src/pages/SimplifiedImportFlow.test.tsx
+printf 'rc.115 simplified import flow fixture assertion verified for %s.\n' "$actual_version"
+grep -Fq "Behöver din uppmärksamhet" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "Inga särskilda risker hittades" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "Granska blockerade" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "Vanliga ändringar" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "Fullständig plansammanfattning" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "lets the attention panel jump directly to blocked decisions" frontend/src/pages/ImportReviewPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0164 / 1.0.0-rc.116)." docs/implementation-steps.md
+printf 'Step 9.34 attention-first review assertions verified for %s.\n' "$actual_version"
+grep -Fq "element?.tagName === 'P' && element.textContent === '2 vanliga filförändringar är valbara enligt ordinarie regler.'" frontend/src/pages/ImportReviewPage.test.tsx
+printf 'rc.117 ImportReviewPage text assertion verified for %s.\n' "$actual_version"
+grep -Fq "Behöver din uppmärksamhet" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "getProjectWorkActions" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "Status kunde inte verifieras" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "Repositoryöversikt" frontend/src/components/RepositoryPicker.tsx
+grep -Fq "groups={groups}" frontend/src/pages/ProjectListPage.tsx
+grep -Fq "groups attention, ongoing and other repositories" frontend/src/pages/ProjectListPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0166 / 1.0.0-rc.118)." docs/implementation-steps.md
+printf 'Step 9.35 repository attention overview assertions verified for %s.\n' "$actual_version"
+
+grep -Fq "findByRole('link', { name: /example-book-project/ })" frontend/src/App.test.tsx
+grep -Fq "queryByRole('link', { name: /example-book-project/ })" frontend/src/App.test.tsx
+printf 'rc.119 repository accessible-name test assertion verified for %s.\n' "$actual_version"
+grep -Fq "export class SessionExpiredError" frontend/src/api/session.ts
+grep -Fq "assertSessionActive(response);" frontend/src/api/projects.ts
+grep -Fq "assertSessionActive(response);" frontend/src/api/imports.ts
+grep -Fq "request.status === 401" frontend/src/api/imports.ts
+grep -Fq "signalSessionExpired();" frontend/src/api/imports.ts
+grep -Fq "subscribeSessionExpired" frontend/src/components/AppLayout.tsx
+grep -Fq "Din session har gått ut. Logga in igen för att fortsätta där du var." frontend/src/components/AppLayout.tsx
+grep -Fq "returns to login on API 401 after an authenticated session expires" frontend/src/App.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0168 / 1.0.0-rc.120)." docs/implementation-steps.md
+printf 'Step 9.36 central session-expiry assertions verified for %s.\n' "$actual_version"
+grep -Fq "Ladda upp första ZIP" frontend/src/pages/RepositoryDetailPage.tsx
+grep -Fq 'navigate(`/projects/${result.project.id}/imports/new`' frontend/src/pages/RepositoryDetailPage.tsx
+! grep -Fq ">Starta arbete<" frontend/src/pages/RepositoryDetailPage.tsx
+grep -Fq "creates project and Work lazily and opens the first ZIP upload directly for a new repository" frontend/src/App.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0169 / 1.0.0-rc.121)." docs/implementation-steps.md
+grep -Fq "## Steg 9.38 - Project progressive disclosure" docs/implementation-steps.md
+printf 'Step 9.37 new repository first-ZIP flow assertions verified for %s.\n' "$actual_version"
+grep -Fq "expect(await screen.findByLabelText('Projektarkiv')).toBeEnabled();" frontend/src/App.test.tsx
+printf 'rc.122 first-ZIP App timing assertion verified for %s.\n' "$actual_version"
+grep -Fq "Repositoryinformation" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Visa tekniska Work-detaljer" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Avancerat: återuppta befintlig branch" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Avancerade Work-åtgärder" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "Avancerade repositoryåtgärder" frontend/src/pages/ProjectDetailPage.tsx
+grep -Fq "puts next step before repository metadata and keeps technical Work details collapsed by default" frontend/src/pages/ProjectDetailPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0171 / 1.0.0-rc.123)." docs/implementation-steps.md
+grep -Fq "## Steg 9.39 - Review completion guidance" docs/implementation-steps.md
+printf 'Step 9.38 project progressive disclosure assertions verified for %s.\n' "$actual_version"
+grep -Fq "expect(technicalDetails).not.toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
+grep -Fq "expect(technicalDetails).toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
+grep -Fq "expect(repositoryDetails).not.toHaveAttribute('open');" frontend/src/pages/ProjectDetailPage.test.tsx
+printf 'rc.124 progressive-disclosure details-state assertions verified for %s.\n' "$actual_version"
+grep -Fq "within(technicalDetails as HTMLElement).getByText('zip-github/work-1')" frontend/src/pages/ProjectDetailPage.test.tsx
+printf 'rc.125 scoped Work branch disclosure assertion verified for %s.\n' "$actual_version"
+grep -Fq "Fortsätt till commit" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "editor?.scrollIntoView?." frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "editor.focus();" frontend/src/pages/ImportReviewPage.tsx
+grep -Fq "switches from blocker guidance to continue-to-commit when required decisions are resolved" frontend/src/pages/ImportReviewPage.test.tsx
+grep -Fq "expect(screen.getByRole('textbox', { name: 'Meddelande' })).toHaveFocus();" frontend/src/pages/ImportReviewPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0174 / 1.0.0-rc.126)." docs/implementation-steps.md
+grep -Fq "## Steg 9.40 - Simplified upload" docs/implementation-steps.md
+printf 'Step 9.39 review completion guidance assertions verified for %s.\n' "$actual_version"
+grep -Fq "Så hanteras arbetsbranchen" frontend/src/pages/NewImportPage.tsx
+grep -Fq "Ändra författare" frontend/src/pages/NewImportPage.tsx
+grep -Fq "className=\"author-summary\"" frontend/src/pages/NewImportPage.tsx
+grep -Fq "keeps ZIP selection primary and author/work details collapsed in the normal flow" frontend/src/pages/NewImportPage.test.tsx
+grep -Fq "await user.click(screen.getByText('Ändra författare'));" frontend/src/pages/SimplifiedImportFlow.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0175 / 1.0.0-rc.127)." docs/implementation-steps.md
+grep -Fq "## Steg 9.41 - Result next action follows Actions and Work state" docs/implementation-steps.md
+printf 'Step 9.40 simplified upload assertions verified for %s.\n' "$actual_version"
+grep -Fq "actionsRepresentCurrentCommit" frontend/src/pages/ImportResultPage.tsx
+grep -Fq "hasObservedActions" frontend/src/pages/ImportResultPage.tsx
+grep -Fq "GitHub Actions behöver din uppmärksamhet" frontend/src/pages/ImportResultPage.tsx
+grep -Fq "GitHub Actions körs för den här committen" frontend/src/pages/ImportResultPage.tsx
+grep -Fq "does not block projects with no Actions run for the commit, including PR-only workflows before a PR exists" frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq "keeps normal next-step actions available while observed Actions are still running" frontend/src/pages/ImportResultPage.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0176 / 1.0.0-rc.128)." docs/implementation-steps.md
+grep -Fq "## Steg 9.42 - Compact successful Actions, prominent failures" docs/implementation-steps.md
+printf 'Step 9.41 Actions-aware result guidance assertions verified for %s.\n' "$actual_version"
+grep -Fq "Alla observerade Actions-kontroller för committen är godkända." frontend/src/components/ActionsPanel.tsx
+grep -Fq "Visa Actions-detaljer" frontend/src/components/ActionsPanel.tsx
+grep -Fq "Visa pågående Actions-detaljer" frontend/src/components/ActionsPanel.tsx
+grep -Fq "En eller flera observerade Actions-kontroller har misslyckats." frontend/src/components/ActionsPanel.tsx
+grep -Fq "keeps successful Actions compact until details are requested" frontend/src/components/ActionsPanel.test.tsx
+grep -Fq "keeps failed Actions prominent without requiring expansion" frontend/src/components/ActionsPanel.test.tsx
+grep -Fq "**Status:** DONE (2026-08-14, r0177 / 1.0.0-rc.129)." docs/implementation-steps.md
+printf 'Step 10.1 MCP staging bridge release assertions verified for %s.\n' "$actual_version"
+
+# Phase 10.2 portable plugin package (live deployed acceptance remains BLOCKED).
+test -s plugin/plugin.template.json
+test -s plugin/mcp.template.json
+test -s plugin/skills/zip-github/SKILL.md
+test -s scripts/build-plugin.mjs
+test -s docs/openai-plugin-distribution.md
+test -s docs/step-10.2-report.md
+test -s .github/workflows/release-plugin.yml
+grep -Fq 'openai/fileParams' backend/src/main/java/info/isaksson/erland/zipgithub/mcp/McpResource.java
+grep -Fq 'https://zip-github.apphome.one/mcp' docs/openai-plugin-distribution.md
+grep -Fq '| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **BLOCKED**' docs/implementation-status.md
+printf 'Step 10.2 plugin packaging assertions verified; live acceptance remains blocked for %s.\n' "$actual_version"
+
+# rc.132 unified release version source.
+test -s docs/rc132-release-tag-version-source.md
+grep -Fq 'release:' .github/workflows/release-plugin.yml
+grep -Fq 'tag="${{ github.event.release.tag_name }}"' .github/workflows/release-plugin.yml
+grep -Fq 'version="${tag#v}"' .github/workflows/release-plugin.yml
+grep -Fq 'repository_version=$(tr -d' .github/workflows/release-plugin.yml
+grep -Fq 'Build and publish backend image' .github/workflows/release-plugin.yml
+grep -Fq 'Build and publish frontend image' .github/workflows/release-plugin.yml
+grep -Fq 'Attach plugin ZIP to GitHub Release' .github/workflows/release-plugin.yml
+! grep -Fq '[[ "${GITHUB_REF}" == refs/tags/* ]]' .github/workflows/ci.yml
+printf 'rc.132 release-tag version-source assertions verified for %s.\n' "$actual_version"
+ .github/workflows/ci.yml
+grep -Fq '[[ "${GITHUB_REF}" == "refs/heads/main" ]]' .github/workflows/ci.yml
+! grep -Fq 'refs/tags/*' .github/workflows/ci.yml
 grep -Fq '| `9.28` | Fas 9 — CI efficiency | Undvik dubbla fulla CI-körningar för samma Work-commit med öppen PR | **DONE**' docs/implementation-status.md
-printf 'Phase 9.28 CI trigger optimization assertions verified for %s.\n' "$actual_version"
+printf 'Phase 9.28 historical CI assertions reconciled with current main/release publication model for %s.\n' "$actual_version"
 
 # Phase 9 step 9.29 (completely empty repository bootstrap).
 test -s docs/step-9.29-report.md

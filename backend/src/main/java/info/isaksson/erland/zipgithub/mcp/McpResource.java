@@ -34,6 +34,11 @@ import java.util.Set;
 @Produces(MediaType.APPLICATION_JSON)
 public class McpResource {
     private static final String LATEST_PROTOCOL = "2025-11-25";
+    private static final String SERVER_DESCRIPTION =
+            "Stages user-provided ZIP archives for safe review against an authorized GitHub repository. " +
+            "Repository selection, review, approval and Git delivery remain in the zip-GitHub web UI.";
+    private static final String SERVER_WEBSITE = "https://zip-github.apphome.one/about";
+    private static final String SERVER_ICON_DATA_URI = "data:image/png;base64,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";
     private static final Set<String> SUPPORTED_PROTOCOLS =
             Set.of("2024-11-05", "2025-03-26", "2025-06-18", "2025-11-25");
 
@@ -76,9 +81,19 @@ public class McpResource {
         result.put("protocolVersion", negotiated);
         result.set("capabilities", mapper.createObjectNode().set("tools",
                 mapper.createObjectNode().put("listChanged", false)));
-        result.set("serverInfo", mapper.createObjectNode()
+        ObjectNode serverInfo = mapper.createObjectNode()
                 .put("name", "zip-github")
-                .put("version", "1.0.0-rc.130"));
+                .put("title", "zip-GitHub")
+                .put("version", "1.0.0-rc.132")
+                .put("description", SERVER_DESCRIPTION)
+                .put("websiteUrl", SERVER_WEBSITE);
+        if ("2025-11-25".equals(negotiated)) {
+            serverInfo.set("icons", mapper.createArrayNode().add(mapper.createObjectNode()
+                    .put("src", SERVER_ICON_DATA_URI)
+                    .put("mimeType", "image/png")
+                    .set("sizes", mapper.createArrayNode().add("64x64"))));
+        }
+        result.set("serverInfo", serverInfo);
         result.put("instructions",
                 "Use stage_zip only to transfer a user-provided ZIP into temporary zip-github staging. " +
                 "After it succeeds, give the user review_url and let the ordinary zip-github web UI handle " +

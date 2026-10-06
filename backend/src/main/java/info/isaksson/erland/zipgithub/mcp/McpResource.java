@@ -182,11 +182,12 @@ public class McpResource {
                     .put("sha256", created.sha256())
                     .put("expires_at", created.expiresAt().toString())
                     .put("review_url", created.claimUrl());
-            return mapper.createObjectNode()
-                    .set("content", mapper.createArrayNode().add(mapper.createObjectNode()
-                            .put("type", "text")
-                            .put("text", "ZIP staged. Open the returned review_url to continue in zip-github.")))
-                    .set("structuredContent", structured);
+            ObjectNode result = mapper.createObjectNode();
+            result.set("content", mapper.createArrayNode().add(mapper.createObjectNode()
+                    .put("type", "text")
+                    .put("text", "ZIP staged. Open the returned review_url to continue in zip-github.")));
+            result.set("structuredContent", structured);
+            return result;
         } catch (McpFileDownloadService.DownloadException e) {
             return toolError(e.getMessage());
         } catch (StagingCapacityExceededException e) {
@@ -213,14 +214,18 @@ public class McpResource {
     }
 
     private ObjectNode toolError(String message) {
-        return mapper.createObjectNode()
-                .set("content", mapper.createArrayNode().add(mapper.createObjectNode()
-                        .put("type", "text").put("text", message)))
-                .put("isError", true);
+        ObjectNode result = mapper.createObjectNode();
+        result.set("content", mapper.createArrayNode().add(mapper.createObjectNode()
+                .put("type", "text").put("text", message)));
+        result.put("isError", true);
+        return result;
     }
 
     private ObjectNode success(JsonNode id, JsonNode result) {
-        return mapper.createObjectNode().put("jsonrpc", "2.0").set("id", id).set("result", result);
+        ObjectNode response = mapper.createObjectNode().put("jsonrpc", "2.0");
+        response.set("id", id);
+        response.set("result", result);
+        return response;
     }
 
     private ObjectNode error(JsonNode id, int code, String message) {

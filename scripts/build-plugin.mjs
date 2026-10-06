@@ -11,6 +11,7 @@ const version = valueAfter('--version') || process.env.PLUGIN_VERSION;
 const target = valueAfter('--target');
 const mcpUrl = process.env.ZIP_GITHUB_MCP_URL || 'https://zip-github.apphome.one/mcp';
 const chatgptAppId = process.env.ZIP_GITHUB_CHATGPT_APP_ID?.trim();
+const configuredChatgptPluginName = process.env.ZIP_GITHUB_CHATGPT_PLUGIN_NAME?.trim();
 const allowedTargets = new Set(['chatgpt', 'desktop']);
 
 if (!version || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(version)) {
@@ -21,39 +22,64 @@ if (!allowedTargets.has(target)) {
 }
 
 const outputRoot = resolve(process.env.PLUGIN_OUTPUT_DIR || `build/plugin-${target}`);
-const outputDir = resolve(outputRoot, 'zip-github');
-
 await rm(outputRoot, { recursive: true, force: true });
-await mkdir(outputDir, { recursive: true });
-
-const pluginTemplate = await readFile('plugin/plugin.template.json', 'utf8');
-const manifest = JSON.parse(pluginTemplate.replaceAll('__PLUGIN_VERSION__', version));
-
-if (manifest.name !== 'zip-github' || manifest.version !== version) {
-  throw new Error('Plugin identity/version validation failed');
-}
-if ((manifest.extensions?.['com.openai']?.interface?.shortDescription?.length ?? 0) > 30) {
-  throw new Error('shortDescription exceeds 30 characters');
-}
+await mkdir(outputRoot, { recursive: true });
 
 if (target === 'chatgpt') {
   if (!chatgptAppId) {
-    throw new Error('ZIP_GITHUB_CHATGPT_APP_ID is required for the ChatGPT web package');
+    throw new Error('ZIP_GITHUB_CHATGPT_APP_ID is required for the ChatGPT update package');
   }
-  if (!/^(?:asdk_app_|connector_|templated_apps_)[A-Za-z0-9][A-Za-z0-9_-]*$/.test(chatgptAppId)) {
-    throw new Error('ZIP_GITHUB_CHATGPT_APP_ID must be an app id such as asdk_app_..., not a plugin_... id');
+  if (!/^asdk_app_[A-Za-z0-9][A-Za-z0-9_-]*$/.test(chatgptAppId)) {
+    throw new Error('ZIP_GITHUB_CHATGPT_APP_ID must be the registered asdk_app_... id');
+  }
+
+  const derivedName = `dev-${chatgptAppId.slice('asdk_app_'.length)}`;
+  const chatgptPluginName = configuredChatgptPluginName || derivedName;
+  if (!/^dev-[A-Za-z0-9][A-Za-z0-9_-]*$/.test(chatgptPluginName)) {
+    throw new Error('ZIP_GITHUB_CHATGPT_PLUGIN_NAME must be the stable exported dev-... plugin name');
+  }
+
+  const nativeTemplate = await readFile('plugin/chatgpt-update.template.json', 'utf8');
+  const nativeManifest = JSON.parse(
+    nativeTemplate
+      .replaceAll('__PLUGIN_VERSION__', version)
+      .replaceAll('__CHATGPT_PLUGIN_NAME__', chatgptPluginName)
+  );
+  if (nativeManifest.name !== chatgptPluginName || nativeManifest.version !== version || nativeManifest.apps !== './.app.json') {
+    throw new Error('Generated ChatGPT update manifest identity/version validation failed');
   }
 
   const appTemplate = await readFile('plugin/app.template.json', 'utf8');
-  const appJson = appTemplate.replaceAll('__CHATGPT_APP_ID__', chatgptAppId);
-  const appManifest = JSON.parse(appJson);
-  if (appManifest.apps?.['zip-github']?.id !== chatgptAppId || appManifest.apps?.['zip-github']?.required !== true) {
+  const appManifest = JSON.parse(
+    appTemplate
+      .replaceAll('__CHATGPT_APP_ID__', chatgptAppId)
+      .replaceAll('__CHATGPT_PLUGIN_NAME__', chatgptPluginName)
+  );
+  if (appManifest.apps?.[chatgptPluginName]?.id !== chatgptAppId) {
     throw new Error('Generated ChatGPT app binding validation failed');
   }
 
-  manifest.extensions['com.openai'].apps = './.app.json';
-  await writeFile(resolve(outputDir, '.app.json'), `${JSON.stringify(appManifest, null, 2)}\n`);
+  await mkdir(resolve(outputRoot, '.codex-plugin'), { recursive: true });
+  await writeFile(resolve(outputRoot, '.app.json'), `${JSON.stringify(appManifest, null, 2)}\n`);
+  await writeFile(resolve(outputRoot, '.codex-plugin', 'plugin.json'), `${JSON.stringify(nativeManifest, null, 2)}\n`);
+
+  console.log(`Generated ChatGPT update package directory: ${outputRoot}`);
+  console.log(`Plugin version: ${version}`);
+  console.log(`ChatGPT app id: ${chatgptAppId}`);
+  console.log(`ChatGPT plugin name: ${chatgptPluginName}`);
 } else {
+  const outputDir = resolve(outputRoot, 'zip-github');
+  await mkdir(outputDir, { recursive: true });
+
+  const pluginTemplate = await readFile('plugin/plugin.template.json', 'utf8');
+  const manifest = JSON.parse(pluginTemplate.replaceAll('__PLUGIN_VERSION__', version));
+  if (manifest.name !== 'zip-github' || manifest.version !== version) {
+    throw new Error('Desktop plugin identity/version validation failed');
+  }
+  if ((manifest.extensions?.['com.openai']?.interface?.shortDescription?.length ?? 0) > 30) {
+    throw new Error('shortDescription exceeds 30 characters');
+  }
+
   const parsedUrl = new URL(mcpUrl);
   if (parsedUrl.protocol !== 'https:' || parsedUrl.pathname !== '/mcp') {
     throw new Error('ZIP_GITHUB_MCP_URL must be an HTTPS /mcp endpoint');
@@ -65,16 +91,12 @@ if (target === 'chatgpt') {
   if (mcp.mcpServers?.['zip-github']?.url !== mcpUrl) {
     throw new Error('Generated MCP URL validation failed');
   }
+
   await writeFile(resolve(outputDir, 'mcp.json'), mcpJson);
-}
+  await writeFile(resolve(outputDir, 'plugin.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+  await cp('plugin/skills', resolve(outputDir, 'skills'), { recursive: true });
 
-await writeFile(resolve(outputDir, 'plugin.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-await cp('plugin/skills', resolve(outputDir, 'skills'), { recursive: true });
-
-console.log(`Generated ${target} plugin package directory: ${outputDir}`);
-console.log(`Plugin version: ${version}`);
-if (target === 'chatgpt') {
-  console.log(`ChatGPT app id: ${chatgptAppId}`);
-} else {
+  console.log(`Generated desktop plugin package directory: ${outputDir}`);
+  console.log(`Plugin version: ${version}`);
   console.log(`MCP endpoint: ${mcpUrl}`);
 }

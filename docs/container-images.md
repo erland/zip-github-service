@@ -11,13 +11,13 @@ PostgreSQL continues to use the official `postgres:16-alpine` image.
 
 ## When images are published
 
-Every pull request and branch push builds both Dockerfiles, which makes image construction part of CI. Normal CI pushes images only for successful runs on `main`. Published GitHub Releases use the dedicated release workflow, which checks out the release tag and publishes both application images from that exact tagged source. The container jobs have `packages: write`; test jobs retain read-only repository permissions.
+Every pull request and branch push builds both Dockerfiles, which makes image construction part of CI. Normal CI pushes images only for successful runs on `main`. Published GitHub Releases use the dedicated release workflow, which checks out the release tag and publishes both application images from that exact tagged source. The same workflow can also be run manually for an existing release tag, which is useful after a transient or workflow-only release failure. The container jobs have `packages: write`; test jobs retain read-only repository permissions.
 
 ## Tags
 
 For normal `main` CI, image versions continue to come from `VERSION`.
 
-For a published GitHub Release, the release tag is authoritative. A tag such as `v1.2.3` or `1.2.3` produces application version `1.2.3`. The release workflow verifies that the tagged commit's `VERSION` contains the same normalized version and fails before publication if they differ.
+For a published GitHub Release, the release tag is authoritative. A tag such as `v1.2.3` or `1.2.3` produces application version `1.2.3`. `VERSION` is not consulted when publishing a GitHub Release. The release tag alone determines the published version. This allows a tagged release such as `v1.1.0` to publish `1.1.0` even if the tagged source still carries an RC/development value in `VERSION`.
 
 Each release publish receives:
 

@@ -23,9 +23,9 @@ En publicerad GitHub Release använder nu release-taggen som versionskälla för
 
 Ett valfritt inledande `v` normaliseras bort, så både `v1.2.3` och `1.2.3` ger version `1.2.3`.
 
-`VERSION` är inte versionskälla i releasebygget. Den används endast som en fail-fast consistency guard: releasen avbryts innan publicering om den taggade committen innehåller ett annat versionsnummer.
+`VERSION` är inte versionskälla i releasebygget och används inte heller som releasegrind. GitHub Release-taggen är ensam sanningskälla för releaseversionen.
 
-Vanlig CI på `main` får fortsatt använda `VERSION` för kontinuerligt byggda images. CI publicerar inte längre images på Git-taggar; releasepublicering ägs endast av release-workflowen.
+Vanlig CI på `main` får fortsatt använda `VERSION` för kontinuerligt byggda images. CI publicerar inte längre images på Git-taggar; releasepublicering ägs endast av release-workflowen. Workflowen kan dessutom köras manuellt för en befintlig release-tag för att återhämta ett misslyckat releasebygge.
 
 ## Release output
 

@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "zip-github",
   "version": "__PLUGIN_VERSION__",
-  "description": "Transfer a project ZIP to zip-github staging and continue review in the existing web interface.",
+  "description": "Transfer a project ZIP to zip-GitHub staging and continue review in the web interface before any GitHub delivery.",
   "author": {
     "name": "Erland Lindmark"
   },
@@ -11,13 +11,22 @@
       "interface": {
         "displayName": "zip-GitHub",
         "shortDescription": "Skicka ZIP till GitHub",
-        "longDescription": "Överför en projekt-ZIP till zip-GitHub via MCP och fortsätt sedan i det befintliga webbgränssnittet för repositoryval, granskning, godkännande och Git-leverans.",
+        "longDescription": "Överför en projekt-ZIP till zip-GitHub via MCP, skapa en tillfällig staging och fortsätt sedan i webbgränssnittet för repositoryval, granskning, godkännande och GitHub-leverans. Staging ändrar inte GitHub och GitHub-leverans sker först efter uttryckligt godkännande.",
         "developerName": "Erland Lindmark",
         "category": "Productivity",
         "capabilities": [
           "Interactive"
         ],
-        "defaultPrompt": "Skicka den bifogade ZIP-filen till zip-GitHub och ge mig länken där jag kan granska ändringarna."
+        "defaultPrompt": [
+          "Skicka den bifogade ZIP-filen till zip-GitHub och ge mig länken där jag kan granska ändringarna.",
+          "Lägg den här projekt-ZIP:en i zip-GitHub staging och ge mig review-länken."
+        ],
+        "websiteURL": "https://zip-github.apphome.one/about",
+        "supportURL": "https://zip-github.apphome.one/support",
+        "privacyPolicyURL": "https://zip-github.apphome.one/privacy",
+        "termsOfServiceURL": "https://zip-github.apphome.one/terms",
+        "logo": "assets/logo.png",
+        "composerIcon": "assets/composer-icon.png"
       }
     }
   }

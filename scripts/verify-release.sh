@@ -588,7 +588,13 @@ grep -q 'suggestRepository' frontend/src/pages/StagingClaimPage.tsx
 # PR validation has since been re-enabled; publication remains restricted to main,
 # while GitHub Release publication is owned by release-plugin.yml.
 test -s docs/step-9.28-report.md
-grep -q '^  push:
+grep -q '^  push:$' .github/workflows/ci.yml
+grep -q '^  pull_request:$' .github/workflows/ci.yml
+grep -q '^  workflow_dispatch:$' .github/workflows/ci.yml
+grep -Fq '[[ "${GITHUB_REF}" == "refs/heads/main" ]]' .github/workflows/ci.yml
+! grep -Fq 'refs/tags/*' .github/workflows/ci.yml
+grep -Fq '| `9.28` | Fas 9 — CI efficiency | Undvik dubbla fulla CI-körningar för samma Work-commit med öppen PR | **DONE**' docs/implementation-status.md
+printf 'Phase 9.28 historical CI assertions reconciled with current main/release publication model for %s.\n' "$actual_version"
 
 # Phase 9 step 9.29 (completely empty repository bootstrap).
 test -s docs/step-9.29-report.md

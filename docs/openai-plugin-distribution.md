@@ -42,8 +42,8 @@ Generated files are written under `build/plugin/zip-github/` and are not committ
 
 ## Release artifact
 
-A published GitHub Release is the version source for all release artifacts. The workflow normalizes an optional leading `v` from the release tag, verifies that the tagged commit's `VERSION` matches, then uses that same version for backend image, frontend image and plugin package.
+A published GitHub Release tag is the sole version source for all release artifacts. The workflow normalizes an optional leading `v` and uses that version for backend image, frontend image and plugin package. `VERSION` is intentionally ignored for release publication.
 
-The plugin artifact is built as `zip-github-plugin-<version>.zip` with one top-level `zip-github/` directory and attached to the corresponding GitHub Release.
+The plugin artifact is built as `zip-github-plugin-<version>.zip` with one top-level `zip-github/` directory and attached to the corresponding GitHub Release. If a release run fails, the workflow can be started manually with the existing `release_tag` to rebuild and re-upload the artifacts without moving or recreating the tag.
 
 No session cookie, GitHub token, staging capability, client secret, private key or other secret may be embedded in the package.

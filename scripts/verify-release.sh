@@ -767,28 +767,32 @@ printf 'Step 10.1 MCP staging bridge release assertions verified for %s.\n' "$ac
 
 # Phase 10.2 plugin package and live deployed acceptance.
 test -s plugin/plugin.template.json
-test -s plugin/chatgpt-update.template.json
-test -s plugin/app.template.json
 test -s plugin/mcp.template.json
 test -s plugin/skills/zip-github/SKILL.md
+test -s plugin/assets/logo.png
+test -s plugin/assets/composer-icon.png
 test -s scripts/build-plugin.mjs
 test -s docs/openai-plugin-distribution.md
 test -s docs/step-10.2-report.md
 test -s .github/workflows/release-plugin.yml
 grep -Fq 'openai/fileParams' backend/src/main/java/info/isaksson/erland/zipgithub/mcp/McpResource.java
 grep -Fq 'https://zip-github.apphome.one/mcp' docs/openai-plugin-distribution.md
-grep -Fq 'ZIP_GITHUB_CHATGPT_APP_ID' scripts/build-plugin.mjs .github/workflows/release-plugin.yml docs/openai-plugin-distribution.md
-grep -Fq 'ZIP_GITHUB_CHATGPT_PLUGIN_NAME' scripts/build-plugin.mjs .github/workflows/release-plugin.yml docs/openai-plugin-distribution.md
-grep -Fq -- '--target chatgpt' .github/workflows/ci.yml .github/workflows/release-plugin.yml
-grep -Fq -- '--target desktop' .github/workflows/ci.yml .github/workflows/release-plugin.yml
-grep -Fq "resolve(outputRoot, '.codex-plugin')" scripts/build-plugin.mjs
-grep -Fq "test -f build/plugin-chatgpt/.codex-plugin/plugin.json" .github/workflows/ci.yml
-grep -Fq "test ! -e build/plugin-chatgpt/zip-github" .github/workflows/ci.yml
-grep -Fq 'zip -qr "../zip-github-plugin-${version}.zip" .app.json .codex-plugin' .github/workflows/release-plugin.yml
-grep -Fq 'zip-github-plugin-desktop-' .github/workflows/release-plugin.yml docs/openai-plugin-distribution.md
+grep -Fq -- '--target marketplace' .github/workflows/ci.yml .github/workflows/release-plugin.yml
+grep -Fq -- '--target desktop' scripts/build-plugin.mjs
+grep -Fq 'websiteURL' plugin/plugin.template.json
+grep -Fq 'supportURL' plugin/plugin.template.json
+grep -Fq 'privacyPolicyURL' plugin/plugin.template.json
+grep -Fq 'termsOfServiceURL' plugin/plugin.template.json
+grep -Fq 'assets/logo.png' plugin/plugin.template.json
+grep -Fq 'assets/composer-icon.png' plugin/plugin.template.json
+grep -Fq "manifest.apps != null" scripts/build-plugin.mjs
+grep -Fq "await cp('plugin/assets'" scripts/build-plugin.mjs
+grep -Fq 'zip -qr "../zip-github-plugin-${version}.zip" zip-github' .github/workflows/release-plugin.yml
+grep -Fq 'zip-github/assets/logo.png' .github/workflows/release-plugin.yml
+grep -Fq 'zip-github/assets/composer-icon.png' .github/workflows/release-plugin.yml
 grep -Fq '| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **DONE** | 2026-10-06 | `docs/step-10.2-report.md` |' docs/implementation-status.md
 grep -Fq 'Result: **PASS**.' docs/step-10.2-report.md
-printf 'Step 10.2 ChatGPT update/desktop plugin packaging and live acceptance completion assertions verified for %s.\n' "$actual_version"
+printf 'Step 10.2 complete Marketplace/portable plugin packaging assertions verified for %s.\n' "$actual_version"
 
 # rc.132 unified release version source.
 test -s docs/rc132-release-tag-version-source.md

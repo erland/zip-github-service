@@ -1,0 +1,8 @@
+{
+  "apps": {
+    "zip-github": {
+      "id": "__CHATGPT_APP_ID__",
+      "required": true
+    }
+  }
+}

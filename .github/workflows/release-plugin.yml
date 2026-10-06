@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ZIP_GITHUB_MCP_URL: ${{ vars.ZIP_GITHUB_MCP_URL || 'https://zip-github.apphome.one/mcp' }}
+      ZIP_GITHUB_CHATGPT_APP_ID: ${{ vars.ZIP_GITHUB_CHATGPT_APP_ID }}
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
 
     steps:
@@ -69,24 +70,36 @@ jobs:
           npm test
           VITE_ZIP_GITHUB_VERSION="${{ steps.version.outputs.version }}" npm run build
 
-      - name: Build ChatGPT plugin package
+      - name: Build ChatGPT web plugin package
         id: plugin
         shell: bash
         run: |
           set -euo pipefail
           version="${{ steps.version.outputs.version }}"
-          node scripts/build-plugin.mjs --version "${version}"
+          if [[ -z "${ZIP_GITHUB_CHATGPT_APP_ID}" ]]; then
+            echo "Repository variable ZIP_GITHUB_CHATGPT_APP_ID must contain the registered ChatGPT app id before release." >&2
+            exit 1
+          fi
+          node scripts/build-plugin.mjs --version "${version}" --target chatgpt
+          node scripts/build-plugin.mjs --version "${version}" --target desktop
           mkdir -p build
-          (cd build/plugin && zip -qr "../zip-github-plugin-${version}.zip" zip-github)
+          (cd build/plugin-chatgpt && zip -qr "../zip-github-plugin-${version}.zip" zip-github)
+          (cd build/plugin-desktop && zip -qr "../zip-github-plugin-desktop-${version}.zip" zip-github)
           echo "archive=build/zip-github-plugin-${version}.zip" >> "$GITHUB_OUTPUT"
+          echo "desktop_archive=build/zip-github-plugin-desktop-${version}.zip" >> "$GITHUB_OUTPUT"
 
-      - name: Inspect plugin archive
+      - name: Inspect plugin archives
         shell: bash
         run: |
           set -euo pipefail
           unzip -l "${{ steps.plugin.outputs.archive }}"
-          unzip -p "${{ steps.plugin.outputs.archive }}" zip-github/plugin.json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const p=JSON.parse(s);if(p.version!=='${{ steps.version.outputs.version }}')process.exit(1)})"
-          unzip -p "${{ steps.plugin.outputs.archive }}" zip-github/mcp.json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>JSON.parse(s))"
+          unzip -p "${{ steps.plugin.outputs.archive }}" zip-github/plugin.json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const p=JSON.parse(s);if(p.version!=='${{ steps.version.outputs.version }}'||p.extensions['com.openai'].apps!=='./.app.json')process.exit(1)})"
+          unzip -p "${{ steps.plugin.outputs.archive }}" zip-github/.app.json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>JSON.parse(s))"
+          if unzip -l "${{ steps.plugin.outputs.archive }}" | grep -q 'zip-github/mcp.json'; then
+            echo "ChatGPT web package must not contain mcp.json" >&2
+            exit 1
+          fi
+          unzip -p "${{ steps.plugin.outputs.desktop_archive }}" zip-github/mcp.json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>JSON.parse(s))"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -170,7 +183,7 @@ jobs:
       - name: Attach plugin ZIP to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ steps.version.outputs.tag }}" "${{ steps.plugin.outputs.archive }}" --clobber
+        run: gh release upload "${{ steps.version.outputs.tag }}" "${{ steps.plugin.outputs.archive }}" "${{ steps.plugin.outputs.desktop_archive }}" --clobber
 
       - name: Release summary
         shell: bash
@@ -180,5 +193,6 @@ jobs:
             echo ""
             echo "- Backend image: `ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/zip-github-service-backend:${{ steps.version.outputs.version }}`"
             echo "- Frontend image: `ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/zip-github-service-frontend:${{ steps.version.outputs.version }}`"
-            echo "- Plugin: `zip-github-plugin-${{ steps.version.outputs.version }}.zip`"
+            echo "- ChatGPT web plugin: `zip-github-plugin-${{ steps.version.outputs.version }}.zip`"
+            echo "- Desktop MCP plugin: `zip-github-plugin-desktop-${{ steps.version.outputs.version }}.zip`"
           } >> "$GITHUB_STEP_SUMMARY"

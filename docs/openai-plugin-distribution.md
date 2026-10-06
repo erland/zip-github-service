@@ -1,8 +1,35 @@
 # OpenAI plugin distribution
 
-zip-github ships a portable Agent Plugins 1.0 package that connects ChatGPT/Codex to the existing remote MCP server.
+zip-github has two plugin package targets because imported plugins that declare MCP servers directly are desktop-only in ChatGPT.
 
-The package contains:
+## ChatGPT web package
+
+The primary ChatGPT package is app-bound and contains no `mcp.json`:
+
+```text
+zip-github/
+├── plugin.json
+├── .app.json
+└── skills/
+    └── zip-github/
+        └── SKILL.md
+```
+
+The package references an already registered ChatGPT app through `.app.json`. The app must expose the deployed zip-github MCP endpoint and be available to the user. The package itself does not create or register that app.
+
+Build it with:
+
+```bash
+ZIP_GITHUB_CHATGPT_APP_ID=asdk_app_example   node scripts/build-plugin.mjs --version 1.1.0 --target chatgpt
+```
+
+`ZIP_GITHUB_CHATGPT_APP_ID` must be a real ChatGPT app id beginning with `asdk_app_`, `connector_`, or `templated_apps_`. A plugin URL id such as `plugin_asdk_app_...` is not valid here.
+
+The generated package is written under `build/plugin-chatgpt/zip-github/`.
+
+## Desktop MCP package
+
+A separate desktop package keeps the direct remote MCP declaration:
 
 ```text
 zip-github/
@@ -13,11 +40,19 @@ zip-github/
         └── SKILL.md
 ```
 
-The plugin does not deploy the service and does not contain credentials. It declares the existing Streamable HTTP endpoint at `https://zip-github.apphome.one/mcp`.
+Build it with:
+
+```bash
+ZIP_GITHUB_MCP_URL=https://zip-github.apphome.one/mcp   node scripts/build-plugin.mjs --version 1.1.0 --target desktop
+```
+
+The generated package is written under `build/plugin-desktop/zip-github/`.
+
+This package is intentionally treated as desktop-only by ChatGPT because it declares an MCP server directly.
 
 ## Behavior
 
-The plugin intentionally exposes only the existing `stage_zip` workflow:
+Both targets describe the same narrow workflow:
 
 1. transfer one user-provided ZIP to temporary staging;
 2. return `review_url`;
@@ -25,25 +60,30 @@ The plugin intentionally exposes only the existing `stage_zip` workflow:
 
 The plugin must not imply that staging itself changed GitHub.
 
-## Build
+## App registration prerequisite
 
-```bash
-node scripts/build-plugin.mjs --version 1.0.0-rc.131
-```
+The ChatGPT web package cannot invent an app id. Before release, the deployed MCP endpoint must be registered as a ChatGPT app through a supported ChatGPT app flow, for example an app provisioned by ChatGPT Sites or another supported app registration path.
 
-Override the endpoint only when testing another deployment:
+After registration:
 
-```bash
-ZIP_GITHUB_MCP_URL=https://zip-github.example.test/mcp \
-  node scripts/build-plugin.mjs --version 0.0.0-ci
-```
+1. obtain the app id, not the plugin id shown in a plugin URL;
+2. store it as the repository variable `ZIP_GITHUB_CHATGPT_APP_ID`;
+3. run repository CI;
+4. publish or rerun the GitHub Release workflow;
+5. install the generated ChatGPT package and complete the live step 10.2 acceptance.
 
-Generated files are written under `build/plugin/zip-github/` and are not committed.
+## Release artifacts
 
-## Release artifact
+A published GitHub Release tag is the sole version source for release artifacts.
 
-A published GitHub Release tag is the sole version source for all release artifacts. The workflow normalizes an optional leading `v` and uses that version for backend image, frontend image and plugin package. `VERSION` is intentionally ignored for release publication.
+The release workflow publishes:
 
-The plugin artifact is built as `zip-github-plugin-<version>.zip` with one top-level `zip-github/` directory and attached to the corresponding GitHub Release. If a release run fails, the workflow can be started manually with the existing `release_tag` to rebuild and re-upload the artifacts without moving or recreating the tag.
+- `zip-github-plugin-<version>.zip` — app-bound ChatGPT web package;
+- `zip-github-plugin-desktop-<version>.zip` — direct-MCP desktop package;
+- backend and frontend container images using the same release version.
 
-No session cookie, GitHub token, staging capability, client secret, private key or other secret may be embedded in the package.
+The release workflow fails before plugin publication when `ZIP_GITHUB_CHATGPT_APP_ID` is missing. This is intentional: it prevents accidentally shipping another desktop-only package under the ChatGPT web artifact name.
+
+If a release run fails, the workflow can be started manually with the existing `release_tag` to rebuild and re-upload the artifacts without moving or recreating the tag.
+
+No session cookie, GitHub token, staging capability, client secret, private key or other secret may be embedded in either package.

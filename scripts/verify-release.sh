@@ -52,7 +52,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION — PLUGIN PACKAGE READY — LIVE ACCEPTANCE PENDING`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION — APP-BOUND PACKAGE READY — APP REGISTRATION/LIVE ACCEPTANCE PENDING`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -765,8 +765,9 @@ grep -Fq "keeps failed Actions prominent without requiring expansion" frontend/s
 grep -Fq "**Status:** DONE (2026-08-14, r0177 / 1.0.0-rc.129)." docs/implementation-steps.md
 printf 'Step 10.1 MCP staging bridge release assertions verified for %s.\n' "$actual_version"
 
-# Phase 10.2 portable plugin package (live deployed acceptance remains BLOCKED).
+# Phase 10.2 plugin package (app registration/live acceptance remain BLOCKED).
 test -s plugin/plugin.template.json
+test -s plugin/app.template.json
 test -s plugin/mcp.template.json
 test -s plugin/skills/zip-github/SKILL.md
 test -s scripts/build-plugin.mjs
@@ -775,8 +776,14 @@ test -s docs/step-10.2-report.md
 test -s .github/workflows/release-plugin.yml
 grep -Fq 'openai/fileParams' backend/src/main/java/info/isaksson/erland/zipgithub/mcp/McpResource.java
 grep -Fq 'https://zip-github.apphome.one/mcp' docs/openai-plugin-distribution.md
+grep -Fq 'ZIP_GITHUB_CHATGPT_APP_ID' scripts/build-plugin.mjs .github/workflows/release-plugin.yml docs/openai-plugin-distribution.md
+grep -Fq -- '--target chatgpt' .github/workflows/ci.yml .github/workflows/release-plugin.yml
+grep -Fq -- '--target desktop' .github/workflows/ci.yml .github/workflows/release-plugin.yml
+grep -Fq "manifest.extensions['com.openai'].apps = './.app.json'" scripts/build-plugin.mjs
+grep -Fq "test ! -e build/plugin-chatgpt/zip-github/mcp.json" .github/workflows/ci.yml
+grep -Fq 'zip-github-plugin-desktop-' .github/workflows/release-plugin.yml docs/openai-plugin-distribution.md
 grep -Fq '| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **BLOCKED**' docs/implementation-status.md
-printf 'Step 10.2 plugin packaging assertions verified; live acceptance remains blocked for %s.\n' "$actual_version"
+printf 'Step 10.2 app-bound/desktop plugin packaging assertions verified; app registration/live acceptance remain blocked for %s.\n' "$actual_version"
 
 # rc.132 unified release version source.
 test -s docs/rc132-release-tag-version-source.md

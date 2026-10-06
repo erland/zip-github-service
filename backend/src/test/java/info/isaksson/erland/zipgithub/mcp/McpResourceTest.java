@@ -47,7 +47,27 @@ class McpResourceTest {
                 .then().statusCode(200)
                 .body("result.protocolVersion", equalTo("2025-11-25"))
                 .body("result.capabilities.tools.listChanged", equalTo(false))
-                .body("result.serverInfo.name", equalTo("zip-github"));
+                .body("result.serverInfo.name", equalTo("zip-github"))
+                .body("result.serverInfo.title", equalTo("zip-GitHub"))
+                .body("result.serverInfo.version", equalTo("1.0.0-rc.132"))
+                .body("result.serverInfo.description", containsString("Stages user-provided ZIP archives"))
+                .body("result.serverInfo.websiteUrl", equalTo("https://zip-github.apphome.one/about"))
+                .body("result.serverInfo.icons", hasSize(1))
+                .body("result.serverInfo.icons[0].src", startsWith("data:image/png;base64,"))
+                .body("result.serverInfo.icons[0].mimeType", equalTo("image/png"))
+                .body("result.serverInfo.icons[0].sizes[0]", equalTo("64x64"));
+    }
+
+    @Test
+    void omitsIconsWhenNegotiatingAnOlderProtocolRevision() {
+        given().contentType("application/json")
+                .body("""
+                        {"jsonrpc":"2.0","id":"init-old","method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}
+                        """)
+                .when().post("/mcp")
+                .then().statusCode(200)
+                .body("result.protocolVersion", equalTo("2025-06-18"))
+                .body("result.serverInfo.icons", nullValue());
     }
 
     @Test

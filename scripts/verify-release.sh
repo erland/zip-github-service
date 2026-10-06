@@ -781,11 +781,16 @@ printf 'Step 10.2 plugin packaging assertions verified; live acceptance remains 
 # rc.132 unified release version source.
 test -s docs/rc132-release-tag-version-source.md
 grep -Fq 'release:' .github/workflows/release-plugin.yml
-grep -Fq 'tag="${{ github.event.release.tag_name }}"' .github/workflows/release-plugin.yml
+grep -Fq 'workflow_dispatch:' .github/workflows/release-plugin.yml
+grep -Fq 'release_tag:' .github/workflows/release-plugin.yml
+grep -Fq 'RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}' .github/workflows/release-plugin.yml
+grep -Fq 'ref: ${{ env.RELEASE_TAG }}' .github/workflows/release-plugin.yml
+grep -Fq 'tag="${RELEASE_TAG}"' .github/workflows/release-plugin.yml
 grep -Fq 'version="${tag#v}"' .github/workflows/release-plugin.yml
-grep -Fq 'repository_version=$(tr -d' .github/workflows/release-plugin.yml
+! grep -Fq 'repository_version=$(tr -d' .github/workflows/release-plugin.yml
+! grep -Fq 'does not match VERSION' .github/workflows/release-plugin.yml
 grep -Fq 'Build and publish backend image' .github/workflows/release-plugin.yml
 grep -Fq 'Build and publish frontend image' .github/workflows/release-plugin.yml
 grep -Fq 'Attach plugin ZIP to GitHub Release' .github/workflows/release-plugin.yml
 ! grep -Fq 'refs/tags/*' .github/workflows/ci.yml
-printf 'rc.132 release-tag version-source assertions verified for %s.\n' "$actual_version"
+printf 'rc.132 release-tag authoritative-version assertions verified for %s.\n' "$actual_version"

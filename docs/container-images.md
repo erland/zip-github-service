@@ -11,17 +11,21 @@ PostgreSQL continues to use the official `postgres:16-alpine` image.
 
 ## When images are published
 
-Every pull request and branch push builds both Dockerfiles, which makes image construction part of CI. Images are pushed only for successful runs on `main` or a Git tag. The container job has `packages: write`; the test jobs retain read-only repository permissions.
+Every pull request and branch push builds both Dockerfiles, which makes image construction part of CI. Normal CI pushes images only for successful runs on `main`. Published GitHub Releases use the dedicated release workflow, which checks out the release tag and publishes both application images from that exact tagged source. The container jobs have `packages: write`; test jobs retain read-only repository permissions.
 
 ## Tags
 
-Every publish receives:
+For normal `main` CI, image versions continue to come from `VERSION`.
 
-- exact application version from `VERSION`, for example `1.0.0-rc.8`;
+For a published GitHub Release, the release tag is authoritative. A tag such as `v1.2.3` or `1.2.3` produces application version `1.2.3`. The release workflow verifies that the tagged commit's `VERSION` contains the same normalized version and fails before publication if they differ.
+
+Each release publish receives:
+
+- exact version derived from the GitHub Release tag;
 - immutable source tag `sha-<12-character-commit>`;
-- mutable `rc` tag while `VERSION` is a release candidate.
+- mutable `rc` tag for release-candidate versions.
 
-A stable version such as `1.2.3` additionally receives `1.2`, `1`, and `latest`. `latest` is never assigned to an RC build. Production/server Compose should normally pin the exact version rather than a mutable convenience tag.
+A stable release such as `1.2.3` additionally receives `1.2`, `1`, and `latest`. `latest` is never assigned to an RC release. Production/server Compose should normally pin the exact release version rather than a mutable convenience tag.
 
 ## Registry authentication
 

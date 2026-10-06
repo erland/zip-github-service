@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.131"
+expected_version="1.0.0-rc.132"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.131 - 2026-10-06' CHANGELOG.md
+grep -q '## 1.0.0-rc.132 - 2026-10-06' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,7 +25,7 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0179`' docs/implementation-status.md
+grep -q 'Repository revision: `r0180`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -584,14 +584,17 @@ grep -q 'Använd detta repository' frontend/src/pages/StagingClaimPage.tsx
 grep -q 'Välj ett annat repository' frontend/src/pages/StagingClaimPage.tsx
 grep -q 'suggestRepository' frontend/src/pages/StagingClaimPage.tsx
 
-# Phase 9 step 9.28 (avoid duplicate push + pull_request full CI runs).
+# Phase 9 step 9.28 historical CI optimization.
+# PR validation has since been re-enabled; publication remains restricted to main,
+# while GitHub Release publication is owned by release-plugin.yml.
 test -s docs/step-9.28-report.md
 grep -q '^  push:$' .github/workflows/ci.yml
+grep -q '^  pull_request:$' .github/workflows/ci.yml
 grep -q '^  workflow_dispatch:$' .github/workflows/ci.yml
-! grep -q '^  pull_request:' .github/workflows/ci.yml
-grep -Fq '[[ "${GITHUB_REF}" == "refs/heads/main" ]] || [[ "${GITHUB_REF}" == refs/tags/* ]]' .github/workflows/ci.yml
+grep -Fq '[[ "${GITHUB_REF}" == "refs/heads/main" ]]' .github/workflows/ci.yml
+! grep -Fq 'refs/tags/*' .github/workflows/ci.yml
 grep -Fq '| `9.28` | Fas 9 — CI efficiency | Undvik dubbla fulla CI-körningar för samma Work-commit med öppen PR | **DONE**' docs/implementation-status.md
-printf 'Phase 9.28 CI trigger optimization assertions verified for %s.\n' "$actual_version"
+printf 'Phase 9.28 historical CI assertions reconciled with current main/release publication model for %s.\n' "$actual_version"
 
 # Phase 9 step 9.29 (completely empty repository bootstrap).
 test -s docs/step-9.29-report.md
@@ -774,3 +777,15 @@ grep -Fq 'openai/fileParams' backend/src/main/java/info/isaksson/erland/zipgithu
 grep -Fq 'https://zip-github.apphome.one/mcp' docs/openai-plugin-distribution.md
 grep -Fq '| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **BLOCKED**' docs/implementation-status.md
 printf 'Step 10.2 plugin packaging assertions verified; live acceptance remains blocked for %s.\n' "$actual_version"
+
+# rc.132 unified release version source.
+test -s docs/rc132-release-tag-version-source.md
+grep -Fq 'release:' .github/workflows/release-plugin.yml
+grep -Fq 'tag="${{ github.event.release.tag_name }}"' .github/workflows/release-plugin.yml
+grep -Fq 'version="${tag#v}"' .github/workflows/release-plugin.yml
+grep -Fq 'repository_version=$(tr -d' .github/workflows/release-plugin.yml
+grep -Fq 'Build and publish backend image' .github/workflows/release-plugin.yml
+grep -Fq 'Build and publish frontend image' .github/workflows/release-plugin.yml
+grep -Fq 'Attach plugin ZIP to GitHub Release' .github/workflows/release-plugin.yml
+! grep -Fq 'refs/tags/*' .github/workflows/ci.yml
+printf 'rc.132 release-tag version-source assertions verified for %s.\n' "$actual_version"

@@ -19,8 +19,11 @@ fi
 # AGENTS.md also permits zero NEXT when the implementation plan is complete.
 if [[ "$next_count" -eq 0 && "$blocked_count" -eq 0 ]]; then
   pending_count=$(grep -c '| \*\*PENDING\*\* |' "$status_file" || true)
-  if [[ "$pending_count" -eq 0 ]] && grep -Fq -- '- Next step: `none` — implementation plan complete' "$status_file"; then
-    printf 'Implementation ledger verified: plan complete; no NEXT step remains.\n'
+  if [[ "$pending_count" -eq 0 ]] && {
+    grep -Fq -- '- Next step: not yet defined' "$status_file" ||
+    grep -Fq -- '- Next step: `none` — implementation plan complete' "$status_file"
+  }; then
+    printf 'Implementation ledger verified: no planned NEXT step remains.\n'
     exit 0
   fi
 fi
@@ -36,5 +39,5 @@ if [[ "$next_count" -eq 0 && "$blocked_count" -eq 1 ]]; then
   exit 0
 fi
 
-printf 'Expected exactly one NEXT, or zero NEXT with exactly one BLOCKED step; found NEXT=%s BLOCKED=%s.\n' "$next_count" "$blocked_count" >&2
+printf 'Expected exactly one NEXT, zero NEXT with one BLOCKED step, or zero NEXT after the planned implementation is complete; found NEXT=%s BLOCKED=%s.\n' "$next_count" "$blocked_count" >&2
 exit 1

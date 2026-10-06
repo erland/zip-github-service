@@ -88,3 +88,12 @@ Modified:
 - `VERSION`
 - `.env.example`
 - `docker-compose.yml`
+
+
+## Live acceptance correction — ChatGPT file host allowlist
+
+A real ChatGPT `stage_zip` invocation reached the deployed MCP endpoint but failed with `The file download host is not allowed.`. This proved MCP discovery and file-parameter delivery were functioning, while the backend allowlist was too narrow.
+
+The default allowlist is corrected from the single exact host `files.oaiusercontent.com` to `.oaiusercontent.com`, which accepts the root domain and its subdomains only. HTTPS remains mandatory, non-443 ports/userinfo remain rejected, and every redirect target is revalidated against the same allowlist. Lookalike domains such as `oaiusercontent.com.evil.test` remain blocked.
+
+Step 10.2 remains BLOCKED until the deployed correction is live and the real ZIP staging/review URL flow passes end to end.

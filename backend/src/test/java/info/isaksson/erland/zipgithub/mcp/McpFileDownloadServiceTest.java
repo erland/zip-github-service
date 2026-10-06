@@ -10,11 +10,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class McpFileDownloadServiceTest {
     private final McpFileDownloadService service =
-            new McpFileDownloadService("files.oaiusercontent.com,.example-cdn.test", HttpClient.newHttpClient());
+            new McpFileDownloadService(".oaiusercontent.com,.example-cdn.test", HttpClient.newHttpClient());
 
     @Test
     void acceptsConfiguredHttpsHosts() {
         assertDoesNotThrow(() -> service.validateUri(URI.create("https://files.oaiusercontent.com/file/123?sig=x")));
+        assertDoesNotThrow(() -> service.validateUri(URI.create("https://chatgpt-upload.oaiusercontent.com/file/123?sig=x")));
+        assertDoesNotThrow(() -> service.validateUri(URI.create("https://oaiusercontent.com/file/123?sig=x")));
         assertDoesNotThrow(() -> service.validateUri(URI.create("https://a.example-cdn.test/file.zip")));
     }
 
@@ -26,5 +28,7 @@ class McpFileDownloadServiceTest {
                 () -> service.validateUri(URI.create("https://127.0.0.1/internal")));
         assertThrows(McpFileDownloadService.DownloadException.class,
                 () -> service.validateUri(URI.create("https://files.oaiusercontent.com.evil.test/file")));
+        assertThrows(McpFileDownloadService.DownloadException.class,
+                () -> service.validateUri(URI.create("https://oaiusercontent.com.evil.test/file")));
     }
 }

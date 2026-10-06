@@ -31,7 +31,7 @@ public class McpFileDownloadService {
 
     @Inject
     public McpFileDownloadService(
-            @ConfigProperty(name = "zipgithub.mcp.file-download-hosts", defaultValue = "files.oaiusercontent.com")
+            @ConfigProperty(name = "zipgithub.mcp.file-download-hosts", defaultValue = ".oaiusercontent.com")
             String allowedHosts) {
         this(allowedHosts, HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))

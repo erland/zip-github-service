@@ -2,6 +2,9 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from './components/AppLayout';
 import AboutPage from './pages/AboutPage';
 import MaintenancePage from './pages/MaintenancePage';
+import PrivacyPage from './pages/PrivacyPage';
+import SupportPage from './pages/SupportPage';
+import TermsPage from './pages/TermsPage';
 import NewImportPage from './pages/NewImportPage';
 import ImportReviewPage from './pages/ImportReviewPage';
 import ImportResultPage from './pages/ImportResultPage';
@@ -26,6 +29,9 @@ export default function App() {
         <Route path="projects/:projectId/imports/:importId/review" element={<ImportReviewPage />} />
         <Route path="projects/:projectId/imports/:importId/result" element={<ImportResultPage />} />
         <Route path="about" element={<AboutPage />} />
+        <Route path="support" element={<SupportPage />} />
+        <Route path="privacy" element={<PrivacyPage />} />
+        <Route path="terms" element={<TermsPage />} />
         <Route path="maintenance" element={<MaintenancePage />} />
         <Route path="shortcut" element={<ShortcutInstallPage />} />
         <Route path="staging/claim" element={<StagingClaimPage />} />

@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "zip-github",
   "version": "__PLUGIN_VERSION__",
-  "description": "Transfer a project ZIP to zip-github staging and continue review in the existing web interface.",
+  "description": "Transfer a project ZIP to temporary zip-GitHub staging and continue review in the web interface before any GitHub delivery.",
   "author": {
     "name": "Erland Lindmark"
   },
@@ -10,14 +10,91 @@
     "com.openai": {
       "interface": {
         "displayName": "zip-GitHub",
-        "shortDescription": "Skicka ZIP till GitHub",
-        "longDescription": "Överför en projekt-ZIP till zip-GitHub via MCP och fortsätt sedan i det befintliga webbgränssnittet för repositoryval, granskning, godkännande och Git-leverans.",
+        "shortDescription": "Send ZIP to GitHub review",
+        "longDescription": "Transfer a project ZIP to temporary zip-GitHub staging through MCP, then continue in the browser for repository selection, review, approval, and GitHub delivery. Staging itself does not change GitHub, and GitHub delivery only happens after explicit user approval.",
         "developerName": "Erland Lindmark",
         "category": "Productivity",
         "capabilities": [
           "Interactive"
         ],
-        "defaultPrompt": "Skicka den bifogade ZIP-filen till zip-GitHub och ge mig länken där jag kan granska ändringarna."
+        "defaultPrompt": [
+          "Stage the attached ZIP in zip-GitHub and give me the review link.",
+          "Send this project ZIP to zip-GitHub staging without making any GitHub changes yet."
+        ],
+        "websiteURL": "https://zip-github.apphome.one/about",
+        "supportURL": "https://zip-github.apphome.one/support",
+        "privacyPolicyURL": "https://zip-github.apphome.one/privacy",
+        "termsOfServiceURL": "https://zip-github.apphome.one/terms",
+        "logo": "assets/logo.png",
+        "composerIcon": "assets/composer-icon.png"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Stage an attached project ZIP and return the browser review link.",
+              "prompt": "Stage the attached project.zip in zip-GitHub and give me the link where I can review it.",
+              "tools_triggered": "stage_zip",
+              "expected_behavior": "Calls stage_zip with the attached ZIP and returns the tool-provided review_url without claiming that GitHub was changed.",
+              "file_attachment_urls": [
+                "https://raw.githubusercontent.com/erland/zip-github-service/main/plugin/review-fixtures/sample-project.zip"
+              ]
+            },
+            {
+              "description": "Respect an explicit request to stage only and avoid GitHub writes.",
+              "prompt": "Put this ZIP in zip-GitHub staging, but do not commit, push, or create a pull request.",
+              "tools_triggered": "stage_zip",
+              "expected_behavior": "Calls stage_zip, returns review_url, and explains that repository selection and any GitHub delivery happen later in the browser.",
+              "file_attachment_urls": [
+                "https://raw.githubusercontent.com/erland/zip-github-service/main/plugin/review-fixtures/sample-project.zip"
+              ]
+            },
+            {
+              "description": "Stage a ZIP and report its returned temporary staging expiry.",
+              "prompt": "Stage this ZIP in zip-GitHub and tell me when the temporary upload expires.",
+              "tools_triggered": "stage_zip",
+              "expected_behavior": "Calls stage_zip and reports review_url together with expires_at from structuredContent.",
+              "file_attachment_urls": [
+                "https://raw.githubusercontent.com/erland/zip-github-service/main/plugin/review-fixtures/sample-project.zip"
+              ]
+            },
+            {
+              "description": "Stage a ZIP and report the returned filename and checksum.",
+              "prompt": "Send this ZIP to zip-GitHub and confirm the staged filename and checksum.",
+              "tools_triggered": "stage_zip",
+              "expected_behavior": "Calls stage_zip and reports filename and sha256 from the returned structuredContent without inventing values.",
+              "file_attachment_urls": [
+                "https://raw.githubusercontent.com/erland/zip-github-service/main/plugin/review-fixtures/sample-project.zip"
+              ]
+            },
+            {
+              "description": "Stage an attached build artifact ZIP for later repository selection.",
+              "prompt": "I have attached a built project ZIP. Move it into zip-GitHub so I can choose the repository and review changes there.",
+              "tools_triggered": "stage_zip",
+              "expected_behavior": "Calls stage_zip once and directs the user to the returned review_url for repository selection and review.",
+              "file_attachment_urls": [
+                "https://raw.githubusercontent.com/erland/zip-github-service/main/plugin/review-fixtures/sample-project.zip"
+              ]
+            }
+          ],
+          "negative": [
+            {
+              "description": "Do not use zip-GitHub MCP to list GitHub repositories.",
+              "prompt": "List all GitHub repositories I can access."
+            },
+            {
+              "description": "Do not use the staging tool to create a pull request directly.",
+              "prompt": "Create a pull request in my repository with these changes."
+            },
+            {
+              "description": "Do not use zip-GitHub MCP to read or edit an existing repository file.",
+              "prompt": "Open README.md in my GitHub repository and change the heading."
+            }
+          ]
+        }
+      },
+      "publication": {
+        "release_notes": "Initial Marketplace package with the complete MCP configuration, workflow skill, public listing metadata, support/privacy/terms pages, and plugin icons."
       }
     }
   }

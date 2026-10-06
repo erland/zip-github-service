@@ -20,8 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ZIP_GITHUB_MCP_URL: ${{ vars.ZIP_GITHUB_MCP_URL || 'https://zip-github.apphome.one/mcp' }}
-      ZIP_GITHUB_CHATGPT_APP_ID: ${{ vars.ZIP_GITHUB_CHATGPT_APP_ID }}
-      ZIP_GITHUB_CHATGPT_PLUGIN_NAME: ${{ vars.ZIP_GITHUB_CHATGPT_PLUGIN_NAME }}
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
 
     steps:
@@ -71,36 +69,31 @@ jobs:
           npm test
           VITE_ZIP_GITHUB_VERSION="${{ steps.version.outputs.version }}" npm run build
 
-      - name: Build ChatGPT web plugin package
+      - name: Build Marketplace plugin package
         id: plugin
         shell: bash
         run: |
           set -euo pipefail
           version="${{ steps.version.outputs.version }}"
-          if [[ -z "${ZIP_GITHUB_CHATGPT_APP_ID}" ]]; then
-            echo "Repository variable ZIP_GITHUB_CHATGPT_APP_ID must contain the registered ChatGPT app id before release." >&2
-            exit 1
-          fi
-          node scripts/build-plugin.mjs --version "${version}" --target chatgpt
-          node scripts/build-plugin.mjs --version "${version}" --target desktop
+          node scripts/build-plugin.mjs --version "${version}" --target marketplace
           mkdir -p build
-          (cd build/plugin-chatgpt && zip -qr "../zip-github-plugin-${version}.zip" .app.json .codex-plugin)
-          (cd build/plugin-desktop && zip -qr "../zip-github-plugin-desktop-${version}.zip" zip-github)
+          (cd build/plugin-marketplace && zip -qr "../zip-github-plugin-${version}.zip" zip-github)
           echo "archive=build/zip-github-plugin-${version}.zip" >> "$GITHUB_OUTPUT"
-          echo "desktop_archive=build/zip-github-plugin-desktop-${version}.zip" >> "$GITHUB_OUTPUT"
 
-      - name: Inspect plugin archives
+      - name: Inspect Marketplace plugin archive
         shell: bash
         run: |
           set -euo pipefail
           unzip -l "${{ steps.plugin.outputs.archive }}"
-          unzip -p "${{ steps.plugin.outputs.archive }}" .codex-plugin/plugin.json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const p=JSON.parse(s);if(p.version!=='${{ steps.version.outputs.version }}'||!p.name.startsWith('dev-')||p.apps!=='./.app.json')process.exit(1)})"
-          unzip -p "${{ steps.plugin.outputs.archive }}" .app.json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const a=JSON.parse(s);const names=Object.keys(a.apps||{});if(names.length!==1||!names[0].startsWith('dev-')||a.apps[names[0]].id!=='${ZIP_GITHUB_CHATGPT_APP_ID}')process.exit(1)})"
-          if unzip -l "${{ steps.plugin.outputs.archive }}" | grep -Eq '(^|[[:space:]])zip-github/|mcp.json'; then
-            echo "ChatGPT update package must have no extra top directory and no mcp.json" >&2
+          unzip -p "${{ steps.plugin.outputs.archive }}" zip-github/plugin.json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const p=JSON.parse(s);if(p.name!=='zip-github'||p.version!=='${{ steps.version.outputs.version }}'||p.apps!=null||p.extensions?.['com.openai']?.apps!=null)process.exit(1)})"
+          unzip -p "${{ steps.plugin.outputs.archive }}" zip-github/mcp.json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const m=JSON.parse(s);if(m.mcpServers?.['zip-github']?.url!=='${ZIP_GITHUB_MCP_URL}')process.exit(1)})"
+          unzip -p "${{ steps.plugin.outputs.archive }}" zip-github/skills/zip-github/SKILL.md >/dev/null
+          unzip -p "${{ steps.plugin.outputs.archive }}" zip-github/assets/logo.png >/dev/null
+          unzip -p "${{ steps.plugin.outputs.archive }}" zip-github/assets/composer-icon.png >/dev/null
+          if unzip -l "${{ steps.plugin.outputs.archive }}" | grep -Eq '\.app\.json|\.codex-plugin/'; then
+            echo "Marketplace upload must not contain app bindings or compatibility update manifests." >&2
             exit 1
           fi
-          unzip -p "${{ steps.plugin.outputs.desktop_archive }}" zip-github/mcp.json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>JSON.parse(s))"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -184,7 +177,7 @@ jobs:
       - name: Attach plugin ZIP to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ steps.version.outputs.tag }}" "${{ steps.plugin.outputs.archive }}" "${{ steps.plugin.outputs.desktop_archive }}" --clobber
+        run: gh release upload "${{ steps.version.outputs.tag }}" "${{ steps.plugin.outputs.archive }}" --clobber
 
       - name: Release summary
         shell: bash
@@ -194,6 +187,5 @@ jobs:
             echo ""
             echo "- Backend image: `ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/zip-github-service-backend:${{ steps.version.outputs.version }}`"
             echo "- Frontend image: `ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/zip-github-service-frontend:${{ steps.version.outputs.version }}`"
-            echo "- ChatGPT update plugin: `zip-github-plugin-${{ steps.version.outputs.version }}.zip` (upload as a new version of the existing ChatGPT app)"
-            echo "- Desktop MCP plugin: `zip-github-plugin-desktop-${{ steps.version.outputs.version }}.zip`"
+            echo "- Marketplace/portable plugin: `zip-github-plugin-${{ steps.version.outputs.version }}.zip`"
           } >> "$GITHUB_STEP_SUMMARY"

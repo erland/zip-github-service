@@ -80,6 +80,7 @@ export default function AppLayout() {
     }
   }
 
+  const publicRoute = ['/about', '/support', '/privacy', '/terms'].includes(location.pathname);
   const returnTo = `${location.pathname}${location.search}`;
   const loginUrl = `/api/auth/github/login?returnTo=${encodeURIComponent(returnTo)}`;
 
@@ -88,7 +89,7 @@ export default function AppLayout() {
       <a className="skip-link" href="#main-content">Hoppa till huvudinnehållet</a>
       <header className="site-header">
         <NavLink className="brand" to="/projects">zip-github</NavLink>
-        {authState === 'authenticated' && user && (
+        {authState === 'authenticated' && user ? (
           <div className="header-actions">
             <nav aria-label="Huvudnavigering" className="primary-nav">
               <NavLink className={navClassName} to="/projects">Repositories</NavLink>
@@ -104,16 +105,24 @@ export default function AppLayout() {
               </button>
             </div>
           </div>
+        ) : (
+          <nav aria-label="Publik navigering" className="primary-nav">
+            <NavLink className={navClassName} to="/about">Om tjänsten</NavLink>
+            <NavLink className={navClassName} to="/support">Support</NavLink>
+            <NavLink className={navClassName} to="/privacy">Integritet</NavLink>
+            <NavLink className={navClassName} to="/terms">Villkor</NavLink>
+          </nav>
         )}
       </header>
       <main className="main-content" id="main-content" tabIndex={-1}>
-        {authState === 'loading' && (
+        {publicRoute && <Outlet />}
+        {!publicRoute && authState === 'loading' && (
           <section className="page-card"><h1>Kontrollerar GitHub-inloggning</h1><p role="status">Hämtar din session…</p></section>
         )}
-        {authState === 'error' && (
+        {!publicRoute && authState === 'error' && (
           <section className="page-card"><h1>Inloggningsstatus kunde inte hämtas</h1><p className="status-message status-message--error" role="alert">{authError}</p></section>
         )}
-        {authState === 'anonymous' && (
+        {!publicRoute && authState === 'anonymous' && (
           <section className="page-card auth-card" aria-labelledby="login-heading">
             <p className="eyebrow">GitHub-inloggning</p>
             <h1 id="login-heading">Logga in för att fortsätta</h1>
@@ -124,7 +133,7 @@ export default function AppLayout() {
             <a className="button" href={loginUrl}>Logga in med GitHub</a>
           </section>
         )}
-        {authState === 'authenticated' && <Outlet />}
+{!publicRoute && authState === 'authenticated' && <Outlet />}
       </main>
     </div>
   );

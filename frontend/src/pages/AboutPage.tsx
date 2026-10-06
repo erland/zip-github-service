@@ -4,17 +4,29 @@ export default function AboutPage() {
   return (
     <section className="page-card">
       <p className="eyebrow">Om tjänsten</p>
-      <h1>ZIP till GitHub med granskning</h1>
-      <p className="lead">zip-github ska jämföra ett projektarkiv med en vald GitHub-branch och skapa en pull request först efter uttryckligt godkännande.</p>
+      <h1>zip-GitHub</h1>
+      <p className="lead">zip-GitHub hjälper användaren att föra över en projekt-ZIP till en säker granskningsyta och fortsätta till GitHub först efter uttryckligt godkännande.</p>
+
+      <h2>Så fungerar det</h2>
+      <ol>
+        <li>En ZIP-fil skickas till en tillfällig staging.</li>
+        <li>Användaren väljer repository och granskar planerade ändringar i webbgränssnittet.</li>
+        <li>GitHub-leverans sker först när användaren uttryckligen godkänner den.</li>
+      </ol>
+
+      <p>Staging i sig ändrar inte GitHub och uppladdad projektkod körs inte av zip-GitHub-backenden.</p>
+
       <dl className="result-link-grid" aria-label="Tjänsteinformation">
+        <div><dt>Utvecklare</dt><dd>Erland Lindmark</dd></div>
         <div><dt>Version</dt><dd>{runtimeVersion}</dd></div>
+        <div><dt>Källkod</dt><dd><a href="https://github.com/erland/zip-github-service">GitHub</a></dd></div>
       </dl>
-      <h2>Produktprinciper</h2>
+
+      <h2>Information och support</h2>
       <ul>
-        <li>GitHub är den beständiga projektkällan.</li>
-        <li>Varje användares projekt och importer ska vara isolerade.</li>
-        <li>Uppladdad projektkod körs inte i tjänstens backend.</li>
-        <li>GitHub Actions ansvarar för byggen, tester och publicering.</li>
+        <li><a href="/support">Support</a></li>
+        <li><a href="/privacy">Integritetspolicy</a></li>
+        <li><a href="/terms">Användarvillkor</a></li>
       </ul>
     </section>
   );

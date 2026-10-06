@@ -19,8 +19,8 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 - Repository revision: `r0180`
 - Last completed step: `10.1`
-- Next step: blocked at `10.2` — pending deployed MCP/plugin upload-and-claim acceptance
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION — PLUGIN PACKAGE READY — LIVE ACCEPTANCE PENDING`
+- Next step: blocked at `10.2` — pending ChatGPT app registration and deployed upload-and-claim acceptance
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION — APP-BOUND PACKAGE READY — APP REGISTRATION/LIVE ACCEPTANCE PENDING`
 
 ## Step ledger
 

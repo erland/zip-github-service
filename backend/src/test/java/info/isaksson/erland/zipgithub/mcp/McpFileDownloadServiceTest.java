@@ -11,13 +11,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McpFileDownloadServiceTest {
     private final McpFileDownloadService service =
-            new McpFileDownloadService(".oaiusercontent.com,.example-cdn.test", HttpClient.newHttpClient());
+            new McpFileDownloadService(".oaiusercontent.com,oaisdmntprnortheu.blob.core.windows.net,.example-cdn.test", HttpClient.newHttpClient());
 
     @Test
     void acceptsConfiguredHttpsHosts() {
         assertDoesNotThrow(() -> service.validateUri(URI.create("https://files.oaiusercontent.com/file/123?sig=x")));
         assertDoesNotThrow(() -> service.validateUri(URI.create("https://chatgpt-upload.oaiusercontent.com/file/123?sig=x")));
         assertDoesNotThrow(() -> service.validateUri(URI.create("https://oaiusercontent.com/file/123?sig=x")));
+        assertDoesNotThrow(() -> service.validateUri(URI.create("https://oaisdmntprnortheu.blob.core.windows.net/container/file.zip?sig=x")));
         assertDoesNotThrow(() -> service.validateUri(URI.create("https://a.example-cdn.test/file.zip")));
     }
 
@@ -31,5 +32,7 @@ class McpFileDownloadServiceTest {
                 () -> service.validateUri(URI.create("https://files.oaiusercontent.com.evil.test/file")));
         assertThrows(McpFileDownloadService.DownloadException.class,
                 () -> service.validateUri(URI.create("https://oaiusercontent.com.evil.test/file")));
+        assertThrows(McpFileDownloadService.DownloadException.class,
+                () -> service.validateUri(URI.create("https://other.blob.core.windows.net/file")));
     }
 }

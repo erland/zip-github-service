@@ -959,8 +959,6 @@ grep -Fq 'openai/fileParams' backend/src/main/java/info/isaksson/erland/zipgithu
 grep -Fq 'https://zip-github.apphome.one/mcp' docs/openai-plugin-distribution.md
 grep -Fq '| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **BLOCKED**' docs/implementation-status.md
 printf 'Step 10.2 plugin packaging assertions verified; live acceptance remains blocked for %s.\n' "$actual_version"
- .github/workflows/ci.yml
-grep -q '^  workflow_dispatch:
 
 # Phase 9 step 9.29 (completely empty repository bootstrap).
 test -s docs/step-9.29-report.md

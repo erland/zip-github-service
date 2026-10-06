@@ -19,7 +19,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 - Repository revision: `r0179`
 - Last completed step: `10.1`
-- Next step: `10.2` — **BLOCKED** pending deployed MCP/plugin upload-and-claim acceptance
+- Next step: blocked at `10.2` — pending deployed MCP/plugin upload-and-claim acceptance
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION — PLUGIN PACKAGE READY — LIVE ACCEPTANCE PENDING`
 
 ## Step ledger

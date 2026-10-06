@@ -17,7 +17,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0179`
+- Repository revision: `r0180`
 - Last completed step: `10.1`
 - Next step: blocked at `10.2` — pending deployed MCP/plugin upload-and-claim acceptance
 - Overall state: `MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION — PLUGIN PACKAGE READY — LIVE ACCEPTANCE PENDING`
@@ -134,6 +134,7 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
+| `r0180` | 2026-10-06 | Release correction while `10.2` remains blocked | GitHub Release tag is authoritative for backend/frontend/plugin release artifacts; `VERSION` is consistency-only | `10.2 BLOCKED — deploy/connect and run live ZIP claim acceptance` |
 | `r0179` | 2026-10-06 | `10.2` partial — plugin package | Portable package, CI validation and release ZIP implemented; live `zip-github.apphome.one/mcp` acceptance could not run because this execution environment cannot resolve the production host | `10.2 BLOCKED — deploy/connect and run live ZIP claim acceptance` |
 | `r0178` | 2026-10-06 | `10.1` MCP staging-upload bridge | Static integration review + focused Quarkus tests added; PR CI passed after corrections | `10.2` |
 | `r0143` | 2026-08-13 | `9.25` safe orphaned Work branch cleanup | Global fail-closed preview + explicit revalidated bulk deletion across visible GitHub App repositories; bounded pagination avoids the former 100-repository truncation | `none — define next step before further product work` |

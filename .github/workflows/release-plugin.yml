@@ -1,0 +1,43 @@
+name: Release ChatGPT plugin
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  plugin:
+    name: Build and attach plugin ZIP
+    runs-on: ubuntu-latest
+    env:
+      ZIP_GITHUB_MCP_URL: ${{ vars.ZIP_GITHUB_MCP_URL || 'https://zip-github.apphome.one/mcp' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Build plugin package
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          node scripts/build-plugin.mjs --version "$version"
+          mkdir -p build
+          (cd build/plugin && zip -qr "../zip-github-plugin-${version}.zip" zip-github)
+          echo "archive=build/zip-github-plugin-${version}.zip" >> "$GITHUB_OUTPUT"
+      - name: Inspect plugin archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -l "${{ steps.package.outputs.archive }}"
+          unzip -p "${{ steps.package.outputs.archive }}" zip-github/plugin.json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>JSON.parse(s))"
+          unzip -p "${{ steps.package.outputs.archive }}" zip-github/mcp.json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>JSON.parse(s))"
+      - name: Attach plugin ZIP
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.event.release.tag_name }}" "${{ steps.package.outputs.archive }}" --clobber

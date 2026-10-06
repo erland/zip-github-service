@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "zip-github",
+  "version": "__PLUGIN_VERSION__",
+  "description": "Transfer a project ZIP to zip-github staging and continue review in the existing web interface.",
+  "author": {
+    "name": "Erland Lindmark"
+  },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "zip-GitHub",
+        "shortDescription": "Skicka ZIP till GitHub",
+        "longDescription": "Överför en projekt-ZIP till zip-GitHub via MCP och fortsätt sedan i det befintliga webbgränssnittet för repositoryval, granskning, godkännande och Git-leverans.",
+        "developerName": "Erland Lindmark",
+        "category": "Productivity",
+        "capabilities": [
+          "Interactive"
+        ],
+        "defaultPrompt": "Skicka den bifogade ZIP-filen till zip-GitHub och ge mig länken där jag kan granska ändringarna."
+      }
+    }
+  }
+}

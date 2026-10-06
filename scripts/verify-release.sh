@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.130"
+expected_version="1.0.0-rc.131"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.130 - 2026-10-06' CHANGELOG.md
+grep -q '## 1.0.0-rc.131 - 2026-10-06' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,7 +25,7 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0178`' docs/implementation-status.md
+grep -q 'Repository revision: `r0179`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -52,7 +52,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION — STEP 10.1 COMPLETE`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION — PLUGIN PACKAGE READY — LIVE ACCEPTANCE PENDING`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -761,3 +761,16 @@ grep -Fq "keeps successful Actions compact until details are requested" frontend
 grep -Fq "keeps failed Actions prominent without requiring expansion" frontend/src/components/ActionsPanel.test.tsx
 grep -Fq "**Status:** DONE (2026-08-14, r0177 / 1.0.0-rc.129)." docs/implementation-steps.md
 printf 'Step 10.1 MCP staging bridge release assertions verified for %s.\n' "$actual_version"
+
+# Phase 10.2 portable plugin package (live deployed acceptance remains BLOCKED).
+test -s plugin/plugin.template.json
+test -s plugin/mcp.template.json
+test -s plugin/skills/zip-github/SKILL.md
+test -s scripts/build-plugin.mjs
+test -s docs/openai-plugin-distribution.md
+test -s docs/step-10.2-report.md
+test -s .github/workflows/release-plugin.yml
+grep -Fq 'openai/fileParams' backend/src/main/java/info/isaksson/erland/zipgithub/mcp/McpResource.java
+grep -Fq 'https://zip-github.apphome.one/mcp' docs/openai-plugin-distribution.md
+grep -Fq '| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **BLOCKED**' docs/implementation-status.md
+printf 'Step 10.2 plugin packaging assertions verified; live acceptance remains blocked for %s.\n' "$actual_version"

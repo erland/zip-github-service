@@ -188,3 +188,24 @@ jobs:
           tags: ${{ steps.image-meta.outputs.frontend_tags }}
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
+
+
+  plugin-package:
+    name: Validate ChatGPT plugin package
+    runs-on: ubuntu-latest
+    env:
+      ZIP_GITHUB_MCP_URL: https://zip-github.example.test/mcp
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Build portable plugin
+        run: node scripts/build-plugin.mjs --version 0.0.0-ci
+      - name: Validate generated package
+        run: |
+          test -f build/plugin/zip-github/plugin.json
+          test -f build/plugin/zip-github/mcp.json
+          test -f build/plugin/zip-github/skills/zip-github/SKILL.md
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('build/plugin/zip-github/plugin.json'));if(p.name!=='zip-github'||p.version!=='0.0.0-ci'||p.extensions['com.openai'].interface.shortDescription.length>30)process.exit(1)"
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('build/plugin/zip-github/mcp.json'));if(m.mcpServers['zip-github'].type!=='streamable-http'||m.mcpServers['zip-github'].url!=='https://zip-github.example.test/mcp')process.exit(1)"

@@ -1,3 +1,12 @@
+## 1.0.0-rc.131 - 2026-10-06
+
+Repository revision: `r0179`
+
+- Adds the portable zip-GitHub ChatGPT/OpenAI plugin package for the existing remote MCP server.
+- Adds a minimal skill for the `stage_zip -> review_url -> web review` handoff.
+- Adds CI validation and GitHub Release packaging of `zip-github-plugin-<version>.zip`.
+- Live deployed upload/claim acceptance remains required before step 10.2 can be marked DONE; the available execution environment could not resolve the production host.
+
 ## 1.0.0-rc.130 - 2026-10-06
 
 Repository revision: `r0178`

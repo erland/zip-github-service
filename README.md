@@ -4,11 +4,11 @@
 
 ## Current state
 
-- Product version: `1.0.0-rc.130`
-- Repository revision: `r0178`
+- Product version: `1.0.0-rc.131`
+- Repository revision: `r0179`
 - Completed implementation step: `10.1 — MCP staging-upload bridge`
-- Next implementation step: `10.2 — ChatGPT plugin package and deployed MCP acceptance`
-- Overall state: **MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION IN PROGRESS**
+- Current implementation step: `10.2 — ChatGPT plugin package and deployed MCP acceptance` (**BLOCKED on live deployed acceptance**)
+- Overall state: **MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION — PLUGIN PACKAGE READY, LIVE ACCEPTANCE PENDING**
 - Status register: [`docs/implementation-status.md`](docs/implementation-status.md)
 - Release decision: [`docs/mvp-release.md`](docs/mvp-release.md)
 - Production acceptance checklist: [`docs/release-checklist.md`](docs/release-checklist.md)
@@ -22,6 +22,9 @@ The release candidate is intended for controlled deployment and live acceptance 
 Phase 10 adds a deliberately narrow MCP integration. Step 10.1 exposes `stage_zip` at `/mcp`, reusing the
 existing staging pipeline and returning the ordinary browser review link. Review, approval and Git delivery
 remain in the web UI. See [`docs/mcp-staging-upload.md`](docs/mcp-staging-upload.md).
+
+The portable plugin source lives under `plugin/`; `node scripts/build-plugin.mjs --version <semver>` generates
+a package under `build/plugin/zip-github/`. GitHub Releases attach a versioned plugin ZIP automatically.
 
 The normal workflow is:
 

@@ -110,3 +110,16 @@ Rejected MCP file download host: <hostname>
 ```
 
 Step 10.2 remains BLOCKED until the deployed log identifies the actual ChatGPT file host and a subsequent live ZIP staging test passes.
+
+
+## Live acceptance finding — Azure-backed ChatGPT file delivery
+
+A deployed ChatGPT plugin invocation revealed that the temporary file URL may use the exact Azure Blob host `oaisdmntprnortheu.blob.core.windows.net`. Adding that exact hostname alongside `.oaiusercontent.com` allowed the real `stage_zip` flow to succeed.
+
+The repository defaults now include only those two verified host rules:
+
+```text
+.oaiusercontent.com,oaisdmntprnortheu.blob.core.windows.net
+```
+
+The configuration deliberately does not allow the broad `.blob.core.windows.net` suffix.

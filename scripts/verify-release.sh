@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_version="1.0.0-rc.131"
+expected_version="1.0.0-rc.132"
 actual_version=$(tr -d '[:space:]' < VERSION)
 [[ "$actual_version" == "$expected_version" ]] || {
   printf 'Expected VERSION %s, found %s.\n' "$expected_version" "$actual_version" >&2
   exit 1
 }
 
-grep -q '## 1.0.0-rc.131 - 2026-10-06' CHANGELOG.md
+grep -q '## 1.0.0-rc.132 - 2026-10-06' CHANGELOG.md
 
 for required in \
   CHANGELOG.md \
@@ -25,7 +25,7 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0179`' docs/implementation-status.md
+grep -q 'Repository revision: `r0180`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
@@ -774,3 +774,15 @@ grep -Fq 'openai/fileParams' backend/src/main/java/info/isaksson/erland/zipgithu
 grep -Fq 'https://zip-github.apphome.one/mcp' docs/openai-plugin-distribution.md
 grep -Fq '| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **BLOCKED**' docs/implementation-status.md
 printf 'Step 10.2 plugin packaging assertions verified; live acceptance remains blocked for %s.\n' "$actual_version"
+
+# rc.132 unified release version source.
+test -s docs/rc132-release-tag-version-source.md
+grep -Fq 'release:' .github/workflows/release-plugin.yml
+grep -Fq 'tag="${{ github.event.release.tag_name }}"' .github/workflows/release-plugin.yml
+grep -Fq 'version="${tag#v}"' .github/workflows/release-plugin.yml
+grep -Fq 'repository_version=$(tr -d' .github/workflows/release-plugin.yml
+grep -Fq 'Build and publish backend image' .github/workflows/release-plugin.yml
+grep -Fq 'Build and publish frontend image' .github/workflows/release-plugin.yml
+grep -Fq 'Attach plugin ZIP to GitHub Release' .github/workflows/release-plugin.yml
+! grep -Fq '[[ "${GITHUB_REF}" == refs/tags/* ]]' .github/workflows/ci.yml
+printf 'rc.132 release-tag version-source assertions verified for %s.\n' "$actual_version"

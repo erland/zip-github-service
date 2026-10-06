@@ -38,6 +38,23 @@ describe('App routing and authentication', () => {
     expect(screen.getByRole('link', { name: 'Logga in med GitHub' })).toHaveAttribute('href', '/api/auth/github/login?returnTo=%2Fprojects');
   });
 
+
+  it('serves Marketplace information pages without a GitHub session', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      if (String(input) === '/api/auth/me') return json({ title: 'Unauthorized' }, 401);
+      return Promise.reject(new Error(`Unexpected fetch: ${String(input)}`));
+    }));
+
+    const { unmount } = renderAt('/privacy');
+    expect(screen.getByRole('heading', { name: 'Integritetspolicy för zip-GitHub' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Logga in för att fortsätta' })).not.toBeInTheDocument();
+    unmount();
+
+    renderAt('/support');
+    expect(screen.getByRole('heading', { name: 'Support för zip-GitHub' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Öppna GitHub Issues' })).toHaveAttribute('href', 'https://github.com/erland/zip-github-service/issues');
+  });
+
   it('returns to login on API 401 after an authenticated session expires and preserves the current route', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);

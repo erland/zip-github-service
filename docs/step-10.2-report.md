@@ -1,9 +1,9 @@
 # Step 10.2 report — ChatGPT plugin package and deployed acceptance
 
 Date: 2026-10-06  
-Revision: r0179  
-Product version: 1.0.0-rc.131  
-Status: BLOCKED — app-bound packaging implemented; ChatGPT app registration and live deployed acceptance remain required.
+Revision: r0181  
+Product version: 1.1.2  
+Status: DONE — ChatGPT plugin and deployed MCP upload/claim flow accepted end to end.
 
 ## Implemented
 
@@ -65,7 +65,7 @@ After rc.131 is built/deployed:
 7. Open the URL and verify the ordinary authenticated staging claim page loads.
 8. Verify repository selection/review remains in the web UI and no GitHub write occurred merely from staging.
 
-Only after these checks pass may step 10.2 be marked DONE.
+All acceptance checks passed on 2026-10-06; step 10.2 is complete.
 
 ## Changed files
 
@@ -110,3 +110,19 @@ Rejected MCP file download host: <hostname>
 ```
 
 Step 10.2 remains BLOCKED until the deployed log identifies the actual ChatGPT file host and a subsequent live ZIP staging test passes.
+
+
+## Final live acceptance — PASS
+
+Manual acceptance was completed against the deployed ChatGPT plugin and production zip-github service:
+
+1. ChatGPT accepted a real ZIP attachment and invoked `stage_zip`.
+2. The MCP endpoint returned a working `review_url`.
+3. Opening `review_url` loaded the ordinary zip-github staging/claim and review UI.
+4. Repository selection, review and delivery remained in the zip-github web application.
+5. The reviewed changes were successfully committed to a GitHub repository from that web flow.
+6. Staging itself did not perform the GitHub write.
+
+During acceptance, ChatGPT delivered the temporary file through an Azure Blob hostname that differed from the default `*.oaiusercontent.com` path. This is intentionally handled as deployment configuration through `ZIP_GITHUB_MCP_FILE_DOWNLOAD_HOSTS`, not as a globally hard-coded Azure hostname. Rejected hostnames are logged without paths, query strings or signed URL material to support safe deployment diagnostics.
+
+Result: **PASS**.

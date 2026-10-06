@@ -25,13 +25,13 @@ done
 
 test -x scripts/verify-package.py || { printf 'Missing executable package verifier.\n' >&2; exit 1; }
 
-grep -q 'Repository revision: `r0180`' docs/implementation-status.md
+grep -q 'Repository revision: `r0181`' docs/implementation-status.md
 grep -q "await screen.findByRole('link', { name: 'example-book-project' })" frontend/src/App.test.tsx
 test -s docs/rc72-frontend-staging-promotion-build-correction.md
 test -s frontend/src/api/staging.test.ts
 grep -q 'export type StagingPromotionTarget' frontend/src/api/staging.ts
 grep -q 'confirmOpenPullRequest' frontend/src/api/staging.ts
-grep -q 'Last completed step: `10.1`' docs/implementation-status.md
+grep -q 'Last completed step: `10.2`' docs/implementation-status.md
 test -s docs/rc103-step-9.29-empty-repository-start-correction.md
 grep -q 'verifyForWorkStart' backend/src/main/java/info/isaksson/erland/zipgithub/application/GitHubProjectConfigurationService.java
 grep -q 'ensureProjectForRepositoryReadyForWork' backend/src/main/java/info/isaksson/erland/zipgithub/api/RepositoryResource.java
@@ -52,7 +52,7 @@ grep -q "Deliver reviewed changes" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Retry delivery without duplicate approval" frontend/src/pages/ImportReviewPage.test.tsx
 grep -q "Apply reviewed ZIP changes" frontend/src/pages/SimplifiedImportFlow.test.tsx
 grep -q "Preserve reviewed external changes" frontend/src/pages/ImportReviewPage.test.tsx
-grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION — APP-BOUND PACKAGE READY — APP REGISTRATION/LIVE ACCEPTANCE PENDING`' docs/implementation-status.md
+grep -q 'Overall state: `MVP RELEASE CANDIDATE — PHASE 10 MCP/CHATGPT INTEGRATION COMPLETE`' docs/implementation-status.md
 grep -Fq 'client_max_body_size ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE};' frontend/nginx.conf
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE=200M' frontend/Dockerfile frontend/Dockerfile.runtime
 grep -q 'ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE: ${ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE:-200M}' docker-compose.yml
@@ -765,7 +765,7 @@ grep -Fq "keeps failed Actions prominent without requiring expansion" frontend/s
 grep -Fq "**Status:** DONE (2026-08-14, r0177 / 1.0.0-rc.129)." docs/implementation-steps.md
 printf 'Step 10.1 MCP staging bridge release assertions verified for %s.\n' "$actual_version"
 
-# Phase 10.2 plugin package (app registration/live acceptance remain BLOCKED).
+# Phase 10.2 plugin package and live deployed acceptance.
 test -s plugin/plugin.template.json
 test -s plugin/chatgpt-update.template.json
 test -s plugin/app.template.json
@@ -786,8 +786,9 @@ grep -Fq "test -f build/plugin-chatgpt/.codex-plugin/plugin.json" .github/workfl
 grep -Fq "test ! -e build/plugin-chatgpt/zip-github" .github/workflows/ci.yml
 grep -Fq 'zip -qr "../zip-github-plugin-${version}.zip" .app.json .codex-plugin' .github/workflows/release-plugin.yml
 grep -Fq 'zip-github-plugin-desktop-' .github/workflows/release-plugin.yml docs/openai-plugin-distribution.md
-grep -Fq '| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **BLOCKED**' docs/implementation-status.md
-printf 'Step 10.2 ChatGPT update/desktop plugin packaging assertions verified for %s.\n' "$actual_version"
+grep -Fq '| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **DONE** | 2026-10-06 | `docs/step-10.2-report.md` |' docs/implementation-status.md
+grep -Fq 'Result: **PASS**.' docs/step-10.2-report.md
+printf 'Step 10.2 ChatGPT update/desktop plugin packaging and live acceptance completion assertions verified for %s.\n' "$actual_version"
 
 # rc.132 unified release version source.
 test -s docs/rc132-release-tag-version-source.md

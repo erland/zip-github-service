@@ -190,21 +190,32 @@ jobs:
 
 
   plugin-package:
-    name: Validate ChatGPT plugin package
+    name: Validate ChatGPT plugin packages
     runs-on: ubuntu-latest
     env:
       ZIP_GITHUB_MCP_URL: https://zip-github.example.test/mcp
+      ZIP_GITHUB_CHATGPT_APP_ID: asdk_app_zipgithub_ci
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - name: Build portable plugin
-        run: node scripts/build-plugin.mjs --version 0.0.0-ci
-      - name: Validate generated package
+      - name: Build ChatGPT web package
+        run: node scripts/build-plugin.mjs --version 0.0.0-ci --target chatgpt
+      - name: Validate ChatGPT web package
         run: |
-          test -f build/plugin/zip-github/plugin.json
-          test -f build/plugin/zip-github/mcp.json
-          test -f build/plugin/zip-github/skills/zip-github/SKILL.md
-          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('build/plugin/zip-github/plugin.json'));if(p.name!=='zip-github'||p.version!=='0.0.0-ci'||p.extensions['com.openai'].interface.shortDescription.length>30)process.exit(1)"
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('build/plugin/zip-github/mcp.json'));if(m.mcpServers['zip-github'].type!=='streamable-http'||m.mcpServers['zip-github'].url!=='https://zip-github.example.test/mcp')process.exit(1)"
+          test -f build/plugin-chatgpt/zip-github/plugin.json
+          test -f build/plugin-chatgpt/zip-github/.app.json
+          test -f build/plugin-chatgpt/zip-github/skills/zip-github/SKILL.md
+          test ! -e build/plugin-chatgpt/zip-github/mcp.json
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('build/plugin-chatgpt/zip-github/plugin.json'));if(p.name!=='zip-github'||p.version!=='0.0.0-ci'||p.extensions['com.openai'].apps!=='./.app.json'||p.extensions['com.openai'].interface.shortDescription.length>30)process.exit(1)"
+          node -e "const fs=require('fs');const a=JSON.parse(fs.readFileSync('build/plugin-chatgpt/zip-github/.app.json'));if(a.apps['zip-github'].id!=='asdk_app_zipgithub_ci'||a.apps['zip-github'].required!==true)process.exit(1)"
+      - name: Build desktop MCP package
+        run: node scripts/build-plugin.mjs --version 0.0.0-ci --target desktop
+      - name: Validate desktop MCP package
+        run: |
+          test -f build/plugin-desktop/zip-github/plugin.json
+          test -f build/plugin-desktop/zip-github/mcp.json
+          test -f build/plugin-desktop/zip-github/skills/zip-github/SKILL.md
+          test ! -e build/plugin-desktop/zip-github/.app.json
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('build/plugin-desktop/zip-github/mcp.json'));if(m.mcpServers['zip-github'].type!=='streamable-http'||m.mcpServers['zip-github'].url!=='https://zip-github.example.test/mcp')process.exit(1)"

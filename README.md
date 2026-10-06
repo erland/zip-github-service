@@ -4,8 +4,8 @@
 
 ## Current state
 
-- Product version: `1.0.0-rc.131`
-- Repository revision: `r0179`
+- Product version: `1.0.0-rc.132`
+- Repository revision: `r0180`
 - Completed implementation step: `10.1 — MCP staging-upload bridge`
 - Current implementation step: `10.2 — ChatGPT plugin package and deployed MCP acceptance` (**BLOCKED on live deployed acceptance**)
 - Overall state: **MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION — PLUGIN PACKAGE READY, LIVE ACCEPTANCE PENDING**

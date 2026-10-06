@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0180`
-- Last completed step: `10.1`
-- Next step: blocked at `10.2` — pending ChatGPT app registration and deployed upload-and-claim acceptance
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION — APP-BOUND PACKAGE READY — APP REGISTRATION/LIVE ACCEPTANCE PENDING`
+- Repository revision: `r0181`
+- Last completed step: `10.2`
+- Next step: not yet defined
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 10 MCP/CHATGPT INTEGRATION COMPLETE`
 
 ## Step ledger
 
@@ -128,12 +128,13 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.41` | Fas 9 — result UX | Result next action follows Actions and Work state | **DONE** | 2026-08-14 | `docs/step-9.41-report.md`, `frontend/src/pages/ImportResultPage.tsx` |
 | `9.42` | Fas 9 — Actions UX | Compact successful Actions, prominent failures | **DONE** | 2026-08-14 | `docs/step-9.42-report.md`, `frontend/src/components/ActionsPanel.tsx` |
 | `10.1` | Fas 10 — MCP | MCP staging-upload bridge till befintligt reviewflöde | **DONE** | 2026-10-06 | `docs/mcp-staging-upload.md`, `docs/step-10.1-report.md` |
-| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **BLOCKED** |  | `docs/step-10.2-report.md` |
+| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **DONE** | 2026-10-06 | `docs/step-10.2-report.md` |
 
 ## Revision history
 
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
+| `r0181` | 2026-10-06 | `10.2` ChatGPT plugin and deployed MCP acceptance | Real ChatGPT ZIP upload succeeded through `stage_zip`; returned `review_url` opened the ordinary zip-github UI and the reviewed changes were committed to GitHub from the web flow. Deployment-specific ChatGPT file hosts remain configurable through `ZIP_GITHUB_MCP_FILE_DOWNLOAD_HOSTS`. | `none — define next step before further product work` |
 | `r0180` | 2026-10-06 | Release correction while `10.2` remains blocked | GitHub Release tag is authoritative for backend/frontend/plugin release artifacts; `VERSION` is consistency-only | `10.2 BLOCKED — deploy/connect and run live ZIP claim acceptance` |
 | `r0179` | 2026-10-06 | `10.2` partial — plugin package | Portable package, CI validation and release ZIP implemented; live `zip-github.apphome.one/mcp` acceptance could not run because this execution environment cannot resolve the production host | `10.2 BLOCKED — deploy/connect and run live ZIP claim acceptance` |
 | `r0178` | 2026-10-06 | `10.1` MCP staging-upload bridge | Static integration review + focused Quarkus tests added; PR CI passed after corrections | `10.2` |

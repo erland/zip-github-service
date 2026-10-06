@@ -97,3 +97,16 @@ A real ChatGPT `stage_zip` invocation reached the deployed MCP endpoint but fail
 The default allowlist is corrected from the single exact host `files.oaiusercontent.com` to `.oaiusercontent.com`, which accepts the root domain and its subdomains only. HTTPS remains mandatory, non-443 ports/userinfo remain rejected, and every redirect target is revalidated against the same allowlist. Lookalike domains such as `oaiusercontent.com.evil.test` remain blocked.
 
 Step 10.2 remains BLOCKED until the deployed correction is live and the real ZIP staging/review URL flow passes end to end.
+
+
+## Diagnostic follow-up — rejected ChatGPT file host logging
+
+To diagnose the remaining live failure without exposing signed temporary URLs, the MCP file downloader now logs only the rejected hostname when a file URL fails the host allowlist. The scheme, path, query string, signature, file id and full download URL are deliberately not logged.
+
+Expected log shape:
+
+```text
+Rejected MCP file download host: <hostname>
+```
+
+Step 10.2 remains BLOCKED until the deployed log identifies the actual ChatGPT file host and a subsequent live ZIP staging test passes.

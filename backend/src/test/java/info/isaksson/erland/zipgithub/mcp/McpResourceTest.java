@@ -53,7 +53,7 @@ class McpResourceTest {
                 .body("result.serverInfo.description", containsString("Stages user-provided ZIP archives"))
                 .body("result.serverInfo.websiteUrl", equalTo("https://zip-github.apphome.one/about"))
                 .body("result.serverInfo.icons", hasSize(1))
-                .body("result.serverInfo.icons[0].src", startsWith("data:image/png;base64,"))
+                .body("result.serverInfo.icons[0].src", org.hamcrest.Matchers.startsWith("data:image/png;base64,"))
                 .body("result.serverInfo.icons[0].mimeType", equalTo("image/png"))
                 .body("result.serverInfo.icons[0].sizes[0]", equalTo("64x64"));
     }

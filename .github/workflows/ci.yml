@@ -195,6 +195,7 @@ jobs:
     env:
       ZIP_GITHUB_MCP_URL: https://zip-github.example.test/mcp
       ZIP_GITHUB_CHATGPT_APP_ID: asdk_app_zipgithub_ci
+      ZIP_GITHUB_CHATGPT_PLUGIN_NAME: dev-zipgithub-ci
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -202,14 +203,14 @@ jobs:
           node-version: '22'
       - name: Build ChatGPT web package
         run: node scripts/build-plugin.mjs --version 0.0.0-ci --target chatgpt
-      - name: Validate ChatGPT web package
+      - name: Validate ChatGPT update package
         run: |
-          test -f build/plugin-chatgpt/zip-github/plugin.json
-          test -f build/plugin-chatgpt/zip-github/.app.json
-          test -f build/plugin-chatgpt/zip-github/skills/zip-github/SKILL.md
-          test ! -e build/plugin-chatgpt/zip-github/mcp.json
-          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('build/plugin-chatgpt/zip-github/plugin.json'));if(p.name!=='zip-github'||p.version!=='0.0.0-ci'||p.extensions['com.openai'].apps!=='./.app.json'||p.extensions['com.openai'].interface.shortDescription.length>30)process.exit(1)"
-          node -e "const fs=require('fs');const a=JSON.parse(fs.readFileSync('build/plugin-chatgpt/zip-github/.app.json'));if(a.apps['zip-github'].id!=='asdk_app_zipgithub_ci'||a.apps['zip-github'].required!==true)process.exit(1)"
+          test -f build/plugin-chatgpt/.codex-plugin/plugin.json
+          test -f build/plugin-chatgpt/.app.json
+          test ! -e build/plugin-chatgpt/zip-github
+          test ! -e build/plugin-chatgpt/mcp.json
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('build/plugin-chatgpt/.codex-plugin/plugin.json'));if(p.name!=='dev-zipgithub-ci'||p.version!=='0.0.0-ci'||p.apps!=='./.app.json')process.exit(1)"
+          node -e "const fs=require('fs');const a=JSON.parse(fs.readFileSync('build/plugin-chatgpt/.app.json'));if(a.apps['dev-zipgithub-ci'].id!=='asdk_app_zipgithub_ci')process.exit(1)"
       - name: Build desktop MCP package
         run: node scripts/build-plugin.mjs --version 0.0.0-ci --target desktop
       - name: Validate desktop MCP package

@@ -767,6 +767,7 @@ printf 'Step 10.1 MCP staging bridge release assertions verified for %s.\n' "$ac
 
 # Phase 10.2 plugin package (app registration/live acceptance remain BLOCKED).
 test -s plugin/plugin.template.json
+test -s plugin/chatgpt-update.template.json
 test -s plugin/app.template.json
 test -s plugin/mcp.template.json
 test -s plugin/skills/zip-github/SKILL.md
@@ -777,13 +778,16 @@ test -s .github/workflows/release-plugin.yml
 grep -Fq 'openai/fileParams' backend/src/main/java/info/isaksson/erland/zipgithub/mcp/McpResource.java
 grep -Fq 'https://zip-github.apphome.one/mcp' docs/openai-plugin-distribution.md
 grep -Fq 'ZIP_GITHUB_CHATGPT_APP_ID' scripts/build-plugin.mjs .github/workflows/release-plugin.yml docs/openai-plugin-distribution.md
+grep -Fq 'ZIP_GITHUB_CHATGPT_PLUGIN_NAME' scripts/build-plugin.mjs .github/workflows/release-plugin.yml docs/openai-plugin-distribution.md
 grep -Fq -- '--target chatgpt' .github/workflows/ci.yml .github/workflows/release-plugin.yml
 grep -Fq -- '--target desktop' .github/workflows/ci.yml .github/workflows/release-plugin.yml
-grep -Fq "manifest.extensions['com.openai'].apps = './.app.json'" scripts/build-plugin.mjs
-grep -Fq "test ! -e build/plugin-chatgpt/zip-github/mcp.json" .github/workflows/ci.yml
+grep -Fq "resolve(outputRoot, '.codex-plugin')" scripts/build-plugin.mjs
+grep -Fq "test -f build/plugin-chatgpt/.codex-plugin/plugin.json" .github/workflows/ci.yml
+grep -Fq "test ! -e build/plugin-chatgpt/zip-github" .github/workflows/ci.yml
+grep -Fq 'zip -qr "../zip-github-plugin-${version}.zip" .app.json .codex-plugin' .github/workflows/release-plugin.yml
 grep -Fq 'zip-github-plugin-desktop-' .github/workflows/release-plugin.yml docs/openai-plugin-distribution.md
 grep -Fq '| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **BLOCKED**' docs/implementation-status.md
-printf 'Step 10.2 app-bound/desktop plugin packaging assertions verified; app registration/live acceptance remain blocked for %s.\n' "$actual_version"
+printf 'Step 10.2 ChatGPT update/desktop plugin packaging assertions verified for %s.\n' "$actual_version"
 
 # rc.132 unified release version source.
 test -s docs/rc132-release-tag-version-source.md

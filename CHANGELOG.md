@@ -1,3 +1,13 @@
+## 1.0.0-rc.132 - 2026-10-06
+
+Repository revision: `r0180`
+
+- Makes the GitHub Release tag the authoritative version for backend image, frontend image and ChatGPT plugin ZIP.
+- A leading `v` in the release tag is normalized away.
+- The tagged commit's `VERSION` is now a consistency guard only; a mismatch fails the release before publication.
+- Normal CI no longer publishes release images for Git tag pushes; release publication is owned by the release workflow.
+- Step 10.2 remains blocked only on deployed MCP upload/claim acceptance.
+
 ## 1.0.0-rc.131 - 2026-10-06
 
 Repository revision: `r0179`

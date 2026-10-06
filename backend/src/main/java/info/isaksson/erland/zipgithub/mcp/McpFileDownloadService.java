@@ -3,6 +3,7 @@ package info.isaksson.erland.zipgithub.mcp;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +25,7 @@ import java.util.Locale;
  */
 @ApplicationScoped
 public class McpFileDownloadService {
+    private static final Logger LOG = Logger.getLogger(McpFileDownloadService.class);
     private static final int MAX_REDIRECTS = 3;
 
     private final List<String> allowedHosts;
@@ -102,7 +104,10 @@ public class McpFileDownloadService {
             }
             return host.equals(rule);
         });
-        if (!allowed) throw new DownloadException("The file download host is not allowed.");
+        if (!allowed) {
+            LOG.warnf("Rejected MCP file download host: %s", host);
+            throw new DownloadException("The file download host is not allowed.");
+        }
     }
 
     public record Download(InputStream body, long contentLength, String contentType) implements AutoCloseable {

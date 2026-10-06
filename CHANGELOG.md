@@ -1,3 +1,15 @@
+## 1.0.0-rc.130 - 2026-10-06
+
+Repository revision: `r0178`
+
+- Implements step 10.1: narrow MCP staging-upload bridge.
+- Adds a stateless `/mcp` endpoint with exactly one tool, `stage_zip`.
+- Uses ChatGPT `openai/fileParams` to receive a temporary ZIP download URL and streams it through the existing `StagingUploadService`.
+- Returns the existing staging claim URL as `review_url`; repository choice, review, approval, Git delivery and PR creation remain in the ordinary browser UI.
+- Restricts MCP file downloads to HTTPS and an explicit host allowlist, with redirect revalidation.
+- Proxies `/mcp` through the frontend nginx container and wires the new configuration through standard and Coolify Compose.
+- Step 10.2 `ChatGPT plugin package and deployed MCP acceptance` is now NEXT.
+
 ## 1.0.0-rc.129 - 2026-08-14
 
 Repository revision: `r0177`

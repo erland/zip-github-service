@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "zip-github": {
+      "type": "streamable-http",
+      "url": "__ZIP_GITHUB_MCP_URL__"
+    }
+  }
+}

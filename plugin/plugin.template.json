@@ -35,31 +35,46 @@
               "description": "Stage an attached project ZIP and return the browser review link.",
               "prompt": "Stage the attached project.zip in zip-GitHub and give me the link where I can review it.",
               "tools_triggered": "stage_zip",
-              "expected_behavior": "Calls stage_zip with the attached ZIP and returns the tool-provided review_url without claiming that GitHub was changed."
+              "expected_behavior": "Calls stage_zip with the attached ZIP and returns the tool-provided review_url without claiming that GitHub was changed.",
+              "file_attachment_urls": [
+                "https://raw.githubusercontent.com/erland/zip-github-service/main/plugin/review-fixtures/sample-project.zip"
+              ]
             },
             {
               "description": "Respect an explicit request to stage only and avoid GitHub writes.",
               "prompt": "Put this ZIP in zip-GitHub staging, but do not commit, push, or create a pull request.",
               "tools_triggered": "stage_zip",
-              "expected_behavior": "Calls stage_zip, returns review_url, and explains that repository selection and any GitHub delivery happen later in the browser."
+              "expected_behavior": "Calls stage_zip, returns review_url, and explains that repository selection and any GitHub delivery happen later in the browser.",
+              "file_attachment_urls": [
+                "https://raw.githubusercontent.com/erland/zip-github-service/main/plugin/review-fixtures/sample-project.zip"
+              ]
             },
             {
               "description": "Stage a ZIP and report its returned temporary staging expiry.",
               "prompt": "Stage this ZIP in zip-GitHub and tell me when the temporary upload expires.",
               "tools_triggered": "stage_zip",
-              "expected_behavior": "Calls stage_zip and reports review_url together with expires_at from structuredContent."
+              "expected_behavior": "Calls stage_zip and reports review_url together with expires_at from structuredContent.",
+              "file_attachment_urls": [
+                "https://raw.githubusercontent.com/erland/zip-github-service/main/plugin/review-fixtures/sample-project.zip"
+              ]
             },
             {
               "description": "Stage a ZIP and report the returned filename and checksum.",
               "prompt": "Send this ZIP to zip-GitHub and confirm the staged filename and checksum.",
               "tools_triggered": "stage_zip",
-              "expected_behavior": "Calls stage_zip and reports filename and sha256 from the returned structuredContent without inventing values."
+              "expected_behavior": "Calls stage_zip and reports filename and sha256 from the returned structuredContent without inventing values.",
+              "file_attachment_urls": [
+                "https://raw.githubusercontent.com/erland/zip-github-service/main/plugin/review-fixtures/sample-project.zip"
+              ]
             },
             {
               "description": "Stage an attached build artifact ZIP for later repository selection.",
               "prompt": "I have attached a built project ZIP. Move it into zip-GitHub so I can choose the repository and review changes there.",
               "tools_triggered": "stage_zip",
-              "expected_behavior": "Calls stage_zip once and directs the user to the returned review_url for repository selection and review."
+              "expected_behavior": "Calls stage_zip once and directs the user to the returned review_url for repository selection and review.",
+              "file_attachment_urls": [
+                "https://raw.githubusercontent.com/erland/zip-github-service/main/plugin/review-fixtures/sample-project.zip"
+              ]
             }
           ],
           "negative": [

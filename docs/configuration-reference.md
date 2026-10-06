@@ -20,6 +20,7 @@
 | `ZIP_GITHUB_CSRF_ENABLED` | `true` | keep enabled |
 | `ZIP_GITHUB_UPLOAD_RETENTION_HOURS` | `24` | minimize while allowing review |
 | `ZIP_GITHUB_UPLOAD_CLEANUP_INTERVAL` | `1h` | alert if cleanup repeatedly fails |
+| `ZIP_GITHUB_MCP_FILE_DOWNLOAD_HOSTS` | `files.oaiusercontent.com` | keep to verified ChatGPT temporary-file hosts only |
 
 ## Resource limits
 
@@ -35,6 +36,16 @@
 | `ZIP_GITHUB_ARCHIVE_MAX_COMPRESSION_RATIO` | 100:1 |
 
 The external reverse proxy, frontend-container nginx, Quarkus HTTP request-body ceiling and backend upload policy must all admit the intended request size. `ZIP_GITHUB_NGINX_CLIENT_MAX_BODY_SIZE` and `QUARKUS_HTTP_LIMITS_MAX_BODY_SIZE` should be at least as large as `ZIP_GITHUB_UPLOAD_MAX_COMPRESSED_BYTES`; the zip-github compressed-byte limit remains authoritative. Changing limits requires matching disk/tmpfs capacity and a security review.
+
+## MCP staging bridge
+
+`POST /mcp` exposes the narrow MCP `stage_zip` tool. The tool downloads only ChatGPT-provided temporary
+file URLs whose host matches `ZIP_GITHUB_MCP_FILE_DOWNLOAD_HOSTS`, then streams the bytes through the
+ordinary staging ingestion service. Keep the allowlist narrow; entries are comma-separated exact hosts,
+with an optional leading dot to allow a domain and its subdomains. Redirect targets are revalidated.
+
+The MCP tool has no GitHub authority and returns only a temporary browser claim/review URL. Repository
+selection, review, approval and delivery continue in the authenticated web application.
 
 ## Backup values
 

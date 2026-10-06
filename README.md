@@ -4,11 +4,11 @@
 
 ## Current state
 
-- Product version: `1.0.0-rc.129`
-- Repository revision: `r0177`
-- Completed implementation step: `9.42 — Compact successful Actions, prominent failures`
-- Next implementation step: `none` — the current implementation plan is complete
-- Overall state: **MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — GUIDED UX REVISION COMPLETE**
+- Product version: `1.0.0-rc.130`
+- Repository revision: `r0178`
+- Completed implementation step: `10.1 — MCP staging-upload bridge`
+- Next implementation step: `10.2 — ChatGPT plugin package and deployed MCP acceptance`
+- Overall state: **MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION IN PROGRESS**
 - Status register: [`docs/implementation-status.md`](docs/implementation-status.md)
 - Release decision: [`docs/mvp-release.md`](docs/mvp-release.md)
 - Production acceptance checklist: [`docs/release-checklist.md`](docs/release-checklist.md)
@@ -19,9 +19,11 @@ The release candidate is intended for controlled deployment and live acceptance 
 
 ## Continue implementation
 
-The current implementation plan is complete. Before using the step-by-step workflow again, define and record a new implementation step in the status ledger.
+Phase 10 adds a deliberately narrow MCP integration. Step 10.1 exposes `stage_zip` at `/mcp`, reusing the
+existing staging pipeline and returning the ordinary browser review link. Review, approval and Git delivery
+remain in the web UI. See [`docs/mcp-staging-upload.md`](docs/mcp-staging-upload.md).
 
-Once a new step is marked `NEXT`, the normal workflow is:
+The normal workflow is:
 
 > Kör nästa steg.
 

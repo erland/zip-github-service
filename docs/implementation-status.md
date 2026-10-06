@@ -1,7 +1,7 @@
 # Implementation status — zip-github
 
 Version 1.0  
-Updated: 14 August 2026
+Updated: 6 October 2026
 
 ## Purpose
 
@@ -17,10 +17,10 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 
 ## Current position
 
-- Repository revision: `r0177`
-- Last completed step: `9.42`
-- Next step: `none` — implementation plan complete
-- Overall state: `MVP RELEASE CANDIDATE — PHASE 9 EXTENDED — STEP 9.42 COMPLETE — GUIDED UX REVISION COMPLETE`
+- Repository revision: `r0178`
+- Last completed step: `10.1`
+- Next step: `10.2`
+- Overall state: `MVP RELEASE CANDIDATE — PHASE 10 MCP INTEGRATION — STEP 10.1 COMPLETE`
 
 ## Step ledger
 
@@ -127,11 +127,14 @@ This file is the authoritative execution ledger for the prompt-by-prompt impleme
 | `9.40` | Fas 9 — upload UX | Simplified upload | **DONE** | 2026-08-14 | `docs/step-9.40-report.md`, `frontend/src/pages/NewImportPage.tsx` |
 | `9.41` | Fas 9 — result UX | Result next action follows Actions and Work state | **DONE** | 2026-08-14 | `docs/step-9.41-report.md`, `frontend/src/pages/ImportResultPage.tsx` |
 | `9.42` | Fas 9 — Actions UX | Compact successful Actions, prominent failures | **DONE** | 2026-08-14 | `docs/step-9.42-report.md`, `frontend/src/components/ActionsPanel.tsx` |
+| `10.1` | Fas 10 — MCP | MCP staging-upload bridge till befintligt reviewflöde | **DONE** | 2026-10-06 | `docs/mcp-staging-upload.md`, `docs/step-10.1-report.md` |
+| `10.2` | Fas 10 — Plugin/acceptans | ChatGPT-pluginpaket och deployad MCP upload/claim-acceptans | **NEXT** |  |  |
 
 ## Revision history
 
 | Revision | Date | Completed step | Verification | Next step |
 |---|---|---|---|---|
+| `r0178` | 2026-10-06 | `10.1` MCP staging-upload bridge | Static integration review + focused Quarkus tests added; local network and Agent Workspace execution unavailable, PR CI is executable gate | `10.2` |
 | `r0143` | 2026-08-13 | `9.25` safe orphaned Work branch cleanup | Global fail-closed preview + explicit revalidated bulk deletion across visible GitHub App repositories; bounded pagination avoids the former 100-repository truncation | `none — define next step before further product work` |
 | `r0145` | 2026-08-13 | `9.26` grouped workflow-run presentation | Same workflow/commit is shown once with all actual GitHub runs preserved as expandable details; 9.27 is NEXT | `9.27` |
 | `r0146` | 2026-08-13 | `9.27` open-PR continuation confirmation | Web and Shortcut imports require explicit confirmation before extending a strictly reconciled PR_OPEN Work; merged PRs still start fresh Work | `none` |

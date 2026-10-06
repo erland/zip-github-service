@@ -131,8 +131,7 @@ jobs:
           backend="ghcr.io/${owner}/zip-github-service-backend"
           frontend="ghcr.io/${owner}/zip-github-service-frontend"
           publish=false
-          if [[ "${GITHUB_EVENT_NAME}" != "pull_request" ]] && \
-             { [[ "${GITHUB_REF}" == "refs/heads/main" ]] || [[ "${GITHUB_REF}" == refs/tags/* ]]; }; then
+          if [[ "${GITHUB_EVENT_NAME}" != "pull_request" ]] && [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             publish=true
           fi
           {

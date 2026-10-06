@@ -1069,3 +1069,28 @@ Den rekommenderade arbetsformen är därför: **en prompt per steg, en eller fle
 
 **Kvalitetsgrind för 9.42:** Actions-panelen ska använda mest visuell uppmärksamhet när användaren faktiskt behöver agera och minst när allt är grönt.
 
+
+
+# Fas 10 - MCP och ChatGPT-plugin
+
+## Steg 10.1 - MCP staging-upload bridge
+
+- Exponera en stabil Streamable HTTP-kompatibel MCP-endpoint på `/mcp`.
+- Exponera endast verktyget `stage_zip`.
+- Ta emot ChatGPT-filer via `openai/fileParams` och strömma ZIP-bytes till befintlig staging-ingestion.
+- Returnera befintlig claim/review-länk till webbgränssnittet.
+- Ge inte MCP GitHub-, repository-, approval- eller delivery-behörighet.
+- Skydda extern filhämtning med HTTPS, snäv host-allowlist, redirect-validering, stagingkapacitet och rate limiting.
+- Proxyera `/mcp` genom den ordinarie publika frontend-originen och dokumentera driftkonfigurationen.
+
+**Leverabel:** `docs/mcp-staging-upload.md`, fokuserade backendtester och `docs/step-10.1-report.md`.
+
+## Steg 10.2 - ChatGPT-plugin och deployad MCP-acceptans
+
+- Paketera zip-github som plugin med remote MCP på `https://zip-github.apphome.one/mcp`.
+- Lägg en minimal skill som instruerar modellen att använda `stage_zip`, visa `review_url` och lämna all review/delivery till webbgränssnittet.
+- Validera pluginmanifest, `mcp.json`, tool metadata och filparameterkontrakt.
+- Efter deploy, kör MCP Inspector/ChatGPT-acceptans med en verklig ZIP och verifiera att claim-länken öppnar ordinarie stagingflöde.
+- Dokumentera eventuell klientbegränsning för filparametrar utan att bygga en parallell uploadväg.
+
+**Kvalitetsgrind för fas 10:** en ZIP i ChatGPT kan överföras via MCP och öppnas i det befintliga autentiserade granskningsflödet utan att MCP får GitHub-skrivbehörighet.

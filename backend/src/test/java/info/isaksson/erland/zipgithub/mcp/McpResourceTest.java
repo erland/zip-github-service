@@ -82,7 +82,7 @@ class McpResourceTest {
                 .then().statusCode(200)
                 .body("result.isError", nullValue())
                 .body("result.structuredContent.staging_id", equalTo(id.toString()))
-                .body("result.structuredContent.review_url", endsWith("#token=opaque"))
+                .body("result.structuredContent.review_url", org.hamcrest.Matchers.endsWith("#token=opaque"))
                 .body("result.structuredContent.filename", equalTo("project.zip"));
 
         verify(uploads).create(eq("project.zip"), eq(3L), same(body));

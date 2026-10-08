@@ -43,6 +43,8 @@ Override it for non-production builds with `ZIP_GITHUB_MCP_URL`.
 
 The four public pages are available without GitHub login. They identify the service and publisher, explain support, and describe the service's data handling and terms.
 
+Publication metadata declares no commerce and limits availability to Sweden (`SE`).
+
 ## Build
 
 Build a public package directory with:

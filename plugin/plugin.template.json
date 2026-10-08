@@ -91,10 +91,14 @@
               "prompt": "Open README.md in my GitHub repository and change the heading."
             }
           ]
-        }
+        },
+        "commerce": false
       },
       "publication": {
-        "release_notes": "Initial Marketplace package with the complete MCP configuration, workflow skill, public listing metadata, support/privacy/terms pages, and plugin icons."
+        "release_notes": "Initial Marketplace package with the complete MCP configuration, workflow skill, public listing metadata, support/privacy/terms pages, and plugin icons.",
+        "countries": [
+          "SE"
+        ]
       }
     }
   }
